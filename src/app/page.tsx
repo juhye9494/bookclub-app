@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import { loadPaymentWidget, PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
+import DaumPostcodeEmbed from 'react-daum-postcode';
 
 const REVIEWS = [
   { stars:'★★★★★', quote:'"책을 고르는 재미가 생겼어요."', author:'30대 직장인, 서울' },
@@ -101,6 +102,9 @@ export default function Home() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [detailAddress, setDetailAddress] = useState('');
+  const [zonecode, setZonecode] = useState('');
+  const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null);
   const paymentMethodsWidgetRef = useRef<ReturnType<PaymentWidgetInstance['renderPaymentMethods']> | null>(null);
@@ -146,8 +150,8 @@ export default function Home() {
       return;
     }
     
-    if (!isLoginMode && (!name || !phone || !address)) {
-      alert('배송을 위해 이름, 연락처, 주소를 모두 입력해주세요.');
+    if (!isLoginMode && (!name || !phone || !address || !detailAddress)) {
+      alert('배송을 위해 이름, 연락처, 상세 주소를 모두 입력해주세요.');
       return;
     }
 
@@ -168,7 +172,7 @@ export default function Home() {
           data: {
             name,
             phone,
-            address
+            address: `[${zonecode}] ${address} ${detailAddress}`
           }
         }
       });
@@ -409,7 +413,12 @@ export default function Home() {
               </div>
               <div className="form-field">
                 <label>배송지 주소</label>
-                <input type="text" placeholder="서울특별시 중구 청파로 463" value={address} onChange={(e) => setAddress(e.target.value)} />
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input type="text" placeholder="우편번호" value={zonecode} readOnly style={{ flex: 1, backgroundColor: '#f5f5f5' }} />
+                  <button type="button" onClick={() => setIsPostcodeOpen(true)} style={{ padding: '0 16px', background: '#333', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'var(--sans)', whiteSpace: 'nowrap' }}>주소 찾기</button>
+                </div>
+                <input type="text" placeholder="기본 주소" value={address} readOnly style={{ marginBottom: '8px', backgroundColor: '#f5f5f5' }} />
+                <input type="text" placeholder="상세 주소 (동, 호수 등)" value={detailAddress} onChange={(e) => setDetailAddress(e.target.value)} />
               </div>
             </>
           )}
@@ -422,6 +431,24 @@ export default function Home() {
           </p>
         </div>
       </div>
+      {/* POSTCODE MODAL */}
+      {isPostcodeOpen && (
+        <div className="modal-overlay open" style={{ zIndex: 9999 }} onClick={(e) => { if (e.target === e.currentTarget) setIsPostcodeOpen(false); }}>
+          <div className="modal" style={{ padding: '24px', width: 'min(400px, 90vw)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem' }}>주소 검색</h3>
+              <button type="button" onClick={() => setIsPostcodeOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+            </div>
+            <DaumPostcodeEmbed 
+              onComplete={(data) => {
+                setZonecode(data.zonecode);
+                setAddress(data.address);
+                setIsPostcodeOpen(false);
+              }} 
+            />
+          </div>
+        </div>
+      )}
 
       {/* PAYMENT MODAL */}
       <div className={`modal-overlay ${isPaymentOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsPaymentOpen(false); }}>
