@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
-import { loadPaymentWidget, PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
+import { loadTossPayments } from '@tosspayments/payment-sdk';
 import DaumPostcodeEmbed from 'react-daum-postcode';
 
 const REVIEWS = [
@@ -106,41 +106,23 @@ export default function Home() {
   const [zonecode, setZonecode] = useState('');
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
-  const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null);
-  const paymentMethodsWidgetRef = useRef<ReturnType<PaymentWidgetInstance['renderPaymentMethods']> | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      if (isPaymentOpen) {
-        const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
-        const customerKey = "k_H_z67kH81uA_PjYmI4f"; // 테스트용 임시 고객 키
-        const widget = await loadPaymentWidget(clientKey, customerKey);
-        paymentWidgetRef.current = widget;
-        
-        const paymentMethodsWidget = widget.renderPaymentMethods(
-          "#payment-method",
-          { value: 60000 },
-          { variantKey: "DEFAULT" }
-        );
-        paymentMethodsWidgetRef.current = paymentMethodsWidget;
-
-        widget.renderAgreement('#agreement', { variantKey: "AGREEMENT" });
-      }
-    })();
-  }, [isPaymentOpen]);
 
   const handlePayment = async () => {
     try {
-      await paymentWidgetRef.current?.requestPayment({
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
+      const tossPayments = await loadTossPayments(clientKey);
+
+      await tossPayments.requestPayment('카드', {
+        amount: 60000,
         orderId: `order_${new Date().getTime()}`,
         orderName: "한경 석세스 클럽 6개월권",
+        customerName: name || "홍길동",
         successUrl: `${window.location.origin}/success`,
         failUrl: `${window.location.origin}/fail`,
-        customerEmail: email || 'test@test.com',
-        customerName: "홍길동",
       });
     } catch (err) {
       console.error(err);
+      alert('결제창을 띄우는 데 실패했습니다.');
     }
   };
 
@@ -472,11 +454,7 @@ export default function Home() {
             <div className="plan-row total"><span className="label">합계</span><span className="value">60,000원</span></div>
           </div>
           
-          {/* Toss Payments UI */}
-          <div id="payment-method" style={{ width: '100%' }}></div>
-          <div id="agreement" style={{ width: '100%', marginBottom: '16px' }}></div>
-          
-          <button className="modal-btn" onClick={handlePayment}>60,000원 결제하기</button>
+          <button className="modal-btn" onClick={handlePayment} style={{ marginTop: '16px' }}>60,000원 결제하기</button>
         </div>
       </div>
 
