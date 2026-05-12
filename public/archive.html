@@ -108,10 +108,27 @@
 
   footer {
     background: var(--bg-warm); border-top: 1px solid var(--border);
-    padding: 32px 5vw; text-align: center;
-    font-size: 0.78rem; color: var(--text-muted);
+    padding: 60px 5vw 40px; color: var(--text-mid);
   }
-
+  .footer-grid {
+    max-width: 1200px; margin: 0 auto; display: grid;
+    grid-template-columns: 200px 1fr 200px; gap: 40px; margin-bottom: 60px;
+  }
+  @media (max-width: 768px) {
+    .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+  }
+  .footer-logo { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; }
+  .footer-logo img { height: 28px; width: auto; transform: scale(1.4); transform-origin: left center; }
+  .footer-company { font-size: 0.85rem; line-height: 1.8; }
+  .footer-company strong { display: inline-block; width: 80px; color: var(--text); }
+  .footer-contact { font-size: 0.85rem; line-height: 1.8; text-align: right; }
+  @media (max-width: 768px) { .footer-contact { text-align: left; } }
+  .footer-bottom {
+    max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between;
+    align-items: center; border-top: 1px solid var(--border); padding-top: 24px;
+  }
+  .footer-legal { font-size: 0.75rem; color: var(--text-muted); }
+  .footer-policy-btn { background: none; border: none; color: var(--text-mid); font-size: 0.85rem; text-decoration: underline; cursor: pointer; padding: 0; }
   @media (max-width: 600px) {
     .cycle-head { flex-direction: column; align-items: flex-start; gap: 6px; }
     .cycle-title { font-size: 1.3rem; }
@@ -137,7 +154,27 @@
 </main>
 
 <footer>
-  <p>© 한경매거진앤북</p>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-logo"><img src="/logo.svg" alt="한경 석세스 클럽" class="brand-logo" /></div>
+    </div>
+    <div class="footer-company">
+      <div><strong>대표이사</strong>서정환</div>
+      <div><strong>주소</strong>04505 서울시 중구 청파로 463 한국경제신문사 6층</div>
+      <div><strong>사업자번호</strong>104-81-47761</div>
+    </div>
+    <div class="footer-contact">
+      📞 02-360-4555<br />
+      📧 bp@hankyung.com
+      <div style="margin-top: 14px;">
+        <a href="/" style="font-size: 0.85rem; text-decoration: underline; color: var(--text-mid);">메인 페이지로 이동</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-legal">© 한경매거진앤북</p>
+    <a href="/admin.html" style="font-size: 0.7rem; color: var(--text-muted); text-decoration: none; opacity: 0.6;">관리자</a>
+  </div>
 </footer>
 
 <script src="bookclub-data.js"></script>
