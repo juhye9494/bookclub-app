@@ -98,6 +98,9 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [isLoginMode, setIsLoginMode] = useState(true);
   const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null);
   const paymentMethodsWidgetRef = useRef<ReturnType<PaymentWidgetInstance['renderPaymentMethods']> | null>(null);
@@ -143,6 +146,11 @@ export default function Home() {
       return;
     }
     
+    if (!isLoginMode && (!name || !phone || !address)) {
+      alert('배송을 위해 이름, 연락처, 주소를 모두 입력해주세요.');
+      return;
+    }
+
     if (isLoginMode) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
@@ -153,7 +161,17 @@ export default function Home() {
       setIsLoginOpen(false);
       setIsPaymentOpen(true);
     } else {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            name,
+            phone,
+            address
+          }
+        }
+      });
       if (error) {
         alert('회원가입 실패: ' + error.message);
         return;
@@ -379,6 +397,22 @@ export default function Home() {
             <label>비밀번호</label>
             <input type="password" placeholder="비밀번호를 입력하세요" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
+          {!isLoginMode && (
+            <>
+              <div className="form-field">
+                <label>이름</label>
+                <input type="text" placeholder="홍길동" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>연락처</label>
+                <input type="tel" placeholder="010-0000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>배송지 주소</label>
+                <input type="text" placeholder="서울특별시 중구 청파로 463" value={address} onChange={(e) => setAddress(e.target.value)} />
+              </div>
+            </>
+          )}
           <button className="modal-btn" onClick={handleAuth}>{isLoginMode ? '로그인하기' : '가입하기'}</button>
           <p className="modal-divider">
             {isLoginMode ? '계정이 없으신가요? ' : '이미 계정이 있으신가요? '}
