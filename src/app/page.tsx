@@ -144,7 +144,7 @@ export default function Home() {
     <>
       {/* NAV */}
       <nav id="main-nav" className={scrolled ? 'scrolled' : ''}>
-        <div className="nav-logo"><img src="/logo.png" alt="한경 석세스 클럽" className="brand-logo" /></div>
+        <div className="nav-logo"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <a href="#" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</a>
           <a href="#plan" className="nav-cta">지금 가입하기</a>
@@ -210,7 +210,7 @@ export default function Home() {
                 </svg>
                 도서 목록으로
               </button>
-              <div className="dv-nav-title"><img src="/logo.png" alt="한경 석세스 클럽" className="brand-logo" /></div>
+              <div className="dv-nav-title"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
               <div style={{ width: '100px' }}></div>
             </div>
 
@@ -300,7 +300,7 @@ export default function Home() {
       <div className={`modal-overlay ${isLoginOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsLoginOpen(false); }}>
         <div className="modal">
           <button className="modal-close" onClick={() => setIsLoginOpen(false)}>✕</button>
-          <div className="modal-logo"><img src="/logo.png" alt="한경 석세스 클럽" className="brand-logo" /></div>
+          <div className="modal-logo"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
           <h3>로그인</h3>
           <p className="modal-sub">배송을 위해 로그인이 필요합니다.</p>
           <div className="form-field">
@@ -320,7 +320,7 @@ export default function Home() {
       <div className={`modal-overlay ${isPaymentOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsPaymentOpen(false); }}>
         <div className="modal">
           <button className="modal-close" onClick={() => setIsPaymentOpen(false)}>✕</button>
-          <div className="modal-logo"><img src="/logo.png" alt="한경 석세스 클럽" className="brand-logo" /></div>
+          <div className="modal-logo"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
           <h3>구독 신청</h3>
           <p className="modal-sub">선택하신 4권이 담겼습니다. 구독을 시작하시면 배송됩니다.</p>
           <div className="selected-books-preview">
@@ -480,7 +480,7 @@ export default function Home() {
       <footer>
         <div className="footer-grid">
           <div>
-            <div className="footer-logo"><img src="/logo.png" alt="한경 석세스 클럽" className="brand-logo" /></div>
+            <div className="footer-logo"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
           </div>
           <div className="footer-company">
             <div><strong>대표이사</strong>서정환</div>
