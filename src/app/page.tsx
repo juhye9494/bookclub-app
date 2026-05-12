@@ -269,10 +269,10 @@ export default function Home() {
                   <div className="dv-plan-row"><span className="l">도서 선택</span><span className="r">6개월간 4권</span></div>
                   <div className="dv-plan-row"><span className="l">구독 금액</span><span className="r" style={{ color: 'var(--accent)' }}>60,000원</span></div>
                   <button
-                    className={`dv-add-btn ${selected.has(detailIdx) ? 'added' : ''}`}
-                    onClick={() => toggleBook(detailIdx)}
+                    className={`dv-add-btn ${detailIdx !== null && selected.has(detailIdx) ? 'added' : ''}`}
+                    onClick={() => detailIdx !== null && toggleBook(detailIdx)}
                   >
-                    {selected.has(detailIdx) ? '✓ 담겼어요' : '+ 내 목록에 담기'}
+                    {detailIdx !== null && selected.has(detailIdx) ? '✓ 담겼어요' : '+ 내 목록에 담기'}
                   </button>
                 </div>
               </div>
