@@ -106,6 +106,19 @@ export default function Home() {
   const [zonecode, setZonecode] = useState('');
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handlePayment = async () => {
     try {
@@ -219,7 +232,14 @@ export default function Home() {
         <div className="nav-logo"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <a href="#" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</a>
-          <a href="#plan" className="nav-cta">지금 가입하기</a>
+          {user ? (
+            <button className="nav-cta" style={{ background: '#333' }} onClick={() => {
+              supabase.auth.signOut();
+              alert('로그아웃 되었습니다.');
+            }}>로그아웃</button>
+          ) : (
+            <button className="nav-cta" onClick={() => { setIsLoginMode(true); setIsLoginOpen(true); }}>로그인/가입</button>
+          )}
         </div>
       </nav>
 
