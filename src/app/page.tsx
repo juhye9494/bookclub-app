@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
+import { loadPaymentWidget, PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
 
 const REVIEWS = [
   { stars:'★★★★★', quote:'"책을 고르는 재미가 생겼어요."', author:'30대 직장인, 서울' },
@@ -98,6 +99,43 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoginMode, setIsLoginMode] = useState(true);
+  const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null);
+  const paymentMethodsWidgetRef = useRef<ReturnType<PaymentWidgetInstance['renderPaymentMethods']> | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      if (isPaymentOpen) {
+        const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
+        const customerKey = "k_H_z67kH81uA_PjYmI4f"; // 테스트용 임시 고객 키
+        const widget = await loadPaymentWidget(clientKey, customerKey);
+        paymentWidgetRef.current = widget;
+        
+        const paymentMethodsWidget = widget.renderPaymentMethods(
+          "#payment-method",
+          { value: 60000 },
+          { variantKey: "DEFAULT" }
+        );
+        paymentMethodsWidgetRef.current = paymentMethodsWidget;
+
+        widget.renderAgreement('#agreement', { variantKey: "AGREEMENT" });
+      }
+    })();
+  }, [isPaymentOpen]);
+
+  const handlePayment = async () => {
+    try {
+      await paymentWidgetRef.current?.requestPayment({
+        orderId: `order_${new Date().getTime()}`,
+        orderName: "한경 석세스 클럽 6개월권",
+        successUrl: `${window.location.origin}/success`,
+        failUrl: `${window.location.origin}/fail`,
+        customerEmail: email || 'test@test.com',
+        customerName: "홍길동",
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -372,21 +410,12 @@ export default function Home() {
             <div className="plan-row"><span className="label">저자 강연권</span><span className="value">포함</span></div>
             <div className="plan-row total"><span className="label">합계</span><span className="value">60,000원</span></div>
           </div>
-          <div className="form-field">
-            <label>카드 번호</label>
-            <input type="text" placeholder="0000 - 0000 - 0000 - 0000" />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div className="form-field">
-              <label>유효기간</label>
-              <input type="text" placeholder="MM / YY" />
-            </div>
-            <div className="form-field">
-              <label>CVC</label>
-              <input type="text" placeholder="000" />
-            </div>
-          </div>
-          <button className="modal-btn">구독 결제하기</button>
+          
+          {/* Toss Payments UI */}
+          <div id="payment-method" style={{ width: '100%' }}></div>
+          <div id="agreement" style={{ width: '100%', marginBottom: '16px' }}></div>
+          
+          <button className="modal-btn" onClick={handlePayment}>60,000원 결제하기</button>
         </div>
       </div>
 
