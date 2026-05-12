@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 :root {
   --background: #ffffff;
@@ -804,8 +804,8 @@ body {
     }
   
 
-.brand-logo { height: 28px; width: auto; display: block; }
-.nav-logo .brand-logo { height: 32px; }
-.modal-logo .brand-logo { height: 24px; margin-bottom: 24px; }
-.dv-nav-title .brand-logo { height: 26px; }
-.footer-logo .brand-logo { height: 28px; filter: grayscale(100%) opacity(0.8); }
+.brand-logo { height: 28px; width: auto; display: block; transform: scale(3.2); }
+.nav-logo .brand-logo { height: 32px; transform-origin: left center; }
+.modal-logo .brand-logo { height: 24px; margin-bottom: 24px; transform-origin: center center; margin: 0 auto 32px; }
+.dv-nav-title .brand-logo { height: 26px; transform-origin: left center; }
+.footer-logo .brand-logo { height: 28px; filter: grayscale(100%) opacity(0.8); transform-origin: left center; }
