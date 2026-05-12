@@ -620,7 +620,7 @@ export default function Home() {
         </div>
         <div className="footer-bottom">
           <p className="footer-legal">© 한경매거진앤북</p>
-          <a href="#" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none', opacity: 0.6 }}>관리자</a>
+          <a href="/admin.html" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none', opacity: 0.6 }}>관리자</a>
         </div>
       </footer>
 
