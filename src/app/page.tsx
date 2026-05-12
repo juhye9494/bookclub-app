@@ -231,7 +231,7 @@ export default function Home() {
       <nav id="main-nav" className={scrolled ? 'scrolled' : ''}>
         <div className="nav-logo"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-          <a href="#" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</a>
+          <a href="/archive.html" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</a>
           {user ? (
             <button className="nav-cta" style={{ background: '#333' }} onClick={() => {
               supabase.auth.signOut();

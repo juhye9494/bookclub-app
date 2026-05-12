@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>지난 도서 리스트 — 한경 석세스 클럽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;900&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8f4; --bg-warm: #f3ede2; --text: #1a1815;
+    --text-mid: #4a463f; --text-muted: #8a8478;
+    --border: #e5dfd2; --accent: #fc6640; --accent-dark: #d44d2a;
+    --serif: 'Noto Serif KR', serif; --sans: 'Noto Sans KR', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.5; }
+  a { color: inherit; text-decoration: none; }
+
+  nav {
+    position: sticky; top: 0; z-index: 100; background: rgba(250,248,244,0.95);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+    padding: 18px 5vw; display: flex; justify-content: space-between; align-items: center;
+  }
+  .nav-logo { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+  .nav-logo span { color: var(--accent); }
+  .nav-back { font-size: 0.85rem; color: var(--text-mid); }
+  .nav-back:hover { color: var(--accent); }
+
+  .hero-section {
+    padding: 80px 5vw 56px; text-align: center; max-width: 1200px; margin: 0 auto;
+  }
+  .section-label {
+    font-size: 0.78rem; font-weight: 500; letter-spacing: 0.12em;
+    color: var(--accent); text-transform: uppercase; margin-bottom: 16px;
+  }
+  h1 {
+    font-family: var(--serif); font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700; line-height: 1.25; letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+  .hero-desc { color: var(--text-mid); font-size: 1rem; line-height: 1.8; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 0 5vw 100px; }
+
+  .cycle {
+    margin-bottom: 64px;
+  }
+  .cycle-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    padding-bottom: 16px; margin-bottom: 24px; border-bottom: 2px solid var(--text);
+  }
+  .cycle-title {
+    font-family: var(--serif); font-size: 1.6rem; font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .cycle-meta {
+    font-size: 0.82rem; color: var(--text-muted); font-weight: 500;
+  }
+  .cycle-badge {
+    display: inline-block; margin-left: 12px; padding: 3px 10px;
+    background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 600;
+    border-radius: 12px; vertical-align: middle; letter-spacing: 0.04em;
+  }
+  .cycle-badge.archived { background: var(--text-muted); }
+
+  .book-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    gap: 32px 20px;
+  }
+  @media (max-width: 900px) {
+    .book-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 520px) {
+    .book-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .book-item { text-align: center; }
+  .book-cover {
+    aspect-ratio: 3/4.3; background: var(--bg-warm); border-radius: 4px;
+    box-shadow: 0 2px 18px rgba(0,0,0,0.08); overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px 14px; position: relative;
+    font-family: var(--serif); font-weight: 700; font-size: 1rem;
+    line-height: 1.35; color: var(--text);
+    text-align: center; letter-spacing: -0.01em;
+  }
+  .book-cover.has-img { padding: 0; background: #2a2620; }
+  .book-cover img { width: 100%; height: 100%; object-fit: cover; }
+  .book-cover::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 5px; height: 100%;
+    background: rgba(0,0,0,0.18); z-index: 1;
+  }
+  .book-title {
+    font-size: 0.85rem; font-weight: 600; margin-top: 14px; line-height: 1.4;
+  }
+  .book-author {
+    font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;
+  }
+  .book-lecture {
+    font-size: 0.7rem; font-weight: 600; color: var(--accent);
+    margin-top: 6px; letter-spacing: -0.01em;
+  }
+
+  .empty {
+    text-align: center; padding: 80px 0; color: var(--text-muted); font-size: 0.9rem;
+  }
+
+  footer {
+    background: var(--bg-warm); border-top: 1px solid var(--border);
+    padding: 32px 5vw; text-align: center;
+    font-size: 0.78rem; color: var(--text-muted);
+  }
+
+  @media (max-width: 600px) {
+    .cycle-head { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .cycle-title { font-size: 1.3rem; }
+    .book-grid { grid-template-columns: repeat(3, 1fr); gap: 24px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">한경 <span>석세스</span> 클럽</a>
+  <a href="/" class="nav-back">← 메인으로</a>
+</nav>
+
+<section class="hero-section">
+  <p class="section-label">Past Books</p>
+  <h1>지난 도서 리스트</h1>
+  <p class="hero-desc">6개월마다 새롭게 큐레이션되는 한경 석세스 클럽의 도서 기록.<br />지난 시즌의 책들을 한눈에 살펴보세요.</p>
+</section>
+
+<main id="archiveList">
+  <div class="empty">불러오는 중...</div>
+</main>
+
+<footer>
+  <p>© 한경매거진앤북</p>
+</footer>
+
+<script src="bookclub-data.js"></script>
+<script>
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  function renderArchive() {
+    const root = document.getElementById('archiveList');
+    const cycles = BookclubData.getAllCycles();
+    if (!cycles.length) {
+      root.innerHTML = '<div class="empty">아직 등록된 시즌이 없습니다.</div>';
+      return;
+    }
+    root.innerHTML = cycles.map(c => {
+      const isActive = c.status === 'active';
+      const badge = isActive
+        ? '<span class="cycle-badge">현재 시즌</span>'
+        : '<span class="cycle-badge archived">종료</span>';
+      const books = c.books.length
+        ? c.books.map(b => {
+            const hasImg = !!b.cover;
+            return `
+              <div class="book-item">
+                <div class="book-cover ${hasImg ? 'has-img' : ''}">
+                  ${hasImg ? `<img src="${escapeHtml(b.cover)}" alt="${escapeHtml(b.title)}" />` : escapeHtml(b.title)}
+                </div>
+                <p class="book-title">${escapeHtml(b.title)}</p>
+                <p class="book-author">${escapeHtml(b.author)}</p>
+                ${b.lecture ? '<p class="book-lecture">+ 저자 강연권</p>' : ''}
+              </div>`;
+          }).join('')
+        : '<div class="empty" style="grid-column:1/-1">등록된 도서가 없습니다.</div>';
+      return `
+        <section class="cycle">
+          <div class="cycle-head">
+            <div>
+              <span class="cycle-title">${escapeHtml(c.label)}</span>
+              ${badge}
+            </div>
+            <span class="cycle-meta">${escapeHtml(c.startDate)} ~ ${escapeHtml(c.endDate)} · 도서 ${c.books.length}권</span>
+          </div>
+          <div class="book-grid">${books}</div>
+        </section>`;
+    }).join('');
+  }
+
+  renderArchive();
+</script>
+
+</body>
+</html>
