@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabaseClient';
 
 const REVIEWS = [
   { stars:'★★★★★', quote:'"책을 고르는 재미가 생겼어요."', author:'30대 직장인, 서울' },
@@ -94,6 +95,35 @@ export default function Home() {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoginMode, setIsLoginMode] = useState(true);
+
+  const handleAuth = async () => {
+    if (!email || !password) {
+      alert('이메일과 비밀번호를 입력해주세요.');
+      return;
+    }
+    
+    if (isLoginMode) {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        alert('로그인 실패: ' + error.message);
+        return;
+      }
+      alert('로그인 성공!');
+      setIsLoginOpen(false);
+      setIsPaymentOpen(true);
+    } else {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        alert('회원가입 실패: ' + error.message);
+        return;
+      }
+      alert('회원가입 성공! 이제 로그인 해주세요.');
+      setIsLoginMode(true);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -301,18 +331,23 @@ export default function Home() {
         <div className="modal">
           <button className="modal-close" onClick={() => setIsLoginOpen(false)}>✕</button>
           <div className="modal-logo"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
-          <h3>로그인</h3>
-          <p className="modal-sub">배송을 위해 로그인이 필요합니다.</p>
+          <h3>{isLoginMode ? '로그인' : '회원가입'}</h3>
+          <p className="modal-sub">배송을 위해 {isLoginMode ? '로그인이' : '회원가입이'} 필요합니다.</p>
           <div className="form-field">
             <label>이메일</label>
-            <input type="email" placeholder="example@email.com" />
+            <input type="email" placeholder="example@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div className="form-field">
             <label>비밀번호</label>
-            <input type="password" placeholder="비밀번호를 입력하세요" />
+            <input type="password" placeholder="비밀번호를 입력하세요" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
-          <button className="modal-btn" onClick={() => { setIsLoginOpen(false); setIsPaymentOpen(true); }}>로그인하기</button>
-          <p className="modal-divider">계정이 없으신가요? <span className="modal-link">회원가입</span></p>
+          <button className="modal-btn" onClick={handleAuth}>{isLoginMode ? '로그인하기' : '가입하기'}</button>
+          <p className="modal-divider">
+            {isLoginMode ? '계정이 없으신가요? ' : '이미 계정이 있으신가요? '}
+            <span className="modal-link" style={{ cursor: 'pointer' }} onClick={() => setIsLoginMode(!isLoginMode)}>
+              {isLoginMode ? '회원가입' : '로그인'}
+            </span>
+          </p>
         </div>
       </div>
 
