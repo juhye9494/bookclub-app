@@ -158,7 +158,13 @@ export default function Home() {
       }
       alert('로그인 성공!');
       setIsLoginOpen(false);
-      if (selected.size === MAX_SELECT) setIsPaymentOpen(true);
+      if (selected.size === MAX_SELECT) {
+        if (data.user?.user_metadata?.has_paid) {
+          alert('이미 결제가 완료된 계정입니다. 첫 번째 배송을 준비중입니다!');
+        } else {
+          setIsPaymentOpen(true);
+        }
+      }
     } else {
       const { data, error } = await supabase.auth.signUp({ 
         email, 
@@ -285,8 +291,15 @@ export default function Home() {
             <button
               className={`btn-delivery ${selected.size === MAX_SELECT ? 'visible' : ''}`}
               onClick={() => {
-                if (user) setIsPaymentOpen(true);
-                else { setIsLoginMode(false); setIsLoginOpen(true); }
+                if (user) {
+                  if (user.user_metadata?.has_paid) {
+                    alert('이미 결제가 완료된 계정입니다. 첫 번째 배송을 준비중입니다!');
+                  } else {
+                    setIsPaymentOpen(true);
+                  }
+                } else {
+                  setIsLoginMode(false); setIsLoginOpen(true);
+                }
               }}
             >
               선택한 4권 집으로 배송하기 →
@@ -598,8 +611,15 @@ export default function Home() {
             <p className="plan-price">60,000<span>원</span></p>
             <p className="plan-period">6개월 구독 · 일시납</p>
             <button className="plan-btn" style={{ marginTop: '24px' }} onClick={() => {
-              if (user) setIsPaymentOpen(true);
-              else { setIsLoginMode(false); setIsLoginOpen(true); }
+              if (user) {
+                if (user.user_metadata?.has_paid) {
+                  alert('이미 결제가 완료된 계정입니다. 첫 번째 배송을 준비중입니다!');
+                } else {
+                  setIsPaymentOpen(true);
+                }
+              } else {
+                setIsLoginMode(false); setIsLoginOpen(true);
+              }
             }}>지금 구독 신청하기</button>
             <p className="plan-note">* 가입 후 7일 이내 서비스 이용 내역이 없는 경우 전액 환불 가능합니다.<br />* 7일 이내라도 발송된 사은품 및 배송된 도서를 훼손한 경우 해당 비용을 제합니다.</p>
           </div>

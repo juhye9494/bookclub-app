@@ -2,11 +2,19 @@
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
+import { useEffect } from 'react';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
   const amount = searchParams.get('amount');
+
+  useEffect(() => {
+    if (orderId) {
+      supabase.auth.updateUser({ data: { has_paid: true } });
+    }
+  }, [orderId]);
 
   return (
     <div style={{ padding: '100px 20px', textAlign: 'center', fontFamily: 'var(--sans)' }}>
