@@ -158,7 +158,7 @@ export default function Home() {
       }
       alert('로그인 성공!');
       setIsLoginOpen(false);
-      setIsPaymentOpen(true);
+      if (selected.size === MAX_SELECT) setIsPaymentOpen(true);
     } else {
       const { data, error } = await supabase.auth.signUp({ 
         email, 
@@ -175,8 +175,9 @@ export default function Home() {
         alert('회원가입 실패: ' + error.message);
         return;
       }
-      alert('회원가입 성공! 이제 로그인 해주세요.');
-      setIsLoginMode(true);
+      alert('회원가입 성공!');
+      setIsLoginOpen(false);
+      if (selected.size === MAX_SELECT) setIsPaymentOpen(true);
     }
   };
 
@@ -283,7 +284,10 @@ export default function Home() {
             </div>
             <button
               className={`btn-delivery ${selected.size === MAX_SELECT ? 'visible' : ''}`}
-              onClick={() => setIsLoginOpen(true)}
+              onClick={() => {
+                if (user) setIsPaymentOpen(true);
+                else { setIsLoginMode(false); setIsLoginOpen(true); }
+              }}
             >
               선택한 4권 집으로 배송하기 →
             </button>
@@ -593,7 +597,10 @@ export default function Home() {
             <p className="plan-name">한경 석세스 클럽 6개월권</p>
             <p className="plan-price">60,000<span>원</span></p>
             <p className="plan-period">6개월 구독 · 일시납</p>
-            <button className="plan-btn" style={{ marginTop: '24px' }} onClick={() => setIsLoginOpen(true)}>지금 구독 신청하기</button>
+            <button className="plan-btn" style={{ marginTop: '24px' }} onClick={() => {
+              if (user) setIsPaymentOpen(true);
+              else { setIsLoginMode(false); setIsLoginOpen(true); }
+            }}>지금 구독 신청하기</button>
             <p className="plan-note">* 가입 후 7일 이내 서비스 이용 내역이 없는 경우 전액 환불 가능합니다.<br />* 7일 이내라도 발송된 사은품 및 배송된 도서를 훼손한 경우 해당 비용을 제합니다.</p>
           </div>
         </div>
