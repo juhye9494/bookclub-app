@@ -102,13 +102,16 @@ function saveAll(cycles) {
 }
 
 function loadAll() {
-  if (memoryStorage) return memoryStorage;
+  if (Array.isArray(memoryStorage)) return memoryStorage;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
   } catch (e) { console.warn('Failed to load from localStorage', e); }
   
-  // First run or blocked: use seed
+  // First run or corrupted or blocked: use seed
   saveAll(SEED_CYCLES);
   try {
     localStorage.setItem(CURRENT_KEY, 'cycle-2026-h1');
@@ -123,7 +126,11 @@ function loadAll() {
 window.BookclubData = {
   // ---- Cycles ----
   getAllCycles() {
-    return loadAll().sort((a, b) => b.startDate.localeCompare(a.startDate));
+    return loadAll().sort((a, b) => {
+      const sa = a.startDate || '';
+      const sb = b.startDate || '';
+      return sb.localeCompare(sa);
+    });
   },
   getCurrentCycle() {
     const all = loadAll();

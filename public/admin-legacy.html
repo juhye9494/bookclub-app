@@ -282,7 +282,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="bookclub-data.js?v=2"></script>
+<script src="bookclub-data.js?v=3"></script>
 <script>
   function escapeHtml(s) {
     return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -327,7 +327,7 @@
       <li data-id="${c.id}" class="${c.id === activeCycleId ? 'active' : ''}">
         ${escapeHtml(c.label)}
         <span class="cycle-status ${c.status}">${({active:'운영중',archived:'종료',draft:'준비중'})[c.status] || c.status}</span>
-        <span class="meta">도서 ${c.books.length}권 · ${c.startDate} ~ ${c.endDate}</span>
+        <span class="meta">도서 ${(c.books||[]).length}권 · ${c.startDate||''} ~ ${c.endDate||''}</span>
       </li>
     `).join('');
     list.querySelectorAll('li').forEach(li => {
@@ -369,7 +369,7 @@
 
       <div class="books-section">
         <div class="books-head">
-          <h3>도서 목록 <span class="count">${cycle.books.length}권</span></h3>
+          <h3>도서 목록 <span class="count">${(cycle.books||[]).length}권</span></h3>
           <button class="btn primary" id="addBookBtn">+ 도서 추가</button>
         </div>
         <div id="booksList"></div>
@@ -396,10 +396,10 @@
     if (creatingBook) {
       html += bookEditFormHtml(null);
     }
-    if (!cycle.books.length && !creatingBook) {
+    if (!(cycle.books||[]).length && !creatingBook) {
       html += '<div class="empty-state">아직 등록된 도서가 없습니다. + 도서 추가를 눌러 시작하세요.</div>';
     } else {
-      html += cycle.books.map(b => editingBookId === b.id ? bookEditFormHtml(b) : bookRowHtml(b)).join('');
+      html += (cycle.books||[]).map(b => editingBookId === b.id ? bookEditFormHtml(b) : bookRowHtml(b)).join('');
     }
     list.innerHTML = html;
 
