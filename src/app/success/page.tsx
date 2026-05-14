@@ -5,16 +5,50 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useEffect } from 'react';
 
+import { BOOKS } from '../page';
+
 function SuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
   const amount = searchParams.get('amount');
 
   useEffect(() => {
-    if (orderId) {
-      supabase.auth.updateUser({ data: { has_paid: true } });
+    async function recordPayment() {
+      if (!orderId) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) return;
+
+      // 이미 기록했는지 확인
+      if (user.user_metadata?.has_paid) return;
+
+      // 선택한 책 정보 가져오기
+      const savedSelection = sessionStorage.getItem('bookSelection');
+      let selectedBooks = [];
+      if (savedSelection) {
+        const indices = JSON.parse(savedSelection);
+        selectedBooks = indices.map((idx: number) => BOOKS[idx]);
+      }
+
+      // DB에 주문 정보 저장
+      await supabase.from('orders').insert([{
+        user_id: user.id,
+        user_email: user.email,
+        user_name: user.user_metadata?.name || 'Unknown',
+        user_phone: user.user_metadata?.phone || 'Unknown',
+        user_address: user.user_metadata?.address || 'Unknown',
+        selected_books: selectedBooks,
+        total_amount: Number(amount) || 60000,
+        payment_order_id: orderId
+      }]);
+
+      // 사용자 메타데이터 업데이트
+      await supabase.auth.updateUser({ data: { has_paid: true } });
     }
-  }, [orderId]);
+
+    recordPayment();
+  }, [orderId, amount]);
 
   return (
     <div style={{ padding: '100px 20px', textAlign: 'center', fontFamily: 'var(--sans)' }}>

@@ -18,7 +18,7 @@ const REVIEWS = [
   { stars:'★★★★★', quote:'"독서 노트가 의외로 너무 좋아요."', author:'30대 디자이너, 서울' }
 ];
 
-const BOOKS = [
+export const BOOKS = [
   {
     title: 'CES 2026', author: '한국경제신문 × The Miilk', genre: '테크 · 트렌드',
     color: 'book-1', bg: '#0d1b6e', bgDark: '#070e3a',
