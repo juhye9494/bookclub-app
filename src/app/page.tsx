@@ -240,10 +240,13 @@ export default function Home() {
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <a href="/archive.html" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</a>
           {user ? (
-            <button className="nav-cta" style={{ background: '#333' }} onClick={() => {
-              supabase.auth.signOut();
-              alert('로그아웃 되었습니다.');
-            }}>로그아웃</button>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <a href="/mypage" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>마이페이지</a>
+              <button className="nav-cta" style={{ background: '#333' }} onClick={() => {
+                supabase.auth.signOut();
+                alert('로그아웃 되었습니다.');
+              }}>로그아웃</button>
+            </div>
           ) : (
             <button className="nav-cta" onClick={() => { setIsLoginMode(true); setIsLoginOpen(true); }}>로그인/가입</button>
           )}
@@ -647,7 +650,7 @@ export default function Home() {
         </div>
         <div className="footer-bottom">
           <p className="footer-legal">© 한경매거진앤북</p>
-          <a href="/admin.html" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none', opacity: 0.6 }}>관리자</a>
+          <a href="/admin" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none', opacity: 0.6 }}>관리자</a>
         </div>
       </footer>
 
