@@ -293,6 +293,8 @@
     clearTimeout(toast._t);
     toast._t = setTimeout(() => t.classList.remove('show'), 2200);
   }
+  const myConfirm = (window.parent && window.parent.confirm) ? window.parent.confirm.bind(window.parent) : window.confirm.bind(window);
+  const myPrompt = (window.parent && window.parent.prompt) ? window.parent.prompt.bind(window.parent) : window.prompt.bind(window);
 
   // ===== Auth =====
   const loginScreen = document.getElementById('loginScreen');
@@ -507,18 +509,18 @@
   }
 
   function deleteBook(id) {
-    if (!confirm('이 도서를 삭제하시겠습니까?')) return;
+    if (!myConfirm('이 도서를 삭제하시겠습니까?')) return;
     BookclubData.deleteBook(activeCycleId, id);
     toast('삭제되었습니다.');
     renderSidebar(); renderBooks();
   }
 
   function editCycleInfo(cycle) {
-    const newLabel = prompt('시즌 라벨', cycle.label);
+    const newLabel = myPrompt('시즌 라벨', cycle.label);
     if (newLabel == null) return;
-    const newStart = prompt('시작일 (YYYY-MM-DD)', cycle.startDate);
+    const newStart = myPrompt('시작일 (YYYY-MM-DD)', cycle.startDate);
     if (newStart == null) return;
-    const newEnd = prompt('종료일 (YYYY-MM-DD)', cycle.endDate);
+    const newEnd = myPrompt('종료일 (YYYY-MM-DD)', cycle.endDate);
     if (newEnd == null) return;
     BookclubData.updateCycle(cycle.id, { label: newLabel, startDate: newStart, endDate: newEnd });
     toast('시즌 정보가 수정되었습니다.');
@@ -526,7 +528,7 @@
   }
 
   function deleteCycle(cycle) {
-    if (!confirm(`'${cycle.label}' 시즌을 정말 삭제하시겠습니까? 모든 도서 정보가 함께 삭제됩니다.`)) return;
+    if (!myConfirm(`'${cycle.label}' 시즌을 정말 삭제하시겠습니까? 모든 도서 정보가 함께 삭제됩니다.`)) return;
     BookclubData.deleteCycle(cycle.id);
     toast('삭제되었습니다.');
     const cycles = BookclubData.getAllCycles();
@@ -539,18 +541,16 @@
   window.closeModal = closeModal;
   document.getElementById('addCycleBtn').addEventListener('click', () => cycleModal.classList.add('show'));
   document.getElementById('resetDataBtn').addEventListener('click', () => {
-    if (confirm('기본 예시 데이터를 다시 불러오시겠습니까? 기존 데이터는 덮어씌워집니다.')) {
-      BookclubData.resetToSeed();
-      activeCycleId = null;
-      renderSidebar();
-      const cycles = BookclubData.getAllCycles();
-      if (cycles.length) {
-        selectCycle(cycles[0].id);
-      } else {
-        renderMain();
-      }
-      toast('기본 데이터가 복구되었습니다.');
+    BookclubData.resetToSeed();
+    activeCycleId = null;
+    renderSidebar();
+    const cycles = BookclubData.getAllCycles();
+    if (cycles.length) {
+      selectCycle(cycles[0].id);
+    } else {
+      renderMain();
     }
+    toast('기본 데이터가 복구되었습니다.');
   });
   cycleModal.addEventListener('click', e => { if (e.target === cycleModal) closeModal(); });
   document.getElementById('cycleForm').addEventListener('submit', e => {
