@@ -19,8 +19,8 @@ export default function AdminPage() {
         return;
       }
 
-      // 관리자 이메일 확인 (원하시는 관리자 이메일로 수정하세요)
-      if (session.user.email !== 'juhye94@hankyung.com') {
+      // 관리자 이메일 확인
+      if (session.user.email !== 'xn940@naver.com') {
         alert("접근 권한이 없습니다. 관리자 계정으로 로그인해주세요.");
         router.push('/');
         return;
