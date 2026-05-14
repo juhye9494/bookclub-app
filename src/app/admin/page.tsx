@@ -95,12 +95,14 @@ export default function AdminPage() {
     document.body.removeChild(link);
   };
 
+  const [activeTab, setActiveTab] = useState('shipping'); // 'shipping', 'content', 'members'
+
   if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>데이터를 불러오는 중...</div>;
 
   return (
-    <div style={{ background: '#f5f7fa', minHeight: '100vh', fontFamily: 'var(--sans)' }}>
+    <div style={{ background: '#f5f7fa', minHeight: '100vh', fontFamily: 'var(--sans)', paddingTop: '64px' }}>
       {/* HEADER */}
-      <nav style={{ padding: '16px 5vw', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e1e4e8', background: '#fff' }}>
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '0 5vw', height: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e1e4e8', background: '#fff' }}>
         <Link href="/" style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: '1.2rem', color: '#111', textDecoration: 'none' }}>
           관리자 대시보드
         </Link>
@@ -108,12 +110,38 @@ export default function AdminPage() {
       </nav>
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 5vw' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 700 }}>전체 주문 목록 ({orders.length}건)</h1>
-          <button onClick={downloadCSV} style={{ padding: '10px 20px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
-            📥 엑셀(CSV) 다운로드
+        
+        {/* TABS */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e5e7eb', marginBottom: '32px' }}>
+          <button 
+            onClick={() => setActiveTab('shipping')} 
+            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'shipping' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'shipping' ? 700 : 500, color: activeTab === 'shipping' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            📦 발송 관리
+          </button>
+          <button 
+            onClick={() => setActiveTab('content')} 
+            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'content' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'content' ? 700 : 500, color: activeTab === 'content' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            📚 콘텐츠(도서/시즌) 관리
+          </button>
+          <button 
+            onClick={() => setActiveTab('members')} 
+            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'members' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'members' ? 700 : 500, color: activeTab === 'members' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            👥 회원 관리
           </button>
         </div>
+
+        {/* TAB 1: SHIPPING */}
+        {activeTab === 'shipping' && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>전체 주문 목록 ({orders.length}건)</h1>
+              <button onClick={downloadCSV} style={{ padding: '10px 20px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
+                📥 엑셀(CSV) 다운로드
+              </button>
+            </div>
 
         <div style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -169,6 +197,23 @@ export default function AdminPage() {
             </tbody>
           </table>
         </div>
+          </>
+        )}
+
+        {/* TAB 2: CONTENT */}
+        {activeTab === 'content' && (
+          <div style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden', height: '800px' }}>
+            <iframe src="/admin-legacy.html" style={{ width: '100%', height: '100%', border: 'none' }} title="콘텐츠 관리"></iframe>
+          </div>
+        )}
+
+        {/* TAB 3: MEMBERS */}
+        {activeTab === 'members' && (
+          <div style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+            <h2 style={{ fontSize: '1.2rem', marginBottom: '12px', color: '#111' }}>회원 관리 기능</h2>
+            <p>이곳에 회원들의 기본 정보(가입일자, 이메일, 마케팅 수신 동의 여부 등)가 표시될 예정입니다.<br/>현재 수파베이스 Authentication 대시보드에서 직접 회원을 관리하실 수 있습니다.</p>
+          </div>
+        )}
       </main>
     </div>
   );
