@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import ContentManager from './ContentManager';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -202,9 +203,7 @@ export default function AdminPage() {
 
         {/* TAB 2: CONTENT */}
         {activeTab === 'content' && (
-          <div style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden', height: '800px' }}>
-            <iframe src="/admin-legacy.html?v=3" style={{ width: '100%', height: '100%', border: 'none' }} title="콘텐츠 관리"></iframe>
-          </div>
+          <ContentManager />
         )}
 
         {/* TAB 3: MEMBERS */}
