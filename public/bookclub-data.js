@@ -90,19 +90,30 @@ const SEED_CYCLES = [
 // Storage helpers
 // ============================================================
 
+let memoryStorage = null;
+
+function saveAll(cycles) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cycles));
+  } catch (e) {
+    console.warn('Failed to save to localStorage, using memory', e);
+    memoryStorage = cycles;
+  }
+}
+
 function loadAll() {
+  if (memoryStorage) return memoryStorage;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch (e) { console.warn('Failed to load cycles', e); }
-  // First run: seed
+  } catch (e) { console.warn('Failed to load from localStorage', e); }
+  
+  // First run or blocked: use seed
   saveAll(SEED_CYCLES);
-  localStorage.setItem(CURRENT_KEY, 'cycle-2026-h1');
+  try {
+    localStorage.setItem(CURRENT_KEY, 'cycle-2026-h1');
+  } catch(e) {}
   return SEED_CYCLES;
-}
-
-function saveAll(cycles) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cycles));
 }
 
 // ============================================================
@@ -123,7 +134,9 @@ window.BookclubData = {
     return loadAll().find(c => c.id === id);
   },
   setCurrentCycle(id) {
-    localStorage.setItem(CURRENT_KEY, id);
+    try {
+      localStorage.setItem(CURRENT_KEY, id);
+    } catch(e) {}
   },
   createCycle(cycle) {
     const all = loadAll();
@@ -191,6 +204,8 @@ window.BookclubData = {
   // ---- Utilities ----
   resetToSeed() {
     saveAll(SEED_CYCLES);
-    localStorage.setItem(CURRENT_KEY, 'cycle-2026-h1');
+    try {
+      localStorage.setItem(CURRENT_KEY, 'cycle-2026-h1');
+    } catch(e) {}
   }
 };
