@@ -18,74 +18,17 @@ const REVIEWS = [
   { stars:'★★★★★', quote:'"독서 노트가 의외로 너무 좋아요."', author:'30대 디자이너, 서울' }
 ];
 
-export const BOOKS = [
-  {
-    title: 'CES 2026', author: '한국경제신문 × The Miilk', genre: '테크 · 트렌드',
-    color: 'book-1', bg: '#0d1b6e', bgDark: '#070e3a',
-    img: '/uploads/041f16811654291628de9f342681dbb1.png',
-    tags: ['IT · 기술', 'AI · 혁신'],
-    desc: 'AI 리더십부터 로봇공학, 양자컴퓨터까지 — 세계 최대 가전·IT 박람회 CES 2026의 모든 것을 한 권에 담았습니다. 한국경제신문과 The Miilk이 공동 취재한 현장 리포트와 전문가 인사이트를 통해 2026년 기술 트렌드를 선점하세요.',
-    lecture: null,
-    benefit: '+ 스페셜 PDF 자료집'
-  },
-  {
-    title: '정리로 시작하는 인생 리셋', author: '정경자 지음', genre: '라이프스타일',
-    color: 'book-2', bg: '#c0392b', bgDark: '#7b241c',
-    img: '/uploads/ce7fe03d39caf9b1708cba7e5e7faa83.jpg',
-    tags: ['정리 · 수납', '라이프스타일', '강연 포함'],
-    desc: '10만 가구의 변화를 이끌어온 정리 전문가 정경자의 인생 정리 바이블. 생각·시간·공간을 한꺼번에 리셋하는 실전 방법론을 담았습니다. "정리는 끝이 아니라 변화의 시작이다!" 정리수납 노하우부터 생활주기별 정리 TIP, 공간 경영 철학까지 모두 수록했습니다.',
-    lecture: {
-      desc: '저자 정경자가 직접 진행하는 "공간 정리로 인생 바꾸기" 온라인 강연.',
-      perks: ['60분 실전 정리 강의', '공간별 체크리스트 PDF 제공', '1:1 Q&A 세션 포함']
-    },
-    benefit: '+ 저자 강연권'
-  },
-  {
-    title: '프로젝트리츠로 일하는 법', author: '강병기·김승범·김중한·이재훈·이준혁 지음', genre: '부동산 · 투자',
-    color: 'book-3', bg: '#c9a000', bgDark: '#7a6000',
-    img: '/uploads/fd38af558278f9de5a15d0ab05aaf85e.jpg',
-    tags: ['부동산', '리츠', '강연 포함'],
-    desc: '새로운 부동산 개발 플랫폼 PROJECT REITs의 모든 것. 개발·운영·공모·상장까지, 리츠 전문가 5인이 집필한 국내 최초 리츠 종합 안내서입니다. 실무 현장의 생생한 사례와 함께 복잡한 리츠 구조를 명쾌하게 정리했습니다.',
-    lecture: {
-      desc: '저자 5인이 릴레이로 진행하는 "리츠 실무 완전정복" 온라인 강연 시리즈.',
-      perks: ['총 3회 릴레이 강연 (각 60분)', '리츠 투자 체크리스트 PDF', '실무 사례집 별책 제공']
-    },
-    benefit: '+ 저자 강연권'
-  },
-  {
-    title: '퍼지키즈', author: '한지우 지음', genre: '교육 · 자녀',
-    color: 'book-4', bg: '#2ecc40', bgDark: '#1a7a26',
-    img: '/uploads/d1bae06b6d279117f4aeacbd777accbb.jpg',
-    tags: ['AI 교육', '인문학', '강연 포함'],
-    desc: 'AI 시대의 새로운 인재상을 제시하는 혁신적 교육서. 속도보다 방향, 지식보다 감각을 키우는 인문학 자녀교육의 핵심을 담았습니다. 방종임 교육대기자TV, 독지선 선생님 강력 추천! 초등 학부모 필독서로 꼽히는 베스트셀러입니다.',
+export default function Home() {
+  const [books, setBooks] = useState<any[]>([]);
+  const [cycleLabel, setCycleLabel] = useState<string>('로딩중...');
+  const [loadingBooks, setLoadingBooks] = useState(true);
     lecture: {
       desc: '저자 한지우가 직접 강의하는 "AI 시대 아이 키우기" 학부모 특강.',
       perks: ['75분 온라인 특강', '연령별 인문학 교육 로드맵 PDF', '학부모 커뮤니티 초대']
     },
     benefit: '+ 저자 강연권'
   },
-  {
-    title: '덜 멍청하게 살기 위한 최소한의 철학', author: '라르스 스벤젠 지음 · 염자선 옮김', genre: '철학 · 인문',
-    color: 'book-5', bg: '#8b2020', bgDark: '#5a1010',
-    img: '/uploads/775c4d1d6677a6abd5ce990900c13cb0.jpg',
-    tags: ['철학', '인문', '번역서'],
-    desc: '전 세계 35개 언어로 읽히는 북유럽 철학자 라르스 스벤젠의 신작. 멍청함은 지능이 아니라 태도다 — 타인의 멍청함에 화가 나고, 자신의 멍청함은 두려운 모든 사람을 위한 지적 수업.',
-    lecture: null,
-    benefit: '+ 스페셜 PDF 자료집'
-  },
-  {
-    title: '사이클 투자 법칙', author: '조윤남 지음', genre: '투자 · 재테크',
-    color: 'book-6', bg: '#8b6914', bgDark: '#4a3800',
-    img: '/uploads/cd52ee5bff3ec53eb02c5a0e4fce2526.jpg',
-    tags: ['주식', '투자', '강연 포함'],
-    desc: '주식시장 슈퍼사이클에 올라타는 실전 매매법. 코스피 5,000 시대 필독서 — 위기는 피하고 기회는 확실히 잡아라! 홍성국 전 더불어민주당 최고위원, 이효석 HSD엔진 대표, 오라영 신한은행 패시브인덱 단장이 강력 추천한 투자 바이블입니다.',
-    lecture: {
-      desc: '저자 조윤남이 직접 진행하는 "사이클로 읽는 주식시장" 투자 강연.',
-      perks: ['90분 심층 투자 강의', 'S&P 500 사이클 분석 PDF', '월별 시장 코멘터리 뉴스레터']
-    },
-    benefit: '+ 저자 강연권'
-  }
-];
+
 
 const MAX_SELECT = 4;
 
@@ -188,6 +131,47 @@ export default function Home() {
   };
 
   useEffect(() => {
+    async function loadBooks() {
+      const { data: cycles } = await supabase.from('cycles').select('*').eq('status', 'active').order('start_date', { ascending: false }).limit(1);
+      if (cycles && cycles.length > 0) {
+        const cycle = cycles[0];
+        setCycleLabel(cycle.label);
+        const { data: bData } = await supabase.from('books').select('*').eq('cycle_id', cycle.id);
+        if (bData) {
+          const formatted = bData.map((b: any, i: number) => {
+            const colors = [
+              { bg: '#0d1b6e', bgDark: '#070e3a' },
+              { bg: '#c0392b', bgDark: '#7b241c' },
+              { bg: '#c9a000', bgDark: '#7a6000' },
+              { bg: '#2ecc40', bgDark: '#1a7a26' },
+              { bg: '#171717', bgDark: '#000000' },
+              { bg: '#605856', bgDark: '#3b3433' },
+            ];
+            const c = colors[i % colors.length];
+            return {
+              id: b.id,
+              title: b.title,
+              author: b.author,
+              genre: b.genre,
+              color: `book-${(i % 6) + 1}`,
+              bg: c.bg,
+              bgDark: c.bgDark,
+              img: b.cover,
+              tags: b.tags || [],
+              desc: b.description,
+              lecture: b.lecture,
+              benefit: b.lecture ? '+ 저자 강연권' : ''
+            };
+          });
+          setBooks(formatted);
+        }
+      } else {
+        setCycleLabel('준비된 시즌이 없습니다.');
+      }
+      setLoadingBooks(false);
+    }
+    loadBooks();
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
@@ -230,7 +214,7 @@ export default function Home() {
     document.body.style.overflow = '';
   };
 
-  const activeBook = detailIdx !== null ? BOOKS[detailIdx] : null;
+  const activeBook = detailIdx !== null ? books[detailIdx] : null;
 
   return (
     <>
@@ -259,9 +243,12 @@ export default function Home() {
         <p className="hero-sub">6개월 동안 새롭게 선별되는 도서 중에서 원하는 4권을 선택해보세요.<br />한경 석세스 클럽과 함께하면, 독서가 달라집니다.</p>
 
         {/* BOOK GRID */}
+        {loadingBooks ? (
+          <div style={{ textAlign: 'center', padding: '100px 0', fontSize: '1.2rem', color: '#666' }}>도서 목록을 불러오는 중입니다...</div>
+        ) : (
         <div id="books" className="book-grid-wrap show-benefit reveal visible">
           <div className="book-grid" id="bookShelf">
-            {BOOKS.map((book, i) => (
+            {books.map((book, i) => (
               <div key={i} className={`book-card ${selected.has(i) ? 'selected' : ''}`}>
                 <div className="book-card-inner">
                   <div className="book-cover" style={{ cursor: 'pointer' }} onClick={() => openDetail(i)}>
@@ -295,20 +282,18 @@ export default function Home() {
               className={`btn-delivery ${selected.size === MAX_SELECT ? 'visible' : ''}`}
               onClick={() => {
                 if (user) {
-                  if (user.user_metadata?.has_paid) {
-                    alert('이미 결제가 완료된 계정입니다. 첫 번째 배송을 준비중입니다!');
-                  } else {
-                    setIsPaymentOpen(true);
-                  }
+                  setIsPaymentOpen(true);
                 } else {
-                  setIsLoginMode(false); setIsLoginOpen(true);
+                  setIsLoginMode(true);
+                  setIsLoginOpen(true);
                 }
               }}
             >
-              선택한 4권 집으로 배송하기 →
+              선택한 {selected.size}권 무료로 시작하기
             </button>
           </div>
         </div>
+        )}
       </section>
 
       {/* DETAIL VIEW */}
