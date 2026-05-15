@@ -222,6 +222,9 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox') {
       setFormData({ ...formData, lecture: checked ? { desc: '', perks: [] } : null });
+    } else if (name.startsWith('lecture.')) {
+      const field = name.split('.')[1];
+      setFormData({ ...formData, lecture: { ...formData.lecture, [field]: value } });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -231,7 +234,11 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
     if (!formData.title || !formData.author) { alert('제목과 저자를 입력해주세요.'); return; }
     onSave({
       ...formData,
-      tags: formData.tagsStr.split(',').map((t: string) => t.trim()).filter(Boolean)
+      tags: formData.tagsStr.split(',').map((t: string) => t.trim()).filter(Boolean),
+      lecture: formData.lecture ? {
+        ...formData.lecture,
+        perks: typeof formData.lecture.perks === 'string' ? formData.lecture.perks.split('\n').map((p: string) => p.trim()).filter(Boolean) : formData.lecture.perks
+      } : null
     });
   };
 
@@ -248,10 +255,27 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
         <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>태그 (쉼표로 구분)</label>
         <input name="tagsStr" value={formData.tagsStr} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
       </div>
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', cursor: 'pointer' }}>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>설명</label>
+        <textarea name="desc" value={formData.desc || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', minHeight: '80px', fontFamily: 'inherit' }} />
+      </div>
+      <div style={{ marginBottom: '16px', background: '#f9f9f9', padding: '12px', borderRadius: '6px', border: '1px solid #e5dfd2' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: 600 }}>
           <input type="checkbox" checked={!!formData.lecture} onChange={handleChange} /> 저자 강연권 포함
         </label>
+        
+        {!!formData.lecture && (
+          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>강연 설명</label>
+              <textarea name="lecture.desc" value={formData.lecture.desc || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', minHeight: '60px', fontFamily: 'inherit' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>혜택 (한 줄에 하나씩)</label>
+              <textarea name="lecture.perks" value={Array.isArray(formData.lecture.perks) ? formData.lecture.perks.join('\n') : formData.lecture.perks || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', minHeight: '60px', fontFamily: 'inherit' }} />
+            </div>
+          </div>
+        )}
       </div>
       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
         <button onClick={onCancel} style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: 'pointer' }}>취소</button>
