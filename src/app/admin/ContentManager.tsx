@@ -272,16 +272,63 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
         <div><label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>제목 *</label><input name="title" value={formData.title} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} /></div>
         <div><label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>저자 *</label><input name="author" value={formData.author} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} /></div>
         <div><label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>장르</label><input name="genre" value={formData.genre || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} /></div>
-        <div><label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>표지 URL</label><input name="cover" value={formData.cover || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} /></div>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4px' }}>
+            <label style={{ fontSize: '0.8rem' }}>표지 URL</label>
+            <label style={{ cursor: 'pointer', background: '#f3ede2', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+              📷 파일 업로드
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const fileExt = file.name.split('.').pop();
+                const fileName = `cover_${Date.now()}.${fileExt}`;
+                const { error } = await supabase.storage.from('books').upload(`covers/${fileName}`, file);
+                if (error) { alert('표지 업로드 실패: ' + error.message); return; }
+                const { data } = supabase.storage.from('books').getPublicUrl(`covers/${fileName}`);
+                setFormData(prev => ({ ...prev, cover: data.publicUrl }));
+                e.target.value = '';
+              }} />
+            </label>
+          </div>
+          <input name="cover" value={formData.cover || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
+        </div>
       </div>
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>태그 (쉼표로 구분)</label>
         <input name="tagsStr" value={formData.tagsStr} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
       </div>
       <div style={{ marginBottom: '12px' }}>
-        <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>
-          설명 <span style={{ color: '#8a8478', fontWeight: 400 }}>(줄바꿈은 엔터, 이미지 추가 시 <code>&lt;img src="이미지주소" style="width:100%" /&gt;</code> 입력)</span>
-        </label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4px' }}>
+          <label style={{ fontSize: '0.8rem' }}>설명 <span style={{ color: '#8a8478', fontWeight: 400 }}>(줄바꿈은 엔터)</span></label>
+          <label style={{ cursor: 'pointer', background: '#f3ede2', padding: '4px 10px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            📷 이미지 첨부하기
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              
+              const fileExt = file.name.split('.').pop();
+              const fileName = `img_${Date.now()}.${fileExt}`;
+              const filePath = `descriptions/${fileName}`;
+              
+              // 1. Upload to Supabase Storage 'books' bucket
+              const { error } = await supabase.storage.from('books').upload(filePath, file);
+              
+              if (error) {
+                alert('이미지 업로드 실패! Supabase에 "books"라는 이름의 Public 버킷이 생성되어 있는지 확인해주세요.\n' + error.message);
+                return;
+              }
+              
+              // 2. Get Public URL
+              const { data } = supabase.storage.from('books').getPublicUrl(filePath);
+              
+              // 3. Insert into textarea
+              const imgTag = `\n<img src="${data.publicUrl}" style="width:100%" />\n`;
+              setFormData(prev => ({ ...prev, description: (prev.description || '') + imgTag }));
+              
+              e.target.value = ''; // Reset input
+            }} />
+          </label>
+        </div>
         <textarea name="description" value={formData.description || ''} onChange={handleChange} style={{ width: '100%', padding: '12px', border: '1px solid #cfc8b8', borderRadius: '4px', minHeight: '300px', fontFamily: 'inherit', lineHeight: '1.6', resize: 'vertical' }} />
       </div>
       <div style={{ marginBottom: '16px', background: '#f9f9f9', padding: '12px', borderRadius: '6px', border: '1px solid #e5dfd2' }}>
