@@ -332,9 +332,9 @@ export default function Home() {
               <div className="dv-main">
                 <div className="dv-section">
                   <p className="dv-label">책 소개</p>
-                  <p className="dv-text">{activeBook.desc}</p>
-                </div>
-                {activeBook.lecture && (
+                  <div className="dv-text" dangerouslySetInnerHTML={{ __html: (activeBook.desc || '').replace(/\n/g, '<br/>') }} />
+                  
+                  {activeBook.lecture && (
                   <div className="dv-section">
                     <p className="dv-label">저자 강연</p>
                     <div className="dv-lecture-card">
@@ -380,7 +380,7 @@ export default function Home() {
                 <p className="dv-other-label">다른 도서</p>
                 <h3 className="dv-other-title">6개월간 4권을 골라보세요</h3>
                 <div className="dv-other-grid">
-                  {BOOKS.map((b, i) => (
+                  {books.map((b, i) => (
                     <div key={i} className={`dv-other-card ${i === detailIdx ? 'active' : ''}`} onClick={() => openDetail(i)}>
                       <div className="dv-other-cover"><img src={b.img} alt={b.title} /></div>
                       <p className="dv-other-name">{b.title}</p>
