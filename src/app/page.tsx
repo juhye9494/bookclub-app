@@ -18,21 +18,12 @@ const REVIEWS = [
   { stars:'★★★★★', quote:'"독서 노트가 의외로 너무 좋아요."', author:'30대 디자이너, 서울' }
 ];
 
+const MAX_SELECT = 4;
+
 export default function Home() {
   const [books, setBooks] = useState<any[]>([]);
   const [cycleLabel, setCycleLabel] = useState<string>('로딩중...');
   const [loadingBooks, setLoadingBooks] = useState(true);
-    lecture: {
-      desc: '저자 한지우가 직접 강의하는 "AI 시대 아이 키우기" 학부모 특강.',
-      perks: ['75분 온라인 특강', '연령별 인문학 교육 로드맵 PDF', '학부모 커뮤니티 초대']
-    },
-    benefit: '+ 저자 강연권'
-  },
-
-
-const MAX_SELECT = 4;
-
-export default function Home() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailIdx, setDetailIdx] = useState<number | null>(null);
@@ -333,8 +324,9 @@ export default function Home() {
                 <div className="dv-section">
                   <p className="dv-label">책 소개</p>
                   <div className="dv-text" dangerouslySetInnerHTML={{ __html: (activeBook.desc || '').replace(/\n/g, '<br/>') }} />
+                </div>
                   
-                  {activeBook.lecture && (
+                {activeBook.lecture && (
                   <div className="dv-section">
                     <p className="dv-label">저자 강연</p>
                     <div className="dv-lecture-card">
