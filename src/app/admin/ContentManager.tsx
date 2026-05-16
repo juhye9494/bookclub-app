@@ -285,7 +285,7 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
                 const { error } = await supabase.storage.from('books').upload(`covers/${fileName}`, file);
                 if (error) { alert('표지 업로드 실패: ' + error.message); return; }
                 const { data } = supabase.storage.from('books').getPublicUrl(`covers/${fileName}`);
-                setFormData(prev => ({ ...prev, cover: data.publicUrl }));
+                setFormData((prev: any) => ({ ...prev, cover: data.publicUrl }));
                 e.target.value = '';
               }} />
             </label>
@@ -323,7 +323,7 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
               
               // 3. Insert into textarea
               const imgTag = `\n<img src="${data.publicUrl}" style="width:100%" />\n`;
-              setFormData(prev => ({ ...prev, description: (prev.description || '') + imgTag }));
+              setFormData((prev: any) => ({ ...prev, description: (prev.description || '') + imgTag }));
               
               e.target.value = ''; // Reset input
             }} />
