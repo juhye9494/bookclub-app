@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useEffect } from 'react';
 
-import { BOOKS } from '../page';
-
 function SuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
@@ -25,10 +23,18 @@ function SuccessContent() {
 
       // 선택한 책 정보 가져오기
       const savedSelection = sessionStorage.getItem('bookSelection');
-      let selectedBooks = [];
+      let selectedBooks: any[] = [];
       if (savedSelection) {
         const indices = JSON.parse(savedSelection);
-        selectedBooks = indices.map((idx: number) => BOOKS[idx]);
+        // Fetch books from Supabase
+        const { data: cycles } = await supabase.from('cycles').select('*').eq('status', 'active').limit(1);
+        if (cycles && cycles.length > 0) {
+          const activeCycle = cycles[0];
+          const { data: booksData } = await supabase.from('books').select('*').eq('cycle_id', activeCycle.id);
+          if (booksData) {
+            selectedBooks = indices.map((idx: number) => booksData[idx]);
+          }
+        }
       }
 
       // DB에 주문 정보 저장
