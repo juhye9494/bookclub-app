@@ -311,7 +311,7 @@ export default function Home() {
                   <h2 className="dv-title">{activeBook.title}</h2>
                   <p className="dv-author">{activeBook.author}</p>
                   <div className="dv-tags">
-                    {activeBook.tags.map((t, i) => (
+                    {activeBook.tags.map((t: string, i: number) => (
                       <span key={i} className={`dv-tag ${t === '강연 포함' ? 'lecture' : ''}`}>{t}</span>
                     ))}
                   </div>
@@ -337,7 +337,7 @@ export default function Home() {
                       </div>
                       <p className="dv-lecture-desc">{activeBook.lecture.desc}</p>
                       <ul className="dv-lecture-perks">
-                        {activeBook.lecture.perks.map((p, i) => (
+                        {activeBook.lecture.perks.map((p: string, i: number) => (
                           <li key={i}><span className="dv-perk-dot"></span>{p}</li>
                         ))}
                       </ul>
@@ -458,8 +458,8 @@ export default function Home() {
           <p className="modal-sub">선택하신 4권이 담겼습니다. 구독을 시작하시면 배송됩니다.</p>
           <div className="selected-books-preview">
             {Array.from(selected).map((idx) => (
-              <div key={idx} className="preview-book" style={{ background: BOOKS[idx].bg }}>
-                <img src={BOOKS[idx].img} alt={BOOKS[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div key={idx} className="preview-book" style={{ background: books[idx].bg }}>
+                <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             ))}
           </div>
