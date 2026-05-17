@@ -129,14 +129,15 @@ export default function Home() {
         setCycleLabel(cycle.label);
         const { data: bData } = await supabase.from('books').select('*').eq('cycle_id', cycle.id);
         if (bData) {
-          const formatted = bData.map((b: any, i: number) => {
+          const sortedBooks = [...bData].sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0));
+          const formatted = sortedBooks.map((b: any, i: number) => {
             const colors = [
-              { bg: '#0d1b6e', bgDark: '#070e3a' },
-              { bg: '#c0392b', bgDark: '#7b241c' },
-              { bg: '#c9a000', bgDark: '#7a6000' },
-              { bg: '#2ecc40', bgDark: '#1a7a26' },
-              { bg: '#171717', bgDark: '#000000' },
-              { bg: '#605856', bgDark: '#3b3433' },
+              { bg: '#3b4b72', bgDark: '#121931' }, // CES 2026 (블루)
+              { bg: '#c0392b', bgDark: '#7b241c' }, // 정리 (레드)
+              { bg: '#c9a000', bgDark: '#7a6000' }, // 리츠 (골드)
+              { bg: '#2ecc40', bgDark: '#1a7a26' }, // 퍼지키즈 (그린)
+              { bg: '#171717', bgDark: '#000000' }, // 철학 (다크)
+              { bg: '#605856', bgDark: '#3b3433' }, // 투자 (그레이)
             ];
             const c = colors[i % colors.length];
             return {
@@ -145,8 +146,8 @@ export default function Home() {
               author: b.author,
               genre: b.genre,
               color: `book-${(i % 6) + 1}`,
-              bg: c.bg,
-              bgDark: c.bgDark,
+              bg: b.bg || c.bg,
+              bgDark: b.bgDark || c.bgDark,
               img: b.cover,
               tags: b.tags || [],
               desc: b.description,

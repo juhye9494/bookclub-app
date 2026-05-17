@@ -50,7 +50,7 @@ export default function ContentManager() {
 
     const mapped = (cyclesData || []).map(c => ({
       ...c,
-      books: (booksData || []).filter(b => b.cycle_id === c.id)
+      books: (booksData || []).filter(b => b.cycle_id === c.id).sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0))
     }));
     
     setCycles(mapped);
@@ -132,7 +132,7 @@ export default function ContentManager() {
     delete payload.tagsStr;
     
     if (isCreatingBook) {
-      const newBook = { ...payload, id: 'b-' + Date.now(), cycle_id: activeCycle.id };
+      const newBook = { ...payload, id: 'b-' + Date.now(), cycle_id: activeCycle.id, order_idx: activeCycle.books?.length || 0 };
       const { error } = await supabase.from('books').insert(newBook);
       if (error) alert('저장 실패: ' + error.message);
     } else {
@@ -141,6 +141,24 @@ export default function ContentManager() {
     }
     setEditingBook(null);
     setIsCreatingBook(false);
+    await loadData();
+  };
+
+  const moveBook = async (index: number, direction: number) => {
+    if (!activeCycle || !activeCycle.books) return;
+    const books = [...activeCycle.books];
+    if (index + direction < 0 || index + direction >= books.length) return;
+    
+    // Swap
+    const temp = books[index];
+    books[index] = books[index + direction];
+    books[index + direction] = temp;
+    
+    // Update order_idx for all books in cycle
+    setLoading(true);
+    for (let i = 0; i < books.length; i++) {
+      await supabase.from('books').update({ order_idx: i }).eq('id', books[i].id);
+    }
     await loadData();
   };
 
@@ -210,12 +228,16 @@ export default function ContentManager() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {isCreatingBook && <BookEditForm book={editingBook} onSave={saveBook} onCancel={() => setIsCreatingBook(false)} />}
               
-              {activeCycle.books?.map((book: any) => (
+              {activeCycle.books?.map((book: any, index: number) => (
                 <div key={book.id}>
                   {editingBook?.id === book.id ? (
                     <BookEditForm book={editingBook} onSave={saveBook} onCancel={() => setEditingBook(null)} />
                   ) : (
                     <div style={{ display: 'flex', background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e5dfd2', gap: '16px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <button onClick={() => moveBook(index, -1)} disabled={index === 0} style={{ padding: '2px 6px', background: index === 0 ? '#f3ede2' : '#e5dfd2', border: 'none', borderRadius: '4px', cursor: index === 0 ? 'not-allowed' : 'pointer', color: index === 0 ? '#cfc8b8' : '#1a1815' }}>▲</button>
+                        <button onClick={() => moveBook(index, 1)} disabled={index === activeCycle.books.length - 1} style={{ padding: '2px 6px', background: index === activeCycle.books.length - 1 ? '#f3ede2' : '#e5dfd2', border: 'none', borderRadius: '4px', cursor: index === activeCycle.books.length - 1 ? 'not-allowed' : 'pointer', color: index === activeCycle.books.length - 1 ? '#cfc8b8' : '#1a1815' }}>▼</button>
+                      </div>
                       <div style={{ width: '48px', height: '64px', background: '#f3ede2', borderRadius: '4px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: '#8a8478', textAlign: 'center' }}>
                         {book.cover ? <img src={book.cover} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="cover"/> : book.title.slice(0, 5)}
                       </div>
@@ -297,6 +319,20 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
             </label>
           </div>
           <input name="cover" value={formData.cover || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>배경 테마 색상 (밝은색)</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input type="color" name="bg" value={formData.bg || '#3b4b72'} onChange={handleChange} style={{ width: '40px', height: '36px', padding: '2px', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: 'pointer' }} />
+            <input name="bg" value={formData.bg || '#3b4b72'} onChange={handleChange} placeholder="#HEX" style={{ flex: 1, padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', textTransform: 'uppercase' }} />
+          </div>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>배경 테마 색상 (어두운색)</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input type="color" name="bgDark" value={formData.bgDark || '#121931'} onChange={handleChange} style={{ width: '40px', height: '36px', padding: '2px', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: 'pointer' }} />
+            <input name="bgDark" value={formData.bgDark || '#121931'} onChange={handleChange} placeholder="#HEX" style={{ flex: 1, padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', textTransform: 'uppercase' }} />
+          </div>
         </div>
       </div>
       <div style={{ marginBottom: '12px' }}>
