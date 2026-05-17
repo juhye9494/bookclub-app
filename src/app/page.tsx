@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { loadTossPayments } from '@tosspayments/payment-sdk';
 import DaumPostcodeEmbed from 'react-daum-postcode';
@@ -214,7 +215,7 @@ export default function Home() {
       <nav id="main-nav" className={scrolled ? 'scrolled' : ''}>
         <div className="nav-logo"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-          <a href="/archive.html" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</a>
+          <Link href="/archive" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</Link>
           {user ? (
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
               <a href="/mypage" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>마이페이지</a>
