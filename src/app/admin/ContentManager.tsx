@@ -127,11 +127,17 @@ export default function ContentManager() {
   };
 
   const saveBook = async (book: any) => {
+    // Remove tagsStr which is only used for the UI form
+    const payload = { ...book };
+    delete payload.tagsStr;
+    
     if (isCreatingBook) {
-      const newBook = { ...book, id: 'b-' + Date.now(), cycle_id: activeCycle.id };
-      await supabase.from('books').insert(newBook);
+      const newBook = { ...payload, id: 'b-' + Date.now(), cycle_id: activeCycle.id };
+      const { error } = await supabase.from('books').insert(newBook);
+      if (error) alert('저장 실패: ' + error.message);
     } else {
-      await supabase.from('books').update(book).eq('id', book.id);
+      const { error } = await supabase.from('books').update(payload).eq('id', book.id);
+      if (error) alert('저장 실패: ' + error.message);
     }
     setEditingBook(null);
     setIsCreatingBook(false);
