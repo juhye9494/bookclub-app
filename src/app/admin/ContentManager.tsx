@@ -283,7 +283,7 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
                 const fileExt = file.name.split('.').pop();
                 const fileName = `cover_${Date.now()}.${fileExt}`;
                 const { error } = await supabase.storage.from('books').upload(`covers/${fileName}`, file);
-                if (error) { alert('표지 업로드 실패: ' + error.message); return; }
+                if (error) { alert('표지 업로드 실패 (Supabase SQL Editor에서 INSERT 정책을 추가해주세요): ' + error.message); return; }
                 const { data } = supabase.storage.from('books').getPublicUrl(`covers/${fileName}`);
                 setFormData((prev: any) => ({ ...prev, cover: data.publicUrl }));
                 e.target.value = '';
@@ -314,22 +314,29 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
               const { error } = await supabase.storage.from('books').upload(filePath, file);
               
               if (error) {
-                alert('이미지 업로드 실패! Supabase에 "books"라는 이름의 Public 버킷이 생성되어 있는지 확인해주세요.\n' + error.message);
+                alert('이미지 업로드 실패! (Supabase 보안 정책 오류)\n\nSupabase 대시보드 -> SQL Editor 탭에 가서 아래 명령어를 실행해주세요:\n\nCREATE POLICY "Allow public uploads to books" ON storage.objects FOR INSERT TO public WITH CHECK (bucket_id = \'books\');\n\n상세 에러: ' + error.message);
                 return;
               }
               
               // 2. Get Public URL
               const { data } = supabase.storage.from('books').getPublicUrl(filePath);
               
-              // 3. Insert into textarea
-              const imgTag = `\n<img src="${data.publicUrl}" style="width:100%" />\n`;
-              setFormData((prev: any) => ({ ...prev, description: (prev.description || '') + imgTag }));
+              // 3. Insert into textarea at cursor position
+              const textarea = document.getElementById('description-textarea') as HTMLTextAreaElement;
+              setFormData((prev: any) => {
+                const currentText = prev.description || '';
+                const cursorPos = textarea ? textarea.selectionStart : currentText.length;
+                const textBefore = currentText.substring(0, cursorPos);
+                const textAfter = currentText.substring(cursorPos);
+                const imgTag = `\n<img src="${data.publicUrl}" style="width:100%" />\n`;
+                return { ...prev, description: textBefore + imgTag + textAfter };
+              });
               
               e.target.value = ''; // Reset input
             }} />
           </label>
         </div>
-        <textarea name="description" value={formData.description || ''} onChange={handleChange} style={{ width: '100%', padding: '12px', border: '1px solid #cfc8b8', borderRadius: '4px', minHeight: '300px', fontFamily: 'inherit', lineHeight: '1.6', resize: 'vertical' }} />
+        <textarea id="description-textarea" name="description" value={formData.description || ''} onChange={handleChange} style={{ width: '100%', padding: '12px', border: '1px solid #cfc8b8', borderRadius: '4px', minHeight: '300px', fontFamily: 'inherit', lineHeight: '1.6', resize: 'vertical' }} />
       </div>
       <div style={{ marginBottom: '16px', background: '#f9f9f9', padding: '12px', borderRadius: '6px', border: '1px solid #e5dfd2' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: 600 }}>
