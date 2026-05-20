@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ContentManager from './ContentManager';
+import EventManager from './EventManager';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -133,6 +134,12 @@ export default function AdminPage() {
             📚 콘텐츠(도서/시즌) 관리
           </button>
           <button 
+            onClick={() => setActiveTab('events')} 
+            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'events' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'events' ? 700 : 500, color: activeTab === 'events' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            📅 이벤트 관리
+          </button>
+          <button 
             onClick={() => setActiveTab('members')} 
             style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'members' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'members' ? 700 : 500, color: activeTab === 'members' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
           >
@@ -210,6 +217,11 @@ export default function AdminPage() {
         {/* TAB 2: CONTENT */}
         {activeTab === 'content' && (
           <ContentManager />
+        )}
+
+        {/* TAB 4: EVENTS */}
+        {activeTab === 'events' && (
+          <EventManager />
         )}
 
         {/* TAB 3: MEMBERS */}

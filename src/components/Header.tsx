@@ -84,6 +84,7 @@ export default function Header() {
           <img src="/logo.svg" alt="한경 석세스 클럽" style={{ height: '24px' }} />
         </Link>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+          <Link href="/events" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>이벤트</Link>
           <Link href="/archive" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</Link>
           {user ? (
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
