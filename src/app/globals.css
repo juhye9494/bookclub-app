@@ -776,6 +776,21 @@ body {
     .marquee-track { display: flex; gap: 20px; width: max-content; animation: marqueeScroll 60s linear infinite; }
     .review-marquee:hover .marquee-track { animation-play-state: paused; }
     @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bookSlide {
+      from { opacity: 0; transform: translateY(40px) rotateX(20deg); }
+      to { opacity: 1; transform: translateY(0) rotateX(0); }
+    }
+    @keyframes checkFade {
+      from { opacity: 0; transform: scale(0.6); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
     .review-card.mini {
       flex: 0 0 320px; background: #fff; border: 1px solid var(--border);
       border-radius: 16px; padding: 26px 24px; display: flex; flex-direction: column; gap: 10px;
