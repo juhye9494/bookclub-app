@@ -42,16 +42,9 @@ export default function ArchivePage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)', color: 'var(--text)' }}>
-      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(250,248,244,0.95)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)', padding: '18px 5vw', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href="/" style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.02em', textDecoration: 'none', color: 'inherit' }}>
-          한경 <span style={{ color: 'var(--accent)' }}>석세스</span> 클럽
-        </Link>
-        <Link href="/" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none' }}>
-          ← 메인으로
-        </Link>
-      </nav>
 
-      <section style={{ padding: '80px 5vw 56px', textAlign: 'center', maxWidth: '1200px', margin: '0 auto' }}>
+
+      <section style={{ padding: '110px 5vw 56px', textAlign: 'center', maxWidth: '1200px', margin: '0 auto' }}>
         <p style={{ fontSize: '0.78rem', fontWeight: 500, letterSpacing: '0.12em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '16px' }}>Past Books</p>
         <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, lineHeight: 1.25, letterSpacing: '-0.03em', marginBottom: '16px' }}>지난 도서 리스트</h1>
         <p style={{ color: 'var(--text-mid)', fontSize: '1rem', lineHeight: 1.8 }}>6개월마다 새롭게 큐레이션되는 한경 석세스 클럽의 도서 기록.<br />지난 시즌의 책들을 한눈에 살펴보세요.</p>
@@ -126,9 +119,6 @@ export default function ArchivePage() {
         )}
       </main>
 
-      <footer style={{ background: 'var(--bg-warm)', borderTop: '1px solid var(--border)', padding: '32px 5vw', textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-        <p>© 한경매거진앤북</p>
-      </footer>
     </div>
   );
 }

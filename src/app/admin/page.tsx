@@ -42,6 +42,17 @@ export default function AdminPage() {
     }
 
     checkAdminAndFetchData();
+
+    // Listen for auth state changes (e.g. logging out from the global header)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session || session.user?.email !== 'xn940@naver.com') {
+        router.push('/');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   // 배송 상태 변경 함수
@@ -102,15 +113,10 @@ export default function AdminPage() {
 
   return (
     <div style={{ background: '#f5f7fa', minHeight: '100vh', fontFamily: 'var(--sans)', paddingTop: '64px' }}>
-      {/* HEADER */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '0 5vw', height: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e1e4e8', background: '#fff' }}>
-        <Link href="/" style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: '1.2rem', color: '#111', textDecoration: 'none' }}>
-          관리자 대시보드
-        </Link>
-        <button onClick={() => { supabase.auth.signOut(); router.push('/'); }} style={{ background: 'none', border: '1px solid #d1d5db', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>로그아웃</button>
-      </nav>
-
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 5vw' }}>
+        <h1 style={{ fontFamily: 'var(--serif)', fontSize: '2rem', fontWeight: 700, marginBottom: '24px', color: 'var(--text)' }}>
+          관리자 대시보드
+        </h1>
         
         {/* TABS */}
         <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e5e7eb', marginBottom: '32px' }}>

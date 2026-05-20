@@ -38,18 +38,8 @@ export default function MyPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)' }}>
-      {/* HEADER */}
-      <nav style={{ padding: '18px 5vw', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', background: '#fff' }}>
-        <Link href="/" style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: '1.2rem', color: 'var(--text)', textDecoration: 'none' }}>
-          한경 <span style={{ color: 'var(--accent)' }}>석세스</span> 클럽
-        </Link>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-mid)' }}>{user?.user_metadata?.name || user?.email}님</span>
-          <button onClick={() => { supabase.auth.signOut(); router.push('/'); }} style={{ background: 'none', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>로그아웃</button>
-        </div>
-      </nav>
 
-      <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '60px 5vw' }}>
+      <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '96px 5vw 60px' }}>
         <h1 style={{ fontFamily: 'var(--serif)', fontSize: '2rem', marginBottom: '40px' }}>나의 구독 현황</h1>
 
         {orders.length === 0 ? (
