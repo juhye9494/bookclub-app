@@ -611,6 +611,30 @@ body {
     .dv-back:hover { color: var(--accent); }
     .dv-back svg { width: 16px; height: 16px; }
 
+    .dv-back-white {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 500;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: color 0.2s, opacity 0.2s;
+      padding: 0;
+    }
+    .dv-back-white:hover {
+      color: #ffffff;
+      opacity: 0.95;
+    }
+    .dv-back-white svg {
+      width: 16px;
+      height: 16px;
+    }
+
+
     .dv-hero {
       min-height: 400px; position: relative; overflow: hidden;
       display: flex; align-items: flex-end;

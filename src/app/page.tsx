@@ -159,19 +159,20 @@ export default function Home() {
     <>
       {isDetailOpen && activeBook ? (
         <div id="detail-view" style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)', paddingTop: '64px' }}>
-          {/* Back button */}
-          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 5vw 0' }}>
-            <button className="dv-back" onClick={closeDetail}>
-              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              도서 목록으로
-            </button>
-          </div>
-
-          <div className="dv-hero" style={{ minHeight: 'auto', padding: '20px 0 0' }}>
+          <div className="dv-hero" style={{ display: 'flex', flexDirection: 'column', minHeight: 'auto', padding: '0' }}>
             <div className="dv-hero-bg" style={{ background: `linear-gradient(160deg, ${activeBook.bgDark} 0%, ${activeBook.bg} 100%)` }}></div>
-            <div className="dv-hero-inner" style={{ padding: '40px 5vw 64px' }}>
+            
+            {/* Back button */}
+            <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1100px', margin: '0 auto', padding: '32px 5vw 16px' }}>
+              <button className="dv-back-white" onClick={closeDetail}>
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                도서 목록으로
+              </button>
+            </div>
+
+            <div className="dv-hero-inner" style={{ padding: '16px 5vw 64px' }}>
               <div className="dv-cover"><img src={activeBook.img} alt="" /></div>
               <div className="dv-meta">
                 <p className="dv-genre">{activeBook.genre}</p>
