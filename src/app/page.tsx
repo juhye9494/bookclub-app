@@ -464,7 +464,7 @@ export default function Home() {
                 window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'signup' } }));
               }
             }}>지금 구독 신청하기</button>
-            <p className="plan-note">* 가입 후 7일 이내 서비스 이용 내역이 없는 경우 전액 환불 가능합니다.</p>
+
           </div>
         </div>
       </section>
