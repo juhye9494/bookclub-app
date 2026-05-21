@@ -362,7 +362,7 @@ export default function Home() {
               <div className="card-icon">🎁</div>
               <p className="card-tag">가입 즉시</p>
               <h3 className="card-title">웰컴 키트</h3>
-              <p className="card-desc">30분을 기록할 수 있는 모래시계와 독서를 더욱 풍성하게 해줄 독서노트, 가죽 북커버까지 모두 드립니다. (가입 시, 최초 1회 무료 증정)</p>
+              <p className="card-desc">30분을 기록할 수 있는 모래시계와 독서를 더욱 풍성하게 해줄 독서노트, 가죽 북커버까지 모두 드립니다.<br />(가입 시, 최초 1회 무료 증정)</p>
             </div>
             <div className="service-card reveal visible" style={{ transitionDelay: '0.2s' }}>
               <div className="card-icon">🎙</div>
@@ -374,13 +374,13 @@ export default function Home() {
               <div className="card-icon">📱</div>
               <p className="card-tag">언제 어디서나</p>
               <h3 className="card-title">전자책 3종</h3>
-              <p className="card-desc">더 많은 책을 경험하실 수 있도록 전자책 콘텐츠를 함께 제공합니다. (한경 전체 도서 중 택 3권)</p>
+              <p className="card-desc">더 많은 책을 경험하실 수 있도록 전자책 콘텐츠를 함께 제공합니다.<br />(한경 전체 도서 중 택 3권)</p>
             </div>
             <div className="service-card reveal visible" style={{ transitionDelay: '0.4s' }}>
               <div className="card-icon">🎼</div>
               <p className="card-tag">한경 패밀리</p>
               <h3 className="card-title">한경 패밀리 행사 초청</h3>
-              <p className="card-desc">한경 아르떼 필아모닉, 미술 전시회 등 품격 있는 문화 경험의 기회를 제공합니다. (상시 이벤트 진행 예정)</p>
+              <p className="card-desc">한경 아르떼 필아모닉, 미술 전시회 등 품격 있는 문화 경험의 기회를 제공합니다.<br />(상시 이벤트 진행 예정)</p>
             </div>
           </div>
         </div>
