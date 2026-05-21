@@ -5,6 +5,7 @@ import Link from 'next/link';
 export default function Footer() {
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isRefundOpen, setIsRefundOpen] = useState(false);
 
   return (
     <>
@@ -24,8 +25,9 @@ export default function Footer() {
           <div className="footer-contact">
             📞 02-360-4555<br />
             📧 bp@hankyung.com
-            <div style={{ marginTop: '14px', display: 'flex', gap: '8px' }}>
+            <div style={{ marginTop: '14px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button type="button" className="footer-policy-btn" onClick={() => setIsTermsOpen(true)}>이용약관</button>
+              <button type="button" className="footer-policy-btn" onClick={() => setIsRefundOpen(true)}>환불규정</button>
               <button type="button" className="footer-policy-btn" onClick={() => setIsPrivacyOpen(true)}>개인정보처리방침</button>
             </div>
           </div>
@@ -61,7 +63,7 @@ export default function Footer() {
             <p>이용자는 서비스가 제공하는 신청 절차에 따라 정기 구독을 신청하고 결제를 완료함으로써 서비스 이용 계약이 체결됩니다. 서비스는 6개월 구독 플랜(일시납 60,000원)을 기본으로 제공하며, 약정된 도서 및 사은품이 회원에게 배송됩니다.</p>
 
             <h4>제 5 조 (청약철회 및 환불)</h4>
-            <p>회원은 구매한 구독 서비스에 대해 계약 체결일로부터 관련 법령에 따른 청약철회 권리를 가집니다. 구체적인 환불 범위, 공제 비용 및 청약철회 절차 등에 관한 세부 사항은 회사 내부의 공식 환불 규정 및 고객센터 안내에 따릅니다. 환불 절차가 개시되면 발송된 사은품 및 배송 도서의 상태에 따라 소정의 비용이 차감될 수 있습니다.</p>
+            <p>회원은 구매한 구독 서비스에 대해 계약 체결일로부터 관련 법령에 따른 청약철회 권리를 가집니다. 구체적인 환불 범위, 공제 비용 및 청약철회 절차 등에 관한 세부 사항은 별도의 공식 환불규정 조항 및 고객센터 안내에 따릅니다.</p>
 
             <h4>제 6 조 (회사의 의무)</h4>
             <p>회사는 관련 법령과 본 약관이 금지하거나 미풍양속에 반하는 행위를 하지 않으며, 계속적이고 안정적으로 서비스를 제공하기 위해 최선을 다합니다.</p>
@@ -73,6 +75,77 @@ export default function Footer() {
             <p>회사는 회원의 개인정보를 보호하기 위해 관련 법령 및 회사의 개인정보처리방침을 준수합니다.</p>
 
             <p style={{ marginTop: '24px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>본 약관은 2026년 1월 1일부터 적용됩니다.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* REFUND MODAL */}
+      <div className={`privacy-modal ${isRefundOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsRefundOpen(false); }}>
+        <div className="privacy-card">
+          <div className="privacy-head">
+            <h3>환불규정</h3>
+            <button type="button" className="privacy-close" onClick={() => setIsRefundOpen(false)}>×</button>
+          </div>
+          <div className="privacy-body">
+            <h4>제1조 (목적)</h4>
+            <p>본 환불정책은 한경매거진앤북(이하 “회사”)이 제공하는 유료 서비스 및 콘텐츠 이용과 관련하여 이용요금의 환불 기준 및 절차를 규정하는 것을 목적으로 합니다.</p>
+
+            <h4>제2조 (환불 원칙)</h4>
+            <p>1. 회사는 관련 법령 및 본 환불정책에 따라 이용자의 정당한 환불 요청에 대해 환불을 진행합니다.</p>
+            <p>2. 환불 금액은 이용자가 실제 결제한 금액을 기준으로 산정합니다.</p>
+            <p>3. 환불은 결제수단별 정책 및 결제대행사(PG사)의 처리 기준에 따라 진행될 수 있습니다.</p>
+            
+            <h4>제3조 (환불 기준)</h4>
+            <h5>1. 서비스 이용 전 환불</h5>
+            <p>이용자가 유료 서비스 결제 후 서비스 이용이 개시되지 않은 경우 전액 환불이 가능합니다.</p>
+            <p>“서비스 이용 개시”란 이용자가 회사가 제공하는 유료 서비스 또는 혜택을 제공받은 경우를 의미하며, 다음 각 호의 어느 하나에 해당하는 경우 이용이 개시된 것으로 봅니다.</p>
+            <ul>
+              <li>디지털 콘텐츠 열람, 다운로드, 스트리밍 등 온라인 서비스 이용이 이루어진 경우</li>
+              <li>구독 혜택으로 제공되는 굿즈 또는 사은품이 발송되었거나 수령된 경우</li>
+              <li>정기 구독 혜택으로 제공되는 도서가 발송되었거나 수령된 경우</li>
+              <li>기타 회사가 제공하는 유료 서비스 또는 혜택의 제공이 개시된 경우</li>
+            </ul>
+
+            <h5>2. 서비스 이용 후 환불</h5>
+            <p>서비스 이용 개시 이후 환불을 요청하는 경우에는 이미 제공된 서비스 및 혜택에 해당하는 금액을 공제한 후 잔여 금액을 환불합니다. 이 경우 다음 항목이 포함될 수 있습니다.</p>
+            <ul>
+              <li>이용자가 제공받은 콘텐츠 또는 서비스 이용분</li>
+              <li>구독 혜택으로 제공된 굿즈, 사은품 등의 실비</li>
+              <li>발송된 도서의 권수에 해당하는 금액</li>
+              <li>배송 완료된 상품의 배송비</li>
+            </ul>
+            <p>구독형 서비스의 경우 실제 이용 기간 및 제공된 혜택을 기준으로 산정하여 환불합니다.</p>
+
+            <h5>3. 회사의 귀책 사유로 인한 환불</h5>
+            <p>다음의 경우 회사는 이용자가 제공받지 못한 서비스에 해당하는 금액을 환불합니다.</p>
+            <ul>
+              <li>회사의 사정으로 서비스 제공이 불가능한 경우</li>
+              <li>서비스의 중대한 오류 또는 장애로 정상적인 이용이 어려운 경우</li>
+              <li>제공된 서비스에 중대한 하자가 있는 경우</li>
+            </ul>
+            
+            <h4>제4조 (환불이 제한되는 경우)</h4>
+            <p>다음의 경우 환불이 제한되거나 불가할 수 있습니다.</p>
+            <p>1. 이용자가 이미 서비스의 주요 부분을 이용한 경우</p>
+            <p>2. 이벤트, 프로모션, 할인 상품 등 별도의 환불 기준이 적용되는 경우</p>
+            <p>3. 이용자의 단순 변심으로 환불을 요청하는 경우</p>
+            <p>4. 이용자의 귀책 사유로 서비스 이용이 불가능한 경우</p>
+            <p>5. 이용자가 제3자를 통해 서비스를 구매한 경우</p>
+            <p>6. 결제 정보 또는 이용자 정보 확인이 불가능한 경우</p>
+            <p>7. 관계 법령에서 환불 제한이 가능한 경우</p>
+            
+            <h4>제5조 (환불 절차)</h4>
+            <p>1. 이용자는 고객센터 또는 이메일을 통해 환불을 요청할 수 있습니다.</p>
+            <p>2. 회사는 환불 요청 접수 후 결제 내역 및 이용 여부를 확인한 뒤 환불 여부를 결정합니다.</p>
+            <p>3. 환불 금액은 결제수단에 따라 카드 취소 또는 계좌 환불 등의 방식으로 처리됩니다.</p>
+            
+            <h4>제6조 (환불 처리 기간)</h4>
+            <p>1. 환불이 승인된 경우 회사는 환불 요청 접수일로부터 영업일 기준 7~14일 이내 환불을 처리합니다.</p>
+            <p>2. 신용카드 결제의 경우 카드사 정책에 따라 환불 완료 시점이 달라질 수 있습니다.</p>
+            
+            <h4>제7조 (면책)</h4>
+            <p>1. 회사는 천재지변, 시스템 장애 등 불가항력적인 사유로 서비스 제공이 불가능한 경우 책임이 제한될 수 있습니다.</p>
+            <p>2. 이용자의 귀책 사유로 발생한 서비스 이용 장애에 대해서는 회사가 책임을 지지 않습니다.</p>
           </div>
         </div>
       </div>
