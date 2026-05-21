@@ -88,9 +88,6 @@ export default function Header() {
           <Link href="/archive" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</Link>
           {user ? (
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-              {user.email === 'xn940@naver.com' && (
-                <Link href="/admin" style={{ fontSize: '0.85rem', color: 'var(--accent)', textDecoration: 'none', fontWeight: 700 }}>관리자</Link>
-              )}
               <Link href="/mypage" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>마이페이지</Link>
               <button style={{ background: '#333', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '40px', fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => {
                 supabase.auth.signOut();
