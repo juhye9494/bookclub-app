@@ -420,7 +420,7 @@ body {
       color: var(--accent); text-transform: uppercase; margin-bottom: 8px;
     }
     .card-title { font-family: var(--serif); font-size: 1.25rem; font-weight: 700; margin-bottom: 12px; line-height: 1.35; }
-    .card-desc { font-size: 0.88rem; color: var(--text-mid); line-height: 1.75; }
+    .card-desc { font-size: 0.88rem; color: var(--text-mid); line-height: 1.75; text-align: left; word-break: keep-all; }
 
     /* FLOW */
     .flow-section { background: var(--bg); }
