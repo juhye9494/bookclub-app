@@ -334,7 +334,7 @@ export default function Home() {
       <div className={`modal-overlay ${isPaymentOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsPaymentOpen(false); }}>
         <div className="modal">
           <button className="modal-close" onClick={() => setIsPaymentOpen(false)}>✕</button>
-          <div className="modal-logo"><img src="/logo.svg" alt="한경 석세스 클럽" className="brand-logo" /></div>
+          <div className="modal-logo"><img src="/logo.png" alt="한경 석세스 클럽" className="brand-logo" /></div>
           <h3>구독 신청</h3>
           <p className="modal-sub">선택하신 4권이 담겼습니다. 구독을 시작하시면 배송됩니다.</p>
           <div className="selected-books-preview">
