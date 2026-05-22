@@ -3,8 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
-import { loadTossPayments } from '@tosspayments/payment-sdk';
 import DaumPostcodeEmbed from 'react-daum-postcode';
+
 
 const REVIEWS = [
   { stars:'★★★★★', quote:'"책을 고르는 재미가 생겼어요."', author:'30대 직장인, 서울' },
@@ -52,18 +52,36 @@ export default function Home() {
     };
   }, []);
 
-  const handlePayment = async () => {
+  const handlePayment = () => {
     try {
-      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
-      const tossPayments = await loadTossPayments(clientKey);
+      const { IMP } = window as any;
+      if (!IMP) {
+        alert('결제 라이브러리가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
 
-      await tossPayments.requestPayment('카드', {
+      const userCode = process.env.NEXT_PUBLIC_PORTONE_USER_CODE || 'imp31737754';
+      IMP.init(userCode);
+
+      IMP.request_pay({
+        pg: 'html5_inicis', // KG Inicis
+        pay_method: 'card',
+        merchant_uid: `order_${new Date().getTime()}`,
+        name: '한경 석세스 클럽 6개월권',
         amount: 60000,
-        orderId: `order_${new Date().getTime()}`,
-        orderName: "한경 석세스 클럽 6개월권",
-        customerName: user?.user_metadata?.name || "구독자",
-        successUrl: `${window.location.origin}/success`,
-        failUrl: `${window.location.origin}/fail`,
+        buyer_email: user?.email || '',
+        buyer_name: user?.user_metadata?.name || '구독자',
+        buyer_tel: user?.user_metadata?.phone || '',
+        buyer_addr: user?.user_metadata?.address || '',
+        m_redirect_url: `${window.location.origin}/success`, // Mobile redirect URL
+      }, (rsp: any) => {
+        if (rsp.success) {
+          // PC web callback
+          window.location.href = `/success?orderId=${rsp.merchant_uid}&amount=${rsp.paid_amount}&impUid=${rsp.imp_uid}`;
+        } else {
+          // PC web failure
+          window.location.href = `/fail?code=${rsp.error_code || 'CANCEL'}&message=${encodeURIComponent(rsp.error_msg || '결제가 취소되었습니다.')}`;
+        }
       });
     } catch (err) {
       console.error(err);

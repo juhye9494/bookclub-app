@@ -7,10 +7,18 @@ import { useEffect } from 'react';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get('orderId');
-  const amount = searchParams.get('amount');
+  const orderId = searchParams.get('orderId') || searchParams.get('merchant_uid');
+  const amount = searchParams.get('amount') || '60000';
+  const impSuccess = searchParams.get('imp_success');
+  const errorMsg = searchParams.get('error_msg') || '결제에 실패하였습니다.';
 
   useEffect(() => {
+    // 모바일 리다이렉트 결제 실패인 경우 실패 페이지로 이동
+    if (impSuccess === 'false') {
+      window.location.href = `/fail?code=CANCEL&message=${encodeURIComponent(errorMsg)}`;
+      return;
+    }
+
     async function recordPayment() {
       if (!orderId) return;
 
@@ -54,7 +62,7 @@ function SuccessContent() {
     }
 
     recordPayment();
-  }, [orderId, amount]);
+  }, [orderId, amount, impSuccess, errorMsg]);
 
   return (
     <div style={{ padding: '100px 20px', textAlign: 'center', fontFamily: 'var(--sans)' }}>
