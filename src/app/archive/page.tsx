@@ -30,7 +30,8 @@ export default function ArchivePage() {
       const mapped = (cyclesData || []).map(c => {
         const cBooks = (booksData || [])
           .filter(b => b.cycle_id === c.id)
-          .sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0));
+          .sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0))
+          .slice(0, 6);
         return { ...c, books: cBooks };
       });
 
