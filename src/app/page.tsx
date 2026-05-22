@@ -98,7 +98,7 @@ export default function Home() {
         setCycleLabel(cycle.label);
         const { data: bData } = await supabase.from('books').select('*').eq('cycle_id', cycle.id);
         if (bData) {
-          const sortedBooks = [...bData].sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0));
+          const sortedBooks = [...bData].sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0)).slice(0, 6);
           const formatted = sortedBooks.map((b: any, i: number) => {
             const colors = [
               { bg: '#3b4b72', bgDark: '#121931' }, // CES 2026 (블루)
