@@ -81,7 +81,7 @@ export default function Header() {
     <>
       <nav id="main-nav" className={scrolled ? 'scrolled' : ''}>
         <Link href="/" style={{ fontFamily: 'var(--serif)', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', textDecoration: 'none', color: 'var(--text)' }}>
-          <img src="/logo.png" alt="한경 석세스 클럽" style={{ height: '24px' }} />
+          <img src="/logo.png" alt="한경 석세스 클럽" style={{ height: '19px' }} />
         </Link>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <Link href="/events" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>이벤트</Link>
