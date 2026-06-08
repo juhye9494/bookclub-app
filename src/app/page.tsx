@@ -130,7 +130,7 @@ export default function Home() {
                 background-color: var(--accent);
                 transform: scaleX(0);
                 transform-origin: left;
-                animation: drawLine 0.7s 0.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                animation: drawLine 1.8s 0.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
               }
               .text-reveal-container {
                 display: inline-block;
@@ -138,14 +138,11 @@ export default function Home() {
               .char-reveal {
                 display: inline-block;
                 opacity: 0;
-                transform: translateY(20px) scale(0.85);
-                filter: blur(4px);
-                animation: charRevealAnim 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                animation: charRevealAnim 0.6s ease forwards;
               }
               @keyframes charRevealAnim {
-                0%   { opacity: 0; transform: translateY(20px) scale(0.85); filter: blur(4px); }
-                60%  { opacity: 1; transform: translateY(-3px) scale(1.05); filter: blur(0); }
-                100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+                from { opacity: 0; }
+                to   { opacity: 1; }
               }
               .hero-sub-animate {
                 opacity: 0;
