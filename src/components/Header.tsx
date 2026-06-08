@@ -79,23 +79,69 @@ export default function Header() {
 
   return (
     <>
+      <style>{`
+        .nav-link {
+          font-size: 0.85rem;
+          color: var(--text-mid);
+          text-decoration: none;
+          font-weight: 500;
+          transition: color 0.2s, transform 0.15s;
+          position: relative;
+          padding: 4px 0;
+        }
+        .nav-link:hover {
+          color: var(--accent);
+          transform: translateY(-1px);
+        }
+        .nav-link::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 0;
+          height: 2px;
+          background: var(--accent);
+          transition: width 0.25s ease;
+        }
+        .nav-link:hover::after {
+          width: 100%;
+        }
+        .nav-btn-logout {
+          background: #333; color: #fff; border: none; padding: 8px 16px;
+          border-radius: 40px; font-size: 0.8rem; cursor: pointer;
+          transition: background 0.2s, transform 0.15s;
+        }
+        .nav-btn-logout:hover {
+          background: var(--accent); transform: translateY(-1px);
+        }
+        .nav-btn-login {
+          background: var(--accent); color: #fff; border: none; padding: 8px 16px;
+          border-radius: 40px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+          transition: background 0.2s, transform 0.15s;
+        }
+        .nav-btn-login:hover {
+          background: var(--accent-dark); transform: translateY(-1px);
+        }
+      `}</style>
       <nav id="main-nav" className={scrolled ? 'scrolled' : ''}>
         <Link href="/" style={{ fontFamily: 'var(--serif)', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', textDecoration: 'none', color: 'var(--text)' }}>
-          <img src="/logo.png" alt="한경 석세스 클럽" style={{ height: '19px' }} />
+          <img src="/logo.png" alt="한경 언더라인 독서클럽" style={{ height: '19px' }} />
         </Link>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-          <Link href="/events" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>이벤트</Link>
-          <Link href="/archive" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>지난 도서</Link>
+          <Link href="/books" className="nav-link">도서 선택</Link>
+          <Link href="/insight" className="nav-link">플러스 인사이트</Link>
+          <Link href="/groups" className="nav-link">소모임</Link>
+          <Link href="/events" className="nav-link">이벤트</Link>
           {user ? (
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <Link href="/mypage" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', textDecoration: 'none', fontWeight: 500 }}>마이페이지</Link>
-              <button style={{ background: '#333', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '40px', fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => {
+              <Link href="/mypage" className="nav-link">마이페이지</Link>
+              <button className="nav-btn-logout" onClick={() => {
                 supabase.auth.signOut();
                 alert('로그아웃 되었습니다.');
               }}>로그아웃</button>
             </div>
           ) : (
-            <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '40px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }} onClick={() => { setIsLoginMode(true); setIsLoginOpen(true); }}>로그인/가입</button>
+            <button className="nav-btn-login" onClick={() => { setIsLoginMode(true); setIsLoginOpen(true); }}>로그인/가입</button>
           )}
         </div>
       </nav>
@@ -104,7 +150,7 @@ export default function Header() {
       <div className={`modal-overlay ${isLoginOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsLoginOpen(false); }}>
         <div className="modal">
           <button className="modal-close" onClick={() => setIsLoginOpen(false)}>✕</button>
-          <div className="modal-logo"><img src="/logo.png" alt="한경 석세스 클럽" className="brand-logo" /></div>
+          <div className="modal-logo"><img src="/logo.png" alt="한경 언더라인 독서클럽" className="brand-logo" /></div>
           <h3>{isLoginMode ? '로그인' : '회원가입'}</h3>
           <p className="modal-sub">배송을 위해 {isLoginMode ? '로그인이' : '회원가입이'} 필요합니다.</p>
           <div className="form-field">

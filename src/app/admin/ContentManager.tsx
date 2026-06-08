@@ -12,7 +12,7 @@ const SEED_CYCLES = [
       { id: 'b3', title: '프로젝트리츠로 일하는 법', author: '강병기 외 4인', genre: '부동산 · 비즈니스', cover: '/uploads/fd38af558278f9de5a15d0ab05aaf85e.jpg', tags: ['부동산', '리츠', '강연 포함'], description: '새로운 부동산 개발 플랫폼 PROJECT REITs의 모든 것. 개발·운영·공모·상장까지, 리츠 전문가 5인이 집필한 국내 최초 리츠 종합 안내서입니다. 실무 현장의 생생한 사례와 함께 복잡한 리츠 구조를 명쾌하게 정리했습니다.', lecture: { desc: '저자 5인이 릴레이로 진행하는 "리츠 실무 완전정복" 온라인 강연 시리즈.', perks: ['총 3회 릴레이 강연 (각 60분)', '리츠 투자 체크리스트 PDF', '실무 사례집 별책 제공'] } },
       { id: 'b4', title: '퍼지키즈', author: '한지우 지음', genre: '교육 · 자녀교육', cover: '/uploads/d1bae06b6d279117f4aeacbd777accbb.jpg', tags: ['AI 교육', '인문학', '강연 포함'], description: 'AI 시대의 새로운 인재상을 제시하는 혁신적 교육서. 속도보다 방향, 지식보다 감각을 키우는 인문학 자녀교육의 핵심을 담았습니다. 방종임 교육대기자TV, 독지선 선생님 강력 추천! 초등 학부모 필독서로 꼽히는 베스트셀러입니다.', lecture: { desc: '저자 한지우가 직접 강의하는 "AI 시대 아이 키우기" 학부모 특강.', perks: ['75분 온라인 특강', '연령별 인문학 교육 로드맵 PDF', '학부모 커뮤니티 초대'] } },
       { id: 'b5', title: '덜 멍청하게 살기 위한 최소한의 철학', author: '라르스 스벤젠', genre: '철학 · 인문', cover: '/uploads/775c4d1d6677a6abd5ce990900c13cb0.jpg', tags: ['철학', '인문', '번역서'], description: '전 세계 35개 언어로 읽히는 북유럽 철학자 라르스 스벤젠의 신작. 멍청함은 지능이 아니라 태도다 — 타인의 멍청함에 화가 나고, 자신의 멍청함은 두려운 모든 사람을 위한 지적 수업.', lecture: null },
-      { id: 'b6', title: '사이클 투자 법칙', author: '조윤남 지음', genre: '경제 · 투자', cover: '/uploads/cd52ee5bff3ec53eb02c5a0e4fce2526.jpg', tags: ['주식', '투자', '강연 포함'], description: '주식시장 슈퍼사이클에 올라타는 실전 매매법. 코스피 5,000 시대 필독서 — 위기는 피하고 기회는 확실히 잡아라! 홍성국 전 더불어민주당 최고위원, 이효석 HSD엔진 대표, 오라영 신한은행 패시브인덱 단장이 강력 추천한 투자 바이블입니다.', lecture: { desc: '저자 조윤남이 직접 진행하는 "사이클로 읽는 주식시장" 투자 강연.', perks: ['90분 심층 분석 강의', '사이클 투자 체크리스트 PDF', '비공개 Q&A 세션'] } }
+      { id: 'b6', title: '사이클 투자 법칙', author: '조윤남 지음', genre: '경제 · 투자', cover: '/uploads/cd52ee5bff3ec53eb02c5a0e4fce2526.jpg', tags: ['주식', '투자', '강연 포함', '대표 도서'], description: '주식시장 슈퍼사이클에 올라타는 실전 매매법. 코스피 5,000 시대 필독서 — 위기는 피하고 기회는 확실히 잡아라! 홍성국 전 더불어민주당 최고위원, 이효석 HSD엔진 대표, 오라영 신한은행 패시브인덱 단장이 강력 추천한 투자 바이블입니다.', lecture: { desc: '저자 조윤남이 직접 진행하는 "사이클로 읽는 주식시장" 투자 강연.', perks: ['90분 심층 분석 강의', '사이클 투자 체크리스트 PDF', '비공개 Q&A 세션'] } }
     ]
   },
   {
@@ -221,7 +221,7 @@ export default function ContentManager() {
             {/* Books Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '1.2rem', margin: 0 }}>도서 목록 <span style={{ color: '#8a8478', fontSize: '1rem', fontWeight: 400 }}>{activeCycle.books?.length || 0}권</span></h3>
-              <button onClick={() => { setIsCreatingBook(true); setEditingBook({ title:'', author:'', genre:'', cover:'', tags:[], description:'', lecture:null }); }} style={{ padding: '8px 16px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>+ 도서 추가</button>
+              <button onClick={() => { setIsCreatingBook(true); setEditingBook({ title:'', author:'', genre:'', cover:'', tags:[], description:'', lecture:null, ebook_url:'' }); }} style={{ padding: '8px 16px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>+ 도서 추가</button>
             </div>
 
             {/* Books List */}
@@ -334,6 +334,10 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
             <input name="bgDark" value={formData.bgDark || '#121931'} onChange={handleChange} placeholder="#HEX" style={{ flex: 1, padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', textTransform: 'uppercase' }} />
           </div>
         </div>
+      </div>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>📖 E북 링크 URL <span style={{ color: '#8a8478', fontWeight: 400 }}>(비워두면 버튼 숨김)</span></label>
+        <input name="ebook_url" value={formData.ebook_url || ''} onChange={handleChange} placeholder="https://..." style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
       </div>
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>태그 (쉼표로 구분)</label>

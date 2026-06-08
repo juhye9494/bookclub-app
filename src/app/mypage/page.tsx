@@ -54,7 +54,7 @@ export default function MyPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '20px', alignItems: 'center' }}>
                   <div>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>주문번호: {order.payment_order_id}</span>
-                    <h3 style={{ fontSize: '1.2rem', marginTop: '4px' }}>한경 석세스 클럽 6개월권</h3>
+                    <h3 style={{ fontSize: '1.2rem', marginTop: '4px' }}>한경 언더라인 독서클럽 3개월권</h3>
                   </div>
                   <span style={{ padding: '6px 14px', background: order.order_status === '배송중' ? '#eef5ff' : 'var(--bg-warm)', color: order.order_status === '배송중' ? '#3b82f6' : 'var(--accent)', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700 }}>
                     {order.order_status}
@@ -62,7 +62,7 @@ export default function MyPage() {
                 </div>
 
                 <div style={{ marginBottom: '24px' }}>
-                  <h4 style={{ fontSize: '0.95rem', marginBottom: '12px', color: 'var(--text-mid)' }}>선택한 도서 4권</h4>
+                  <h4 style={{ fontSize: '0.95rem', marginBottom: '12px', color: 'var(--text-mid)' }}>선택한 도서 3권</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
                     {order.selected_books.map((book: any, idx: number) => (
                       <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>

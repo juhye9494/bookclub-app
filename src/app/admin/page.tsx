@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ContentManager from './ContentManager';
 import EventManager from './EventManager';
+import InsightManager from './InsightManager';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -75,7 +76,7 @@ export default function AdminPage() {
     if (orders.length === 0) return;
     
     // CSV 헤더
-    const headers = ['주문일자', '주문번호', '고객명', '연락처', '배송주소', '상태', '도서1', '도서2', '도서3', '도서4'];
+    const headers = ['주문일자', '주문번호', '고객명', '연락처', '배송주소', '상태', '도서1', '도서2', '도서3'];
     
     // CSV 데이터 행 만들기
     const rows = orders.map(order => {
@@ -91,8 +92,7 @@ export default function AdminPage() {
         order.order_status,
         books[0] || '',
         books[1] || '',
-        books[2] || '',
-        books[3] || ''
+        books[2] || ''
       ].join(',');
     });
 
@@ -102,7 +102,7 @@ export default function AdminPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `한경석세스클럽_주문목록_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute('download', `한경언더라인독서클럽_주문목록_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -138,6 +138,12 @@ export default function AdminPage() {
             style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'events' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'events' ? 700 : 500, color: activeTab === 'events' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
           >
             📅 이벤트 관리
+          </button>
+          <button 
+            onClick={() => setActiveTab('insights')} 
+            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'insights' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'insights' ? 700 : 500, color: activeTab === 'insights' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            📝 인사이트 관리
           </button>
           <button 
             onClick={() => setActiveTab('members')} 
@@ -222,6 +228,11 @@ export default function AdminPage() {
         {/* TAB 4: EVENTS */}
         {activeTab === 'events' && (
           <EventManager />
+        )}
+
+        {/* TAB: INSIGHTS */}
+        {activeTab === 'insights' && (
+          <InsightManager />
         )}
 
         {/* TAB 3: MEMBERS */}

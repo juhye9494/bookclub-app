@@ -1,0 +1,356 @@
+"use client";
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
+
+const MAX_SELECT = 3;
+
+export default function BooksPage() {
+  const [books, setBooks] = useState<any[]>([]);
+  const [cycleLabel, setCycleLabel] = useState<string>('로딩중...');
+  const [loadingBooks, setLoadingBooks] = useState(true);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailIdx, setDetailIdx] = useState<number | null>(null);
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const scrollPosRef = useRef<number>(0);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    const handleAuthSuccess = () => {
+      if (selected.size === MAX_SELECT) setIsPaymentOpen(true);
+    };
+    window.addEventListener('auth-success', handleAuthSuccess);
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('auth-success', handleAuthSuccess);
+    };
+  }, []);
+
+  const handlePayment = () => {
+    try {
+      const { IMP } = window as any;
+      if (!IMP) { alert('결제 라이브러리가 아직 로드되지 않았습니다.'); return; }
+      const userCode = process.env.NEXT_PUBLIC_PORTONE_USER_CODE || 'imp31737754';
+      IMP.init(userCode);
+      IMP.request_pay({
+        pg: 'tosspayments', pay_method: 'card',
+        merchant_uid: `order_${new Date().getTime()}`,
+        name: '한경 언더라인 독서클럽 3개월권', amount: 45000,
+        buyer_email: user?.email || '', buyer_name: user?.user_metadata?.name || '구독자',
+        buyer_tel: user?.user_metadata?.phone || '', buyer_addr: user?.user_metadata?.address || '',
+        m_redirect_url: `${window.location.origin}/success`,
+      }, (rsp: any) => {
+        if (rsp.success) {
+          window.location.href = `/success?orderId=${rsp.merchant_uid}&amount=${rsp.paid_amount}&impUid=${rsp.imp_uid}`;
+        } else {
+          window.location.href = `/fail?code=${rsp.error_code || 'CANCEL'}&message=${encodeURIComponent(rsp.error_msg || '결제가 취소되었습니다.')}`;
+        }
+      });
+    } catch (err) { console.error(err); alert('결제창을 띄우는 데 실패했습니다.'); }
+  };
+
+  useEffect(() => {
+    async function loadBooks() {
+      const { data: cycles } = await supabase.from('cycles').select('*').eq('status', 'active').order('start_date', { ascending: false }).limit(1);
+      if (cycles && cycles.length > 0) {
+        const cycle = cycles[0];
+        setCycleLabel(cycle.label);
+        const { data: bData } = await supabase.from('books').select('*').eq('cycle_id', cycle.id);
+        if (bData) {
+          const sortedBooks = [...bData].sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0)).slice(0, 25);
+          const colors = [
+            { bg: '#3b4b72', bgDark: '#121931' }, { bg: '#c0392b', bgDark: '#7b241c' },
+            { bg: '#c9a000', bgDark: '#7a6000' }, { bg: '#2ecc40', bgDark: '#1a7a26' },
+            { bg: '#171717', bgDark: '#000000' }, { bg: '#605856', bgDark: '#3b3433' },
+          ];
+          const formatted = sortedBooks.map((b: any, i: number) => {
+            const c = colors[i % colors.length];
+            return {
+              id: b.id, title: b.title, author: b.author, genre: b.genre,
+              color: `book-${(i % 6) + 1}`, bg: b.bg || c.bg, bgDark: b.bgDark || c.bgDark,
+              img: b.cover, tags: b.tags || [], desc: b.description, lecture: b.lecture,
+              ebook_url: b.ebook_url || '', benefit: b.lecture ? '+ 저자 강연권' : ''
+            };
+          });
+          setBooks(formatted);
+        }
+      } else { setCycleLabel('준비된 시즌이 없습니다.'); }
+      setLoadingBooks(false);
+    }
+    loadBooks();
+    const saved = sessionStorage.getItem('bookSelection');
+    if (saved) setSelected(new Set(JSON.parse(saved)));
+  }, []);
+
+  const toggleBook = (idx: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) { next.delete(idx); }
+      else {
+        if (next.size >= MAX_SELECT) { alert('이미 3권을 선택하셨어요. 다른 책을 빼고 담아주세요.'); return prev; }
+        next.add(idx);
+      }
+      sessionStorage.setItem('bookSelection', JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  const openDetail = (idx: number) => {
+    scrollPosRef.current = window.scrollY;
+    setDetailIdx(idx); setIsDetailOpen(true);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const closeDetail = () => {
+    setIsDetailOpen(false);
+    setTimeout(() => { window.scrollTo({ top: scrollPosRef.current, behavior: 'instant' }); }, 0);
+  };
+
+  const activeBook = detailIdx !== null ? books[detailIdx] : null;
+
+  // Find recommended
+  const recommendedIdx = books.findIndex(b => b.tags.includes('대표 도서') || b.tags.includes('추천 도서'));
+  const finalRecIdx = recommendedIdx !== -1 ? recommendedIdx : 0;
+  const recommendedBook = books[finalRecIdx];
+  const otherBooks = books.map((book, originalIdx) => ({ book, originalIdx })).filter((_, idx) => idx !== finalRecIdx).slice(0, 20);
+
+  return (
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)', paddingTop: '64px' }}>
+      <style>{`
+        .books-page-rec {
+          display: grid; grid-template-columns: 330px 1fr; gap: 56px;
+          width: 100%; max-width: 980px; margin: 0 auto;
+          background: linear-gradient(135deg, rgba(20,20,20,0.92) 0%, rgba(45,45,45,0.92) 100%);
+          border: 1px solid rgba(252, 102, 64, 0.25); border-radius: 28px; padding: 56px;
+          box-shadow: 0 30px 60px rgba(0,0,0,0.3), 0 0 40px rgba(252, 102, 64, 0.08);
+          color: #fff; text-align: left; align-items: center; position: relative; overflow: hidden;
+          backdrop-filter: blur(12px); transition: transform 0.4s, border-color 0.4s, box-shadow 0.4s;
+        }
+        .books-page-rec::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(252,102,64,0.08) 0%, transparent 60%); pointer-events: none; z-index: 0; }
+        .books-page-rec:hover { transform: translateY(-4px); box-shadow: 0 35px 70px rgba(0,0,0,0.35), 0 0 50px rgba(252,102,64,0.15); border-color: rgba(252,102,64,0.4); }
+        .books-page-rec .dv-cover { width: 240px !important; height: 340px !important; border-radius: 6px 16px 16px 6px !important; box-shadow: -12px 16px 36px rgba(0,0,0,0.6) !important; transition: transform 0.4s, box-shadow 0.4s !important; transform: rotateY(-5deg) rotateX(2deg); }
+        .books-page-rec .dv-cover:hover { transform: scale(1.04) rotateY(0deg) rotateX(0deg) !important; box-shadow: -16px 24px 48px rgba(0,0,0,0.7), 0 0 25px rgba(252,102,64,0.4) !important; }
+        @media (max-width: 768px) {
+          .books-page-rec { grid-template-columns: 1fr !important; padding: 48px 24px !important; gap: 32px !important; text-align: center !important; }
+          .books-page-rec .dv-cover { width: 200px !important; height: 284px !important; margin: 0 auto !important; transform: none !important; }
+        }
+      `}</style>
+
+      {isDetailOpen && activeBook ? (
+        /* ===== DETAIL VIEW ===== */
+        <div id="detail-view">
+          <div className="dv-hero" style={{ display: 'flex', flexDirection: 'column', minHeight: 'auto', padding: '0' }}>
+            <div className="dv-hero-bg" style={{ background: `linear-gradient(160deg, ${activeBook.bgDark} 0%, ${activeBook.bg} 100%)` }}></div>
+            <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1100px', margin: '0 auto', padding: '32px 5vw 16px' }}>
+              <button className="dv-back-white" onClick={closeDetail}>
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                도서 목록으로
+              </button>
+            </div>
+            <div className="dv-hero-inner" style={{ padding: '16px 5vw 64px' }}>
+              <div className="dv-cover"><img src={activeBook.img} alt="" /></div>
+              <div className="dv-meta">
+                <p className="dv-genre">{activeBook.genre}</p>
+                <h2 className="dv-title">{activeBook.title}</h2>
+                <p className="dv-author">{activeBook.author}</p>
+                <div className="dv-tags">
+                  {activeBook.tags.map((t: string, i: number) => (
+                    <span key={i} className={`dv-tag ${t === '강연 포함' ? 'lecture' : ''}`}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="dv-body">
+            <div className="dv-main">
+              <div className="dv-section">
+                <p className="dv-label">책 소개</p>
+                <div className="dv-text" dangerouslySetInnerHTML={{ __html: (activeBook.desc || '').replace(/\n/g, '<br/>') }} />
+              </div>
+              {activeBook.lecture && (
+                <div className="dv-section">
+                  <p className="dv-label">저자 강연</p>
+                  <div className="dv-lecture-card">
+                    <div className="dv-lecture-header">
+                      <span className="dv-lecture-icon">🎙</span>
+                      <span className="dv-lecture-title">저자 온라인 강연 포함</span>
+                      <span className="dv-lecture-badge">무료 제공</span>
+                    </div>
+                    <p className="dv-lecture-desc">{activeBook.lecture.desc}</p>
+                    <ul className="dv-lecture-perks">
+                      {activeBook.lecture.perks.map((p: string, i: number) => (
+                        <li key={i}><span className="dv-perk-dot"></span>{p}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="dv-sidebar">
+              <div className="dv-sidebar-card">
+                <div className="dv-sidebar-cover"><img src={activeBook.img} alt="" /></div>
+                <p className="dv-sidebar-genre">{activeBook.genre}</p>
+                <p className="dv-sidebar-title">{activeBook.title}</p>
+                <p className="dv-sidebar-author">{activeBook.author}</p>
+                <div className="dv-sidebar-divider"></div>
+                <p style={{ fontFamily: 'var(--serif)', fontSize: '0.95rem', fontWeight: 700, marginBottom: '12px' }}>구독 플랜에 포함</p>
+                <div className="plan-row"><span className="l">구독권</span><span className="r">3개월권</span></div>
+                <div className="plan-row"><span className="l">도서 선택</span><span className="r">3개월간 3권</span></div>
+                <div className="plan-row"><span className="l">구독 금액</span><span className="r" style={{ color: 'var(--accent)' }}>45,000원</span></div>
+                {activeBook.ebook_url ? (
+                  <a href={activeBook.ebook_url} target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'block', width: '100%', marginTop: '18px', padding: '13px', borderRadius: '100px', border: '1.5px solid var(--accent)', background: 'transparent', color: 'var(--accent)', fontSize: '0.93rem', fontWeight: 600, fontFamily: 'var(--sans)', textAlign: 'center', textDecoration: 'none', transition: 'background 0.2s, color 0.2s', cursor: 'pointer' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--accent)'; }}
+                  >📖 E북 보기</a>
+                ) : (
+                  <button disabled
+                    style={{ display: 'block', width: '100%', marginTop: '18px', padding: '13px', borderRadius: '100px', border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.93rem', fontWeight: 600, fontFamily: 'var(--sans)', textAlign: 'center', cursor: 'not-allowed', opacity: 0.6 }}
+                  >📖 E북 준비중</button>
+                )}
+                <button className={`dv-add-btn ${detailIdx !== null && selected.has(detailIdx) ? 'added' : ''}`} onClick={() => detailIdx !== null && toggleBook(detailIdx)}>
+                  {detailIdx !== null && selected.has(detailIdx) ? '✓ 담겼어요' : '+ 내 목록에 담기'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="dv-other">
+            <div className="dv-other-inner">
+              <p className="dv-other-label">다른 도서</p>
+              <h3 className="dv-other-title">3개월간 3권을 골라보세요</h3>
+              <div className="dv-other-grid">
+                {books.map((b, i) => (
+                  <div key={i} className={`dv-other-card ${i === detailIdx ? 'active' : ''}`} onClick={() => openDetail(i)}>
+                    <div className="dv-other-cover"><img src={b.img} alt={b.title} /></div>
+                    <p className="dv-other-name">{b.title}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ===== BOOK LIST VIEW ===== */
+        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '48px 5vw 80px' }}>
+          {/* Page Header */}
+          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <p style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.14em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '12px' }}>BOOK CURATION</p>
+            <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 700, lineHeight: 1.3, marginBottom: '16px' }}>이번 시즌 도서를 골라보세요</h1>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-mid)', lineHeight: 1.7 }}>3개월간 총 3권을 자유롭게 선택하실 수 있습니다.</p>
+          </div>
+
+          {loadingBooks ? (
+            <div style={{ textAlign: 'center', padding: '100px 0', fontSize: '1.2rem', color: '#666' }}>도서 목록을 불러오는 중입니다...</div>
+          ) : (
+            <>
+              {/* Recommended Book */}
+              {recommendedBook && (
+                <div className="books-page-rec" style={{ marginBottom: '64px' }}>
+                  <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '6px 16px', borderRadius: '30px', zIndex: 2, boxShadow: '0 4px 12px rgba(252,102,64,0.4)' }}>★ 이번 기수 대표 도서</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', zIndex: 1 }}>
+                    <div style={{ perspective: '1000px' }}>
+                      <div className="dv-cover" style={{ cursor: 'pointer' }} onClick={() => openDetail(finalRecIdx)}>
+                        <img src={recommendedBook.img} alt={recommendedBook.title} />
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', zIndex: 1 }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{recommendedBook.genre}</span>
+                    <h3 style={{ fontFamily: 'var(--serif)', fontSize: '2.1rem', fontWeight: 700, marginBottom: '10px', color: '#fff', lineHeight: 1.3, cursor: 'pointer' }} onClick={() => openDetail(finalRecIdx)}>{recommendedBook.title}</h3>
+                    <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.85)', marginBottom: '18px' }}>{recommendedBook.author}</p>
+                    <p style={{ fontSize: '0.92rem', color: 'rgba(255,255,255,0.75)', lineHeight: '1.8', marginBottom: '24px', wordBreak: 'keep-all' }}>{recommendedBook.desc}</p>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '28px' }}>
+                      {recommendedBook.tags.map((t: string) => (
+                        <span key={t} style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.12)', padding: '4px 12px', borderRadius: '20px', color: 'rgba(255,255,255,0.85)' }}>{t}</span>
+                      ))}
+                      {recommendedBook.lecture && <span style={{ fontSize: '0.72rem', background: 'var(--accent)', padding: '4px 12px', borderRadius: '20px', color: '#fff', fontWeight: 600 }}>🎙 저자 강연 포함</span>}
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '0.9rem', fontWeight: 600, boxShadow: '0 4px 15px rgba(252,102,64,0.4)' }} onClick={() => openDetail(finalRecIdx)}>상세 보기</button>
+                      <button onClick={(e) => toggleBook(finalRecIdx, e)}
+                        style={{ padding: '12px 28px', fontSize: '0.9rem', fontWeight: 600, border: '1.5px solid rgba(255,255,255,0.7)', color: selected.has(finalRecIdx) ? 'var(--text)' : '#fff', background: selected.has(finalRecIdx) ? '#fff' : 'transparent', borderRadius: '100px', cursor: 'pointer', transition: 'all 0.2s' }}
+                      >{selected.has(finalRecIdx) ? '✓ 담겼어요' : '+ 담기'}</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Books Grid */}
+              <h3 style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem', fontWeight: 700, textAlign: 'left', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                도서 큐레이션 풀 (총 {otherBooks.length}권)
+              </h3>
+              <div className="book-grid" id="bookShelf" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '28px 20px', marginBottom: '40px' }}>
+                {otherBooks.map(({ book, originalIdx }) => (
+                  <div key={book.id} className={`book-card ${selected.has(originalIdx) ? 'selected' : ''}`}>
+                    <div className="book-card-inner">
+                      <div className="book-cover" style={{ cursor: 'pointer' }} onClick={() => openDetail(originalIdx)}>
+                        {book.tags.includes('강연 포함') && <div className="book-lecture-badge">강연 포함</div>}
+                        <img src={book.img} alt={book.title} />
+                      </div>
+                      <button className={`book-select-btn ${selected.has(originalIdx) ? 'added' : ''}`} onClick={(e) => toggleBook(originalIdx, e)}>
+                        {selected.has(originalIdx) ? '✓ 담겼어요' : '+ 담기'}
+                      </button>
+                    </div>
+                    <p className="book-title" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)', minHeight: 'auto', marginTop: '12px', marginBottom: '2px' }}>{book.title}</p>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '6px' }}>{book.author}</p>
+                    <p className="book-benefit">{book.benefit}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer / Selection bar */}
+              <div className="shelf-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '32px', marginTop: '24px' }}>
+                <p className="shelf-hint">원하는 책 3권을 골라보세요</p>
+                <div className="shelf-counter">
+                  <div className="counter-dots">
+                    {[0, 1, 2].map((dot) => (<div key={dot} className={`counter-dot ${dot < selected.size ? 'filled' : ''}`}></div>))}
+                  </div>
+                  <span>{selected.size} / 3권</span>
+                </div>
+                <button className={`btn-delivery ${selected.size === MAX_SELECT ? 'visible' : ''}`} onClick={() => {
+                  if (user) { setIsPaymentOpen(true); }
+                  else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
+                }}>선택한 {selected.size}권 신청하기</button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* PAYMENT MODAL */}
+      <div className={`modal-overlay ${isPaymentOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsPaymentOpen(false); }}>
+        <div className="modal">
+          <button className="modal-close" onClick={() => setIsPaymentOpen(false)}>✕</button>
+          <div className="modal-logo"><img src="/logo.png" alt="한경 언더라인 독서클럽" className="brand-logo" /></div>
+          <h3>구독 신청</h3>
+          <p className="modal-sub">선택하신 3권이 담겼습니다. 구독을 시작하시면 배송됩니다.</p>
+          <div className="selected-books-preview">
+            {Array.from(selected).map((idx) => books[idx] && (
+              <div key={idx} className="preview-book" style={{ background: books[idx].bg }}>
+                <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            ))}
+          </div>
+          <div className="plan-detail">
+            <div className="plan-row"><span className="label">구독 플랜</span><span className="value">3개월권</span></div>
+            <div className="plan-row"><span className="label">도서 3권</span><span className="value">포함</span></div>
+            <div className="plan-row"><span className="label">웰컴 굿즈</span><span className="value">무료 증정</span></div>
+            <div className="plan-row"><span className="label">저자 강연권</span><span className="value">포함</span></div>
+            <div className="plan-row total"><span className="label">합계</span><span className="value">45,000원</span></div>
+          </div>
+          <button className="modal-btn" onClick={handlePayment} style={{ marginTop: '16px' }}>45,000원 결제하기</button>
+        </div>
+      </div>
+    </div>
+  );
+}
