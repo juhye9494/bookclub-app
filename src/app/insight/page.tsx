@@ -231,8 +231,8 @@ export default function PlusInsightPage() {
           플러스 인사이트
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem', lineHeight: 1.8, maxWidth: '600px', margin: '0 auto' }}>
-          매주 월, 수, 금 한경 에디터, 마케터, 그리고 경영진이<br />
-          당신의 깊이 있는 독서와 성장을 돕기 위해 새로운 주제와 인사이트를 전해 드립니다.
+          당신의 깊이 있는 독서와 성장을 돕기 위해<br />
+          매주 다양한 주제의 인사이트를 전해 드립니다.
         </p>
       </div>
 

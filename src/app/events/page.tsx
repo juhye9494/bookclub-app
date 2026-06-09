@@ -162,7 +162,7 @@ export default function EventsPage() {
           멤버십 이벤트 & 혜택
         </h1>
         <p style={{ color: 'var(--text-mid)', fontSize: '1.05rem', lineHeight: 1.8, maxWidth: '600px', margin: '0 auto' }}>
-          저자 직강 강연회부터 네트워킹 파티, 제휴 혜택까지.<br />한경 석세스 클럽 멤버만을 위한 프리미엄 혜택을 제공합니다.
+          저자 강연회, 네트워킹 파티, 한경 아르떼 문화 공연까지.<br />한경 언더라인 독서클럽 회원을 위한 프리미엄 혜택을 제공합니다.
         </p>
       </section>
 

@@ -274,7 +274,7 @@ export default function Home() {
             <div className="service-card reveal visible" style={{ transitionDelay: '0.3s' }}>
               <div className="card-icon"><img src="https://placehold.co/400x240/fff0ec/fc6640?text=E-Book" alt="전자책" /></div>
               <p className="card-tag">언제 어디서나</p>
-              <h3 className="card-title">전자책 3종 제공</h3>
+              <h3 className="card-title">전자책 3종</h3>
               <p className="card-desc">제공되는 한경 전자책 중 원하는 3종을 선택하여 무료로 이용하실 수 있습니다.</p>
             </div>
             <div className="service-card reveal visible" style={{ transitionDelay: '0.4s' }}>
