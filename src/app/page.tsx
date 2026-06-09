@@ -260,28 +260,28 @@ export default function Home() {
           </div>
           <div className="service-cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
             <div className="service-card reveal visible" style={{ transitionDelay: '0.1s' }}>
-              <div className="card-icon">🎁</div>
-              <p className="card-tag">가입 즉시</p>
+              <div className="card-icon"><img src="https://placehold.co/400x240/fff0ec/fc6640?text=Welcome+Goods" alt="웰컴 굿즈" /></div>
+              <p className="card-tag">독서 습관을 만드는</p>
               <h3 className="card-title">웰컴 굿즈</h3>
-              <p className="card-desc">30분을 기록할 수 있는 모래시계와 작심세달 독서노트(3개월용), 격려의 레터를 모두 드립니다.<br />(가입 시, 최초 1회 무료 배송)</p>
+              <p className="card-desc">30분을 기록할 수 있는 모래시계와 독서노트, 편집자 레터를 드립니다.<br />(가입 시, 최초 1회 무료 배송)</p>
             </div>
             <div className="service-card reveal visible" style={{ transitionDelay: '0.2s' }}>
-              <div className="card-icon">🎙</div>
-              <p className="card-tag">시즌 대표</p>
+              <div className="card-icon"><img src="https://placehold.co/400x240/fff0ec/fc6640?text=Book+Talk" alt="북토크" /></div>
+              <p className="card-tag">시즌 대표 도서</p>
               <h3 className="card-title">무료 북토크 초대</h3>
-              <p className="card-desc">월 1회 정례화된 저자 오프라인 북토크 행사에 회원 우선 선착순 무료 초청 혜택을 드립니다.</p>
+              <p className="card-desc">월 1회 진행되는 오프라인 저자 북토크에 회원 우선 혜택으로 무료 초청해 드립니다.</p>
             </div>
             <div className="service-card reveal visible" style={{ transitionDelay: '0.3s' }}>
-              <div className="card-icon">📱</div>
+              <div className="card-icon"><img src="https://placehold.co/400x240/fff0ec/fc6640?text=E-Book" alt="전자책" /></div>
               <p className="card-tag">언제 어디서나</p>
-              <h3 className="card-title">전자책 3종 열람</h3>
-              <p className="card-desc">부커스 e-book 플랫폼을 통해 한경의 대표 도서 중 3권을 선정하여 스마트폰, 태블릿으로 열람하실 수 있습니다.</p>
+              <h3 className="card-title">전자책 3종 제공</h3>
+              <p className="card-desc">제공되는 한경 전자책 중 원하는 3종을 선택하여 무료로 이용하실 수 있습니다.</p>
             </div>
             <div className="service-card reveal visible" style={{ transitionDelay: '0.4s' }}>
-              <div className="card-icon">🎼</div>
-              <p className="card-tag">티켓 추첨</p>
+              <div className="card-icon"><img src="https://placehold.co/400x240/fff0ec/fc6640?text=Arte+%2F+Phil" alt="아르떼/필" /></div>
+              <p className="card-tag">품격 있는 문화 생활</p>
               <h3 className="card-title">한경 아르떼/필 티켓</h3>
-              <p className="card-desc">아르떼 공연 티켓 및 한경 필하모닉 콘서트 관람 티켓을 매달 추첨을 통해 무료 증정해 드립니다.</p>
+              <p className="card-desc">아르떼 전시회 및 한경필하모닉오케스트라 공연 티켓을 추첨을 통해 무료로 증정해 드립니다.</p>
             </div>
           </div>
         </div>
