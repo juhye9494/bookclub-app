@@ -287,7 +287,7 @@ export default function BooksPage() {
 
               {/* Books Grid */}
               <h3 style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem', fontWeight: 700, textAlign: 'left', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
-                도서 큐레이션 풀 (총 {otherBooks.length}권)
+                도서 큐레이션 풀
               </h3>
               <div className="book-grid" id="bookShelf" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '28px 20px', marginBottom: '40px' }}>
                 {otherBooks.map(({ book, originalIdx }) => (
