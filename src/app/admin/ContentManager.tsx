@@ -37,6 +37,26 @@ export default function ContentManager() {
   const [isCreatingBook, setIsCreatingBook] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Season creation modal states
+  const [isSeasonModalOpen, setIsSeasonModalOpen] = useState(false);
+  const [seasonYear, setSeasonYear] = useState(new Date().getFullYear());
+  const [seasonQuarter, setSeasonQuarter] = useState(Math.ceil((new Date().getMonth() + 1) / 3));
+  const [seasonLabel, setSeasonLabel] = useState('');
+  const [editingCycleId, setEditingCycleId] = useState<string | null>(null);
+
+  const quarterInfo: Record<number, { months: string; start: string; end: string }> = {
+    1: { months: '1월~3월', start: '-01-01', end: '-03-31' },
+    2: { months: '4월~6월', start: '-04-01', end: '-06-30' },
+    3: { months: '7월~9월', start: '-07-01', end: '-09-30' },
+    4: { months: '10월~12월', start: '-10-01', end: '-12-31' },
+  };
+
+  const getAutoLabel = (year: number, q: number) => `${year} 시즌${q} (${quarterInfo[q].months})`;
+
+  useEffect(() => {
+    setSeasonLabel(getAutoLabel(seasonYear, seasonQuarter));
+  }, [seasonYear, seasonQuarter]);
+
   const loadData = async () => {
     setLoading(true);
     const { data: cyclesData, error: cycleErr } = await supabase.from('cycles').select('*').order('start_date', { ascending: false });
@@ -66,26 +86,62 @@ export default function ContentManager() {
 
   const activeCycle = cycles.find(c => c.id === activeId);
 
-  // Cycle Actions
-  const handleAddCycle = async () => {
-    const label = prompt('새 시즌 이름 (예: 2026 하반기)');
-    if (!label) return;
-    const newCycle = { id: 'cycle-' + Date.now(), label, start_date: '2026-07-01', end_date: '2026-12-31', status: 'draft' };
-    await supabase.from('cycles').insert(newCycle);
-    setActiveId(newCycle.id);
-    await loadData();
+  // Season Actions
+  const openCreateSeason = () => {
+    setEditingCycleId(null);
+    const now = new Date();
+    const y = now.getFullYear();
+    const q = Math.ceil((now.getMonth() + 1) / 3);
+    // Find next available quarter
+    let nextQ = q;
+    let nextY = y;
+    const existingKeys = cycles.map(c => `${c.start_date?.slice(0,4)}-Q${Math.ceil(parseInt(c.start_date?.slice(5,7) || '1') / 3)}`);
+    for (let i = 0; i < 12; i++) {
+      const key = `${nextY}-Q${nextQ}`;
+      if (!existingKeys.includes(key)) break;
+      nextQ++;
+      if (nextQ > 4) { nextQ = 1; nextY++; }
+    }
+    setSeasonYear(nextY);
+    setSeasonQuarter(nextQ);
+    setSeasonLabel(getAutoLabel(nextY, nextQ));
+    setIsSeasonModalOpen(true);
   };
 
-  const handleEditCycle = async () => {
+  const openEditSeason = () => {
     if (!activeCycle) return;
-    const newLabel = prompt('시즌 이름', activeCycle.label);
-    if (!newLabel) return;
-    await supabase.from('cycles').update({ label: newLabel }).eq('id', activeCycle.id);
+    setEditingCycleId(activeCycle.id);
+    const startMonth = parseInt(activeCycle.start_date?.slice(5,7) || '1');
+    const q = Math.ceil(startMonth / 3);
+    const y = parseInt(activeCycle.start_date?.slice(0,4) || String(new Date().getFullYear()));
+    setSeasonYear(y);
+    setSeasonQuarter(q);
+    setSeasonLabel(activeCycle.label);
+    setIsSeasonModalOpen(true);
+  };
+
+  const handleSaveSeason = async () => {
+    const qi = quarterInfo[seasonQuarter];
+    const startDate = `${seasonYear}${qi.start}`;
+    const endDate = `${seasonYear}${qi.end}`;
+
+    if (editingCycleId) {
+      // Update existing
+      await supabase.from('cycles').update({ label: seasonLabel, start_date: startDate, end_date: endDate }).eq('id', editingCycleId);
+    } else {
+      // Create new
+      const newCycle = { id: 'cycle-' + Date.now(), label: seasonLabel, start_date: startDate, end_date: endDate, status: 'draft' };
+      await supabase.from('cycles').insert(newCycle);
+      setActiveId(newCycle.id);
+    }
+    setIsSeasonModalOpen(false);
     await loadData();
   };
 
   const handleDeleteCycle = async () => {
-    if (!activeCycle || !confirm(`'${activeCycle.label}' 시즌을 정말 삭제하시겠습니까?`)) return;
+    if (!activeCycle || !confirm(`'${activeCycle.label}' 시즌을 정말 삭제하시겠습니까?\n해당 시즌의 도서도 모두 삭제됩니다.`)) return;
+    // Delete books in this cycle first
+    await supabase.from('books').delete().eq('cycle_id', activeCycle.id);
     await supabase.from('cycles').delete().eq('id', activeCycle.id);
     setActiveId(null);
     await loadData();
@@ -101,12 +157,10 @@ export default function ContentManager() {
   const resetData = async () => {
     if (confirm('기본 예시 데이터를 다시 불러오시겠습니까? 기존 데이터는 모두 지워지고 초기화됩니다.')) {
       setLoading(true);
-      // Delete all existing
       for (const c of cycles) {
+        await supabase.from('books').delete().eq('cycle_id', c.id);
         await supabase.from('cycles').delete().eq('id', c.id);
       }
-      
-      // Insert seeds
       for (const c of SEED_CYCLES) {
         await supabase.from('cycles').insert({ id: c.id, label: c.label, start_date: c.start_date, end_date: c.end_date, status: c.status });
         if (c.books.length > 0) {
@@ -127,7 +181,6 @@ export default function ContentManager() {
   };
 
   const saveBook = async (book: any) => {
-    // Remove tagsStr which is only used for the UI form
     const payload = { ...book };
     delete payload.tagsStr;
     
@@ -149,12 +202,10 @@ export default function ContentManager() {
     const books = [...activeCycle.books];
     if (index + direction < 0 || index + direction >= books.length) return;
     
-    // Swap
     const temp = books[index];
     books[index] = books[index + direction];
     books[index + direction] = temp;
     
-    // Update order_idx for all books in cycle
     setLoading(true);
     for (let i = 0; i < books.length; i++) {
       await supabase.from('books').update({ order_idx: i }).eq('id', books[i].id);
@@ -168,17 +219,26 @@ export default function ContentManager() {
     return <span style={{ background: colorMap[status] || '#ccc', color: '#fff', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px' }}>{map[status] || status}</span>;
   };
 
+  const getDuration = (start: string, end: string) => {
+    if (!start || !end) return '';
+    const s = new Date(start);
+    const e = new Date(end);
+    const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1;
+    return `${months}개월`;
+  };
+
   if (loading && cycles.length === 0) return <div style={{ padding: '40px', textAlign: 'center' }}>데이터베이스 불러오는 중...</div>;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: '32px', padding: '20px', background: '#faf8f4', minHeight: '800px', borderRadius: '8px', border: '1px solid #e5dfd2' }}>
+    <>
+    <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '32px', padding: '20px', background: '#faf8f4', minHeight: '800px', borderRadius: '8px', border: '1px solid #e5dfd2' }}>
       {/* Sidebar */}
       <aside style={{ borderRight: '1px solid #e5dfd2', paddingRight: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1a1815' }}>시즌</h3>
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1a1815' }}>시즌 (3개월)</h3>
           <div>
             <button onClick={resetData} style={{ fontSize: '0.75rem', padding: '4px 8px', background: '#e5e7eb', border: 'none', borderRadius: '4px', cursor: 'pointer', marginRight: '6px' }}>초기화</button>
-            <button onClick={handleAddCycle} style={{ fontSize: '1rem', padding: '2px 8px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>+</button>
+            <button onClick={openCreateSeason} style={{ fontSize: '1rem', padding: '2px 8px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>+</button>
           </div>
         </div>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -188,8 +248,11 @@ export default function ContentManager() {
               onClick={() => setActiveId(c.id)}
               style={{ padding: '12px', background: activeId === c.id ? '#f3ede2' : 'transparent', borderRadius: '6px', cursor: 'pointer', marginBottom: '8px', border: activeId === c.id ? '1px solid #cfc8b8' : '1px solid transparent' }}
             >
-              <div style={{ fontWeight: 600, color: '#1a1815', marginBottom: '4px' }}>{c.label} {renderStatus(c.status)}</div>
-              <div style={{ fontSize: '0.75rem', color: '#8a8478' }}>도서 {c.books?.length || 0}권 · {c.start_date} ~ {c.end_date}</div>
+              <div style={{ fontWeight: 600, color: '#1a1815', marginBottom: '4px', fontSize: '0.92rem' }}>{c.label} {renderStatus(c.status)}</div>
+              <div style={{ fontSize: '0.72rem', color: '#8a8478' }}>
+                도서 {c.books?.length || 0}권 · {getDuration(c.start_date, c.end_date)}
+              </div>
+              <div style={{ fontSize: '0.68rem', color: '#b5b0a8', marginTop: '2px' }}>{c.start_date} ~ {c.end_date}</div>
             </li>
           ))}
         </ul>
@@ -198,14 +261,19 @@ export default function ContentManager() {
       {/* Main Content */}
       <main>
         {!activeCycle ? (
-          <div style={{ textAlign: 'center', padding: '100px 0', color: '#8a8478' }}>시즌을 선택하세요</div>
+          <div style={{ textAlign: 'center', padding: '100px 0', color: '#8a8478' }}>
+            <p style={{ fontSize: '1.1rem', marginBottom: '16px' }}>시즌을 선택하거나 새로 추가하세요</p>
+            <button onClick={openCreateSeason} style={{ padding: '12px 28px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem' }}>+ 새 시즌 추가</button>
+          </div>
         ) : (
           <div>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #e5dfd2', paddingBottom: '20px', marginBottom: '24px' }}>
               <div>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 8px 0', color: '#1a1815' }}>{activeCycle.label}</h2>
-                <div style={{ fontSize: '0.85rem', color: '#8a8478' }}>{activeCycle.start_date} ~ {activeCycle.end_date} · 상태: <strong>{({active:'운영중',archived:'종료',draft:'준비중'} as any)[activeCycle.status]}</strong></div>
+                <div style={{ fontSize: '0.85rem', color: '#8a8478' }}>
+                  {activeCycle.start_date} ~ {activeCycle.end_date} ({getDuration(activeCycle.start_date, activeCycle.end_date)}) · 상태: <strong>{({active:'운영중',archived:'종료',draft:'준비중'} as any)[activeCycle.status]}</strong>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <select value={activeCycle.status} onChange={handleStatusChange} style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #cfc8b8' }}>
@@ -213,7 +281,7 @@ export default function ContentManager() {
                   <option value="active">운영중</option>
                   <option value="archived">종료</option>
                 </select>
-                <button onClick={handleEditCycle} style={{ padding: '6px 12px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: 'pointer' }}>시즌 수정</button>
+                <button onClick={openEditSeason} style={{ padding: '6px 12px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: 'pointer' }}>시즌 수정</button>
                 <button onClick={handleDeleteCycle} style={{ padding: '6px 12px', background: '#fff', color: '#c0392b', border: '1px solid #f5c6cb', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>
               </div>
             </div>
@@ -263,6 +331,58 @@ export default function ContentManager() {
         )}
       </main>
     </div>
+
+    {/* SEASON CREATE/EDIT MODAL */}
+    {isSeasonModalOpen && (
+      <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setIsSeasonModalOpen(false); }}>
+        <div className="modal" style={{ width: 'min(520px, 92vw)' }}>
+          <button className="modal-close" onClick={() => setIsSeasonModalOpen(false)}>✕</button>
+          <h3>{editingCycleId ? '시즌 정보 수정' : '새 시즌 추가 (3개월 단위)'}</h3>
+          <p className="modal-sub">3개월 단위로 운영되는 시즌을 설정합니다.</p>
+
+          {/* Year & Quarter Selection */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            <div className="form-field">
+              <label>연도</label>
+              <select value={seasonYear} onChange={(e) => setSeasonYear(parseInt(e.target.value))} style={{ width: '100%', padding: '12px', border: '1.5px solid var(--border)', borderRadius: '12px', outline: 'none', background: '#fff', fontSize: '0.92rem' }}>
+                {[2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}년</option>)}
+              </select>
+            </div>
+            <div className="form-field">
+              <label>분기 (3개월)</label>
+              <select value={seasonQuarter} onChange={(e) => setSeasonQuarter(parseInt(e.target.value))} style={{ width: '100%', padding: '12px', border: '1.5px solid var(--border)', borderRadius: '12px', outline: 'none', background: '#fff', fontSize: '0.92rem' }}>
+                <option value={1}>시즌1 (1월~3월)</option>
+                <option value={2}>시즌2 (4월~6월)</option>
+                <option value={3}>시즌3 (7월~9월)</option>
+                <option value={4}>시즌4 (10월~12월)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div style={{ background: '#faf8f5', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 600 }}>자동 생성 정보</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ color: 'var(--text-muted)' }}>운영 기간</span>
+              <span style={{ fontWeight: 600 }}>{seasonYear}{quarterInfo[seasonQuarter].start} ~ {seasonYear}{quarterInfo[seasonQuarter].end}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', padding: '6px 0' }}>
+              <span style={{ color: 'var(--text-muted)' }}>기간</span>
+              <span style={{ fontWeight: 600, color: 'var(--accent)' }}>3개월</span>
+            </div>
+          </div>
+
+          {/* Season Label */}
+          <div className="form-field">
+            <label>시즌 이름</label>
+            <input type="text" value={seasonLabel} onChange={(e) => setSeasonLabel(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1.5px solid var(--border)', fontSize: '0.92rem', fontFamily: 'var(--sans)', outline: 'none', background: 'var(--bg)', color: 'var(--text)' }} />
+          </div>
+
+          <button className="modal-btn" onClick={handleSaveSeason} style={{ marginTop: '16px' }}>{editingCycleId ? '시즌 수정 완료' : '시즌 추가'}</button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
