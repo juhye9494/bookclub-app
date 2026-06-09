@@ -229,8 +229,9 @@ export default function Home() {
                   <Link href="/books" className="see-more-btn">
                     전체 도서 보러가기 →
                   </Link>
-                  <p style={{ marginTop: '16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    총 {books.length}권의 큐레이션 도서 중 3권을 자유롭게 선택하세요
+                  <p style={{ marginTop: '16px', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.7, textAlign: 'center' }}>
+                    3개월 동안 3권의 도서를 자유롭게 선택하세요<br />
+                    <span style={{ fontSize: '0.78rem' }}>(신규 도서는 매월 초 업데이트 됩니다)</span>
                   </p>
                 </div>
               </div>
