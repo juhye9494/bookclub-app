@@ -124,8 +124,8 @@ export default function Header() {
         }
       `}</style>
       <nav id="main-nav" className={scrolled ? 'scrolled' : ''}>
-        <Link href="/" style={{ fontFamily: 'var(--serif)', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', textDecoration: 'none', color: 'var(--text)' }}>
-          <img src="/logo.png" alt="한경 언더라인 독서클럽" style={{ height: '19px' }} />
+        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+          <img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '22px', display: 'block' }} />
         </Link>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <Link href="/books" className="nav-link">도서 선택</Link>
@@ -150,7 +150,7 @@ export default function Header() {
       <div className={`modal-overlay ${isLoginOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsLoginOpen(false); }}>
         <div className="modal">
           <button className="modal-close" onClick={() => setIsLoginOpen(false)}>✕</button>
-          <div className="modal-logo"><img src="/logo.png" alt="한경 언더라인 독서클럽" className="brand-logo" /></div>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '24px' }} /></div>
           <h3>{isLoginMode ? '로그인' : '회원가입'}</h3>
           <p className="modal-sub">배송을 위해 {isLoginMode ? '로그인이' : '회원가입이'} 필요합니다.</p>
           <div className="form-field">

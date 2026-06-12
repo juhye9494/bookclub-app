@@ -12,7 +12,7 @@ export default function Footer() {
       <footer>
         <div className="footer-grid">
           <div>
-            <div className="footer-logo"><img src="/logo.png" alt="한경 언더라인 독서클럽" className="brand-logo" /></div>
+            <div className="footer-logo"><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '18px', opacity: 0.5, display: 'block' }} /></div>
           </div>
           <div className="footer-company" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div><strong>상호</strong>(주)한경매거진앤북</div>
