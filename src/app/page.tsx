@@ -357,6 +357,30 @@ export default function Home() {
             <Link href="/books" className="plan-btn" style={{ marginTop: '24px', display: 'inline-block', textDecoration: 'none', textAlign: 'center' }}>도서 선택하고 구독 신청하기</Link>
 
           </div>
+
+          {/* 유의사항 */}
+          <div style={{ marginTop: '36px', padding: '28px 32px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', textAlign: 'left' }}>
+            <p style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              ⓘ 유의사항
+            </p>
+            <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.85, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <p>※ 한경 언더라인 독서클럽은 3개월 단위의 시즌제 멤버십 서비스로 운영됩니다.</p>
+              <p>※ 구독 문의 : 이메일 hankbp@naver.com (운영시간 10:00 ~ 16:00, 주말·공휴일·점심시간 제외)</p>
+              
+              <p style={{ marginTop: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '14px' }}>
+                ── 중도해약 및 환불 안내 ──
+              </p>
+              <p><strong style={{ color: 'rgba(255,255,255,0.55)' }}>청약철회 (전액 환불):</strong> 결제일로부터 7일 이내에 요청 시 전액 환불이 가능합니다. 단, 지류 도서 및 웰컴굿즈가 이미 발송되었거나 e-book 등 디지털 콘텐츠를 다운로드·열람한 경우에는 청약철회가 제한될 수 있습니다.</p>
+              <p><strong style={{ color: 'rgba(255,255,255,0.55)' }}>중도 해지 환불 공식:</strong> 결제 개시 후 중도 해지 시에는 총 결제금액에서 이미 제공된 리워드의 실제 판매가와 발생한 배송비를 공제한 후 차액을 환불해 드립니다.</p>
+              <p style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', fontWeight: 500, color: 'rgba(255,255,255,0.5)' }}>
+                환불금액 = 총 결제금액 - 기제공 혜택 상당액(지류도서/웰컴굿즈/e-book 등) - 발생 배송비
+              </p>
+              <p>차감 금액의 총합이 결제 금액을 초과하는 경우 추가 비용은 청구되지 않으며 환불 금액은 없는 것으로 합니다.</p>
+              <p><strong style={{ color: 'rgba(255,255,255,0.55)' }}>디지털 콘텐츠 기준:</strong> e-book 및 PDF 다운로드 또는 열람이 개시된 경우 해당 콘텐츠는 이미 이용된 것으로 간주하여 환불 금액 산정 시 정가 차감됩니다.</p>
+              <p><strong style={{ color: 'rgba(255,255,255,0.55)' }}>신용카드 결제 시:</strong> 환불은 카드취소로만 가능하며, 카드 결제 요금을 부분 취소하기 어려운 경우는 전액 취소 후 차액 납입을 요청할 수 있습니다.</p>
+            </div>
+          </div>
+
         </div>
       </section>
     </>
