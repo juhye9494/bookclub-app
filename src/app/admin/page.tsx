@@ -77,12 +77,12 @@ export default function AdminPage() {
     if (orders.length === 0) return;
     
     // CSV 헤더
-    const headers = ['주문일자', '주문번호', '고객명', '연락처', '배송주소', '상태', '도서1', '도서2', '도서3'];
+    const headers = ['주문일자', '주문번호', '고객명', '연락처', '배송주소', '상태', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3'];
     
     // CSV 데이터 행 만들기
     const rows = orders.map(order => {
       const date = new Date(order.created_at).toLocaleDateString();
-      const books = order.selected_books.map((b: any) => b.title);
+      const books = order.selected_books || [];
       
       return [
         date,
@@ -91,9 +91,12 @@ export default function AdminPage() {
         order.user_phone,
         `"${order.user_address}"`, // 주소에 쉼표가 있을 수 있으므로 따옴표로 감쌈
         order.order_status,
-        books[0] || '',
-        books[1] || '',
-        books[2] || ''
+        books[0]?.title || '',
+        books[0]?.isbn || '',
+        books[1]?.title || '',
+        books[1]?.isbn || '',
+        books[2]?.title || '',
+        books[2]?.isbn || ''
       ].join(',');
     });
 

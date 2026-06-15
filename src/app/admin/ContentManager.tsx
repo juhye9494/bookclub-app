@@ -456,6 +456,10 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
         </div>
       </div>
       <div style={{ marginBottom: '12px' }}>
+        <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>📦 ISBN <span style={{ color: '#8a8478', fontWeight: 400 }}>(발송 관리용 · 독자에게 미노출)</span></label>
+        <input name="isbn" value={formData.isbn || ''} onChange={handleChange} placeholder="978-89-0000-000-0" style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', fontFamily: 'monospace' }} />
+      </div>
+      <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>태그 (쉼표로 구분)</label>
         <input name="tagsStr" value={formData.tagsStr} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
       </div>
