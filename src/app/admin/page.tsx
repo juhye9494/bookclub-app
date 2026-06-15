@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import ContentManager from './ContentManager';
 import EventManager from './EventManager';
 import InsightManager from './InsightManager';
+import MembersManager from './MembersManager';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -237,10 +238,7 @@ export default function AdminPage() {
 
         {/* TAB 3: MEMBERS */}
         {activeTab === 'members' && (
-          <div style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-            <h2 style={{ fontSize: '1.2rem', marginBottom: '12px', color: '#111' }}>회원 관리 기능</h2>
-            <p>이곳에 회원들의 기본 정보(가입일자, 이메일, 마케팅 수신 동의 여부 등)가 표시될 예정입니다.<br/>현재 수파베이스 Authentication 대시보드에서 직접 회원을 관리하실 수 있습니다.</p>
-          </div>
+          <MembersManager />
         )}
       </main>
     </div>
