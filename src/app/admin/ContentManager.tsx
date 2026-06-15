@@ -289,7 +289,7 @@ export default function ContentManager() {
             {/* Books Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '1.2rem', margin: 0 }}>도서 목록 <span style={{ color: '#8a8478', fontSize: '1rem', fontWeight: 400 }}>{activeCycle.books?.length || 0}권</span></h3>
-              <button onClick={() => { setIsCreatingBook(true); setEditingBook({ title:'', author:'', genre:'', cover:'', tags:[], description:'', lecture:null, ebook_url:'' }); }} style={{ padding: '8px 16px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>+ 도서 추가</button>
+              <button onClick={() => { setIsCreatingBook(true); setEditingBook({ title:'', author:'', genre:'', cover:'', tags:[], description:'', lecture:null }); }} style={{ padding: '8px 16px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>+ 도서 추가</button>
             </div>
 
             {/* Books List */}
@@ -454,10 +454,6 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
             <input name="bgDark" value={formData.bgDark || '#121931'} onChange={handleChange} placeholder="#HEX" style={{ flex: 1, padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', textTransform: 'uppercase' }} />
           </div>
         </div>
-      </div>
-      <div style={{ marginBottom: '12px' }}>
-        <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>📖 E북 링크 URL <span style={{ color: '#8a8478', fontWeight: 400 }}>(비워두면 버튼 숨김)</span></label>
-        <input name="ebook_url" value={formData.ebook_url || ''} onChange={handleChange} placeholder="https://..." style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
       </div>
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>태그 (쉼표로 구분)</label>

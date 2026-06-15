@@ -206,17 +206,6 @@ export default function BooksPage() {
                 <div className="plan-row"><span className="l">구독권</span><span className="r">3개월권</span></div>
                 <div className="plan-row"><span className="l">도서 선택</span><span className="r">3개월간 3권</span></div>
                 <div className="plan-row"><span className="l">구독 금액</span><span className="r" style={{ color: 'var(--accent)' }}>45,000원</span></div>
-                {activeBook.ebook_url ? (
-                  <a href={activeBook.ebook_url} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'block', width: '100%', marginTop: '18px', padding: '13px', borderRadius: '100px', border: '1.5px solid var(--accent)', background: 'transparent', color: 'var(--accent)', fontSize: '0.93rem', fontWeight: 600, fontFamily: 'var(--sans)', textAlign: 'center', textDecoration: 'none', transition: 'background 0.2s, color 0.2s', cursor: 'pointer' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--accent)'; }}
-                  >📖 E북 보기</a>
-                ) : (
-                  <button disabled
-                    style={{ display: 'block', width: '100%', marginTop: '18px', padding: '13px', borderRadius: '100px', border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.93rem', fontWeight: 600, fontFamily: 'var(--sans)', textAlign: 'center', cursor: 'not-allowed', opacity: 0.6 }}
-                  >📖 E북 준비중</button>
-                )}
                 <button className={`dv-add-btn ${detailIdx !== null && selected.has(detailIdx) ? 'added' : ''}`} onClick={() => detailIdx !== null && toggleBook(detailIdx)}>
                   {detailIdx !== null && selected.has(detailIdx) ? '✓ 담겼어요' : '+ 내 목록에 담기'}
                 </button>
