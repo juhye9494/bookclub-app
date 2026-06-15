@@ -24,7 +24,8 @@ export default function AdminPage() {
       }
 
       // 관리자 이메일 확인
-      if (session.user.email !== 'xn940@naver.com') {
+      const adminEmails = ['xn940@naver.com', 'ess0317@hankyung.com'];
+      if (!adminEmails.includes(session.user.email || '')) {
         alert("접근 권한이 없습니다. 관리자 계정으로 로그인해주세요.");
         router.push('/');
         return;
@@ -47,8 +48,9 @@ export default function AdminPage() {
     checkAdminAndFetchData();
 
     // Listen for auth state changes (e.g. logging out from the global header)
+    const adminEmails = ['xn940@naver.com', 'ess0317@hankyung.com'];
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session || session.user?.email !== 'xn940@naver.com') {
+      if (event === 'SIGNED_OUT' || !session || !adminEmails.includes(session.user?.email || '')) {
         router.push('/');
       }
     });

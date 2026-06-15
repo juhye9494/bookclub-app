@@ -19,6 +19,8 @@ export default function Header() {
   const [detailAddress, setDetailAddress] = useState('');
   const [zonecode, setZonecode] = useState('');
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
+  const [isResetMode, setIsResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -75,6 +77,17 @@ export default function Header() {
       setIsLoginOpen(false);
       window.dispatchEvent(new CustomEvent('auth-success'));
     }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) { alert('이메일을 입력해주세요.'); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`
+    });
+    if (error) { alert('비밀번호 재설정 메일 발송 실패: ' + error.message); return; }
+    alert('비밀번호 재설정 링크가 이메일로 발송되었습니다.\n이메일을 확인해주세요.');
+    setIsResetMode(false);
+    setResetEmail('');
   };
 
   return (
@@ -184,11 +197,34 @@ export default function Header() {
             </>
           )}
           <button className="modal-btn" onClick={handleAuth}>{isLoginMode ? '로그인하기' : '가입하기'}</button>
+          {isLoginMode && (
+            <p style={{ textAlign: 'center', margin: '12px 0 0', fontSize: '0.82rem' }}>
+              <span style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }} onClick={() => { setIsResetMode(true); setResetEmail(email); }}>비밀번호를 잊으셨나요?</span>
+            </p>
+          )}
           <p className="modal-divider">
             {isLoginMode ? '계정이 없으신가요? ' : '이미 계정이 있으신가요? '}
             <span className="modal-link" style={{ cursor: 'pointer' }} onClick={() => setIsLoginMode(!isLoginMode)}>
               {isLoginMode ? '회원가입' : '로그인'}
             </span>
+          </p>
+        </div>
+      </div>
+
+      {/* PASSWORD RESET MODAL */}
+      <div className={`modal-overlay ${isResetMode ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsResetMode(false); }}>
+        <div className="modal">
+          <button className="modal-close" onClick={() => setIsResetMode(false)}>✕</button>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '24px' }} /></div>
+          <h3>비밀번호 재설정</h3>
+          <p className="modal-sub">가입 시 사용한 이메일을 입력하시면<br/>비밀번호 재설정 링크를 보내드립니다.</p>
+          <div className="form-field">
+            <label>이메일</label>
+            <input type="email" placeholder="example@email.com" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} />
+          </div>
+          <button className="modal-btn" onClick={handleResetPassword}>재설정 링크 발송</button>
+          <p className="modal-divider">
+            <span className="modal-link" style={{ cursor: 'pointer' }} onClick={() => { setIsResetMode(false); setIsLoginOpen(true); setIsLoginMode(true); }}>로그인으로 돌아가기</span>
           </p>
         </div>
       </div>
