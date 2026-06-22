@@ -15,6 +15,7 @@ export default function BooksPage() {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const scrollPosRef = useRef<number>(0);
+  const [agreeTerms, setAgreeTerms] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -318,11 +319,11 @@ export default function BooksPage() {
 
       {/* PAYMENT MODAL */}
       <div className={`modal-overlay ${isPaymentOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsPaymentOpen(false); }}>
-        <div className="modal">
+        <div className="modal" style={{ maxHeight: '85vh', overflowY: 'auto' }}>
           <button className="modal-close" onClick={() => setIsPaymentOpen(false)}>✕</button>
-          <div className="modal-logo"><img src="/logo.png" alt="한경 언더라인 독서클럽" className="brand-logo" /></div>
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '22px' }} /></div>
           <h3>구독 신청</h3>
-          <p className="modal-sub">선택하신 3권이 담겼습니다. 구독을 시작하시면 배송됩니다.</p>
+          <p className="modal-sub">선택하신 3권이 담겼습니다.</p>
           <div className="selected-books-preview">
             {Array.from(selected).map((idx) => books[idx] && (
               <div key={idx} className="preview-book" style={{ background: books[idx].bg }}>
@@ -337,7 +338,45 @@ export default function BooksPage() {
             <div className="plan-row"><span className="label">저자 강연권</span><span className="value">포함</span></div>
             <div className="plan-row total"><span className="label">합계</span><span className="value">45,000원</span></div>
           </div>
-          <button className="modal-btn" onClick={handlePayment} style={{ marginTop: '16px' }}>45,000원 결제하기</button>
+
+          {/* 배송/환불 안내 */}
+          <div style={{ margin: '16px 0', padding: '14px 16px', background: '#f9fafb', borderRadius: '10px', fontSize: '0.78rem', color: '#6b7280', lineHeight: 1.7 }}>
+            <p style={{ fontWeight: 600, color: '#374151', marginBottom: '6px' }}>📦 배송 안내</p>
+            <p>• 결제 완료 후 영업일 기준 3~5일 이내 발송됩니다.</p>
+            <p>• 웰컴 굿즈는 최초 1회 무료 배송됩니다.</p>
+            <p style={{ fontWeight: 600, color: '#374151', marginTop: '10px', marginBottom: '6px' }}>↩️ 환불 안내</p>
+            <p>• 결제일로부터 7일 이내 청약철회 시 전액 환불 가능</p>
+            <p>• 도서/굿즈 발송 후에는 제공된 혜택 차감 후 환불</p>
+            <p>• 환불 문의: hankbp@naver.com</p>
+          </div>
+
+          {/* 약관 동의 */}
+          <div style={{ margin: '12px 0 16px' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', color: '#374151', lineHeight: 1.5 }}>
+              <input
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                style={{ marginTop: '3px', accentColor: 'var(--accent)', width: '16px', height: '16px', flexShrink: 0 }}
+              />
+              <span>
+                <strong style={{ color: 'var(--text)' }}>[필수]</strong>{' '}
+                <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={(e) => { e.preventDefault(); window.open('javascript:void(0)'); /* Footer의 약관 참조 */ }}>이용약관</span>,{' '}
+                <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>개인정보처리방침</span>,{' '}
+                <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>환불규정</span>에 동의합니다.
+              </span>
+            </label>
+          </div>
+
+          <button
+            className="modal-btn"
+            onClick={handlePayment}
+            disabled={!agreeTerms}
+            style={{ marginTop: '4px', opacity: agreeTerms ? 1 : 0.5, cursor: agreeTerms ? 'pointer' : 'not-allowed' }}
+          >
+            45,000원 결제하기
+          </button>
+          {!agreeTerms && <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#ef4444', marginTop: '8px' }}>약관에 동의해주세요.</p>}
         </div>
       </div>
     </div>
