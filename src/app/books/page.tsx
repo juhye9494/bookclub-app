@@ -231,7 +231,7 @@ export default function BooksPage() {
         </div>
       ) : (
         /* ===== BOOK LIST VIEW ===== */
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '48px 5vw 80px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 5vw 80px' }}>
           {/* Page Header */}
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <p style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.14em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '12px' }}>BOOK CURATION</p>
@@ -282,7 +282,7 @@ export default function BooksPage() {
               <h3 style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem', fontWeight: 700, textAlign: 'left', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
                 도서 큐레이션 풀
               </h3>
-              <div className="book-grid" id="bookShelf" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '28px 20px', marginBottom: '40px' }}>
+              <div className="book-grid" id="bookShelf" style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '28px 20px', marginBottom: '40px' }}>
                 {otherBooks.map(({ book, originalIdx }) => (
                   <div key={book.id} className={`book-card ${selected.has(originalIdx) ? 'selected' : ''}`}>
                     <div className="book-card-inner">

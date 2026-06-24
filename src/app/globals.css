@@ -372,9 +372,13 @@ body {
     .plan-row.total .label { font-weight: 700; font-size: 0.9rem; color: var(--text); }
     .plan-row.total .value { font-size: 1.1rem; color: var(--accent); }
 
+    @media (max-width: 900px) {
+      #bookShelf { grid-template-columns: repeat(3, 1fr) !important; }
+    }
     @media (max-width: 520px) {
       .book-grid { gap: 12px; }
       .modal { padding: 36px 24px; }
+      #bookShelf { grid-template-columns: repeat(2, 1fr) !important; }
     }
 
     /* SECTIONS COMMON */
