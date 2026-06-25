@@ -3,12 +3,31 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import DaumPostcodeEmbed from 'react-daum-postcode';
+
+type TabType = 'orders' | 'profile';
 
 export default function MyPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('orders');
+
+  // Profile edit state
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [zonecode, setZonecode] = useState('');
+  const [address, setAddress] = useState('');
+  const [detailAddress, setDetailAddress] = useState('');
+  const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPw, setChangingPw] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -20,73 +39,257 @@ export default function MyPage() {
       }
       setUser(session.user);
 
-      const { data, error } = await supabase
+      // 프로필 정보 초기화
+      const meta = session.user.user_metadata || {};
+      setName(meta.name || '');
+      setPhone(meta.phone || '');
+      const fullAddress = meta.address || '';
+      // [우편번호] 주소 상세주소 형태 파싱
+      const zipMatch = fullAddress.match(/^\[(\d+)\]\s*/);
+      if (zipMatch) {
+        setZonecode(zipMatch[1]);
+        const rest = fullAddress.replace(zipMatch[0], '');
+        // 상세주소는 마지막 공백 기준으로 분리 시도
+        const lastSpaceIdx = rest.lastIndexOf(' ');
+        if (lastSpaceIdx > 10) {
+          setAddress(rest.substring(0, lastSpaceIdx));
+          setDetailAddress(rest.substring(lastSpaceIdx + 1));
+        } else {
+          setAddress(rest);
+        }
+      } else {
+        setAddress(fullAddress);
+      }
+
+      const { data } = await supabase
         .from('orders')
         .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });
 
-      if (data) {
-        setOrders(data);
-      }
+      if (data) setOrders(data);
       setLoading(false);
     }
     fetchData();
   }, [router]);
 
-  if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>로딩중...</div>;
+  const handleProfileSave = async () => {
+    if (!name || !phone) { alert('이름과 연락처를 입력해주세요.'); return; }
+    setSaving(true);
+    const fullAddress = zonecode ? `[${zonecode}] ${address} ${detailAddress}`.trim() : `${address} ${detailAddress}`.trim();
+    const { error } = await supabase.auth.updateUser({
+      data: { name, phone, address: fullAddress }
+    });
+    setSaving(false);
+    if (error) { alert('프로필 수정 실패: ' + error.message); return; }
+    alert('프로필이 수정되었습니다.');
+  };
+
+  const handlePasswordChange = async () => {
+    if (!newPassword || !confirmPassword) { alert('새 비밀번호를 입력해주세요.'); return; }
+    if (newPassword !== confirmPassword) { alert('비밀번호가 일치하지 않습니다.'); return; }
+    if (newPassword.length < 6) { alert('비밀번호는 6자 이상이어야 합니다.'); return; }
+    setChangingPw(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPw(false);
+    if (error) { alert('비밀번호 변경 실패: ' + error.message); return; }
+    alert('비밀번호가 변경되었습니다.');
+    setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+  };
+
+  if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontFamily: 'var(--sans)' }}>로딩중...</div>;
+
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--sans)' };
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text)' };
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)' }}>
+      <main style={{ maxWidth: '800px', margin: '0 auto', padding: '96px 5vw 60px' }}>
+        {/* 헤더 */}
+        <div style={{ marginBottom: '8px' }}>
+          <h1 style={{ fontFamily: 'var(--serif)', fontSize: '2rem', marginBottom: '8px' }}>마이페이지</h1>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>{user?.email}</p>
+        </div>
 
-      <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '96px 5vw 60px' }}>
-        <h1 style={{ fontFamily: 'var(--serif)', fontSize: '2rem', marginBottom: '40px' }}>나의 구독 현황</h1>
+        {/* 탭 네비게이션 */}
+        <div style={{ display: 'flex', gap: '0', borderBottom: '2px solid var(--border)', marginBottom: '32px', marginTop: '24px' }}>
+          {([
+            { key: 'orders' as TabType, label: '📦 구독 내역' },
+            { key: 'profile' as TabType, label: '👤 내 정보 수정' },
+          ]).map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              style={{
+                padding: '14px 24px', fontSize: '0.9rem', fontWeight: activeTab === tab.key ? 700 : 500,
+                background: 'none', border: 'none', borderBottom: activeTab === tab.key ? '3px solid var(--accent)' : '3px solid transparent',
+                color: activeTab === tab.key ? 'var(--accent)' : 'var(--text-muted)',
+                cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'var(--sans)', marginBottom: '-2px'
+              }}
+            >{tab.label}</button>
+          ))}
+        </div>
 
-        {orders.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0', background: '#fff', borderRadius: '12px', border: '1px solid var(--border)' }}>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>아직 구독 내역이 없습니다.</p>
-            <Link href="/" style={{ padding: '12px 24px', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: '40px', fontWeight: 600 }}>구독 신청하러 가기</Link>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-            {orders.map((order, i) => (
-              <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '12px', padding: '30px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '20px', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>주문번호: {order.payment_order_id}</span>
-                    <h3 style={{ fontSize: '1.2rem', marginTop: '4px' }}>한경 언더라인 독서클럽 3개월권</h3>
-                  </div>
-                  <span style={{ padding: '6px 14px', background: order.order_status === '배송중' ? '#eef5ff' : 'var(--bg-warm)', color: order.order_status === '배송중' ? '#3b82f6' : 'var(--accent)', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700 }}>
-                    {order.order_status}
-                  </span>
-                </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <h4 style={{ fontSize: '0.95rem', marginBottom: '12px', color: 'var(--text-mid)' }}>선택한 도서 3권</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
-                    {order.selected_books.map((book: any, idx: number) => (
-                      <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <div style={{ width: '50px', height: '70px', background: book.img ? '#fff' : 'var(--bg-warm)', borderRadius: '4px', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border)' }}>
-                          {book.img ? <img src={book.img} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
-                        </div>
-                        <div>
-                          <p style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.3 }}>{book.title}</p>
-                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{book.author}</p>
-                        </div>
+        {/* 탭 1: 구독 내역 */}
+        {activeTab === 'orders' && (
+          <>
+            {orders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '80px 0', background: '#fff', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📚</div>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>아직 구독 내역이 없습니다.</p>
+                <Link href="/" style={{ padding: '12px 24px', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: '40px', fontWeight: 600 }}>구독 신청하러 가기</Link>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {orders.map((order) => (
+                  <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    {/* 주문 헤더 */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {new Date(order.created_at).toLocaleDateString('ko-KR')} · 주문번호: {order.payment_order_id}
+                        </span>
+                        <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>한경 언더라인 독서클럽 3개월권</h3>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <span style={{
+                        padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700,
+                        background: order.order_status === '배송완료' ? '#ecfdf5' : order.order_status === '배송중' ? '#eef5ff' : 'var(--bg-warm)',
+                        color: order.order_status === '배송완료' ? '#059669' : order.order_status === '배송중' ? '#3b82f6' : 'var(--accent)',
+                      }}>
+                        {order.order_status}
+                      </span>
+                    </div>
 
-                <div style={{ background: 'var(--bg-warm)', padding: '16px', borderRadius: '8px', fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-mid)' }}>
-                  <strong>배송 정보:</strong> {order.user_name} ({order.user_phone}) <br/>
-                  {order.user_address}
+                    {/* 선택 도서 */}
+                    <div style={{ marginBottom: '20px' }}>
+                      <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>선택 도서</h4>
+                      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                        {(order.selected_books || []).map((book: any, idx: number) => (
+                          <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 200px', minWidth: '180px' }}>
+                            <div style={{ width: '48px', height: '66px', background: '#f3f4f6', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border)' }}>
+                              {book.img || book.cover ? <img src={book.img || book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                            </div>
+                            <div>
+                              <p style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.3 }}>{book.title}</p>
+                              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '3px' }}>{book.author}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 배송 정보 */}
+                    <div style={{ background: '#f9fafb', padding: '14px 18px', borderRadius: '10px', fontSize: '0.84rem', lineHeight: 1.7, color: 'var(--text-mid)' }}>
+                      <strong>배송지:</strong> {order.user_name} ({order.user_phone}) <br/>
+                      {order.user_address}
+                    </div>
+
+                    {/* 결제 금액 */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', fontSize: '0.9rem' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>결제 금액&nbsp;&nbsp;</span>
+                      <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '1.05rem' }}>{(order.total_amount || 45000).toLocaleString()}원</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 탭 2: 내 정보 수정 */}
+        {activeTab === 'profile' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* 기본 정보 */}
+            <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '24px', color: 'var(--text)' }}>기본 정보</h3>
+              
+              <div style={{ marginBottom: '16px' }}>
+                <label style={labelStyle}>이메일</label>
+                <input value={user?.email || ''} disabled style={{ ...inputStyle, background: '#f5f5f5', color: '#999' }} />
+                <p style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '4px' }}>이메일은 변경할 수 없습니다.</p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div>
+                  <label style={labelStyle}>이름</label>
+                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="홍길동" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>연락처</label>
+                  <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000" style={inputStyle} />
                 </div>
               </div>
-            ))}
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>배송지 주소</label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input placeholder="우편번호" value={zonecode} readOnly style={{ ...inputStyle, flex: 1, background: '#f5f5f5' }} />
+                  <button type="button" onClick={() => setIsPostcodeOpen(true)}
+                    style={{ padding: '0 20px', background: '#333', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'var(--sans)', whiteSpace: 'nowrap', fontSize: '0.85rem', fontWeight: 600 }}>주소 찾기</button>
+                </div>
+                <input placeholder="기본 주소" value={address} readOnly style={{ ...inputStyle, marginBottom: '8px', background: '#f5f5f5' }} />
+                <input placeholder="상세 주소 (동, 호수 등)" value={detailAddress} onChange={(e) => setDetailAddress(e.target.value)} style={inputStyle} />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={handleProfileSave} disabled={saving}
+                  style={{ padding: '12px 32px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'var(--sans)' }}>
+                  {saving ? '저장 중...' : '프로필 저장'}
+                </button>
+              </div>
+            </div>
+
+            {/* 비밀번호 변경 */}
+            <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '24px', color: 'var(--text)' }}>비밀번호 변경</h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <label style={labelStyle}>새 비밀번호</label>
+                  <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="6자 이상" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>비밀번호 확인</label>
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="다시 입력" style={inputStyle} />
+                </div>
+              </div>
+              {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                <p style={{ fontSize: '0.78rem', color: '#ef4444', marginBottom: '12px' }}>⚠️ 비밀번호가 일치하지 않습니다.</p>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={handlePasswordChange} disabled={changingPw}
+                  style={{ padding: '12px 32px', background: '#333', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600, cursor: changingPw ? 'not-allowed' : 'pointer', opacity: changingPw ? 0.7 : 1, fontFamily: 'var(--sans)' }}>
+                  {changingPw ? '변경 중...' : '비밀번호 변경'}
+                </button>
+              </div>
+            </div>
+
+            {/* 고객센터 안내 */}
+            <div style={{ background: '#f9fafb', borderRadius: '16px', padding: '20px 24px', fontSize: '0.84rem', color: '#6b7280', lineHeight: 1.8 }}>
+              <p style={{ fontWeight: 600, color: '#374151', marginBottom: '4px' }}>문의 안내</p>
+              <p>이메일: hankbp@naver.com</p>
+              <p>전화: 02-360-4555</p>
+            </div>
           </div>
         )}
       </main>
+
+      {/* 우편번호 검색 모달 */}
+      {isPostcodeOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setIsPostcodeOpen(false); }}>
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', width: 'min(400px, 90vw)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>주소 검색</h3>
+              <button onClick={() => setIsPostcodeOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+            </div>
+            <DaumPostcodeEmbed onComplete={(data) => {
+              setZonecode(data.zonecode);
+              setAddress(data.address);
+              setIsPostcodeOpen(false);
+            }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
