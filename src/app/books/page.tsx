@@ -107,6 +107,7 @@ export default function BooksPage() {
   const openDetail = (idx: number) => {
     scrollPosRef.current = window.scrollY;
     setDetailIdx(idx); setIsDetailOpen(true);
+    window.history.pushState({ bookDetail: true }, '');
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
@@ -114,6 +115,18 @@ export default function BooksPage() {
     setIsDetailOpen(false);
     setTimeout(() => { window.scrollTo({ top: scrollPosRef.current, behavior: 'instant' }); }, 0);
   };
+
+  // 브라우저 뒤로가기 시 상세 뷰 닫기
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isDetailOpen) {
+        setIsDetailOpen(false);
+        setTimeout(() => { window.scrollTo({ top: scrollPosRef.current, behavior: 'instant' }); }, 0);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isDetailOpen]);
 
   const activeBook = detailIdx !== null ? books[detailIdx] : null;
 
@@ -259,9 +272,11 @@ export default function BooksPage() {
                     <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{recommendedBook.genre}</span>
                     <h3 style={{ fontFamily: 'var(--serif)', fontSize: '2.1rem', fontWeight: 700, marginBottom: '10px', color: '#fff', lineHeight: 1.3, cursor: 'pointer' }} onClick={() => openDetail(finalRecIdx)}>{recommendedBook.title}</h3>
                     <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.85)', marginBottom: '18px' }}>{recommendedBook.author}</p>
-                    <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: '1.8', marginBottom: '24px', wordBreak: 'keep-all', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical' as any }}>
-                      {(recommendedBook.desc || '').replace(/<[^>]*>/g, '').replace(/\n/g, ' ').substring(0, 200)}{(recommendedBook.desc || '').length > 200 ? '...' : ''}
-                    </p>
+                    <div style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: '1.8', marginBottom: '24px', wordBreak: 'keep-all', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical' as any }}>
+                      {(recommendedBook.desc || '').replace(/<[^>]*>/g, '').split('\n').filter((line: string) => line.trim()).slice(0, 5).map((line: string, i: number) => (
+                        <span key={i}>{line.trim()}{i < 4 && <br/>}</span>
+                      ))}
+                    </div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '28px' }}>
                       {recommendedBook.tags.map((t: string) => (
                         <span key={t} style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.12)', padding: '4px 12px', borderRadius: '20px', color: 'rgba(255,255,255,0.85)' }}>{t}</span>
