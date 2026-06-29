@@ -31,7 +31,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ClientLayout>{children}</ClientLayout>
-        <Script src="https://cdn.iamport.kr/v1/iamport.js" strategy="afterInteractive" />
+        <Script src="https://js.tosspayments.com/v2/standard" strategy="afterInteractive" />
       </body>
     </html>
   );

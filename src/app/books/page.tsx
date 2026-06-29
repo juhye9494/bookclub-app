@@ -33,27 +33,46 @@ export default function BooksPage() {
     };
   }, []);
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     try {
-      const { IMP } = window as any;
-      if (!IMP) { alert('결제 라이브러리가 아직 로드되지 않았습니다.'); return; }
-      const userCode = process.env.NEXT_PUBLIC_PORTONE_USER_CODE || 'imp31737754';
-      IMP.init(userCode);
-      IMP.request_pay({
-        pg: 'tosspayments', pay_method: 'card',
-        merchant_uid: `order_${new Date().getTime()}`,
-        name: '한경 언더라인 독서클럽 3개월권', amount: 45000,
-        buyer_email: user?.email || '', buyer_name: user?.user_metadata?.name || '구독자',
-        buyer_tel: user?.user_metadata?.phone || '', buyer_addr: user?.user_metadata?.address || '',
-        m_redirect_url: `${window.location.origin}/success`,
-      }, (rsp: any) => {
-        if (rsp.success) {
-          window.location.href = `/success?orderId=${rsp.merchant_uid}&amount=${rsp.paid_amount}&impUid=${rsp.imp_uid}`;
-        } else {
-          window.location.href = `/fail?code=${rsp.error_code || 'CANCEL'}&message=${encodeURIComponent(rsp.error_msg || '결제가 취소되었습니다.')}`;
-        }
+      const { loadTossPayments } = (window as any).TossPayments
+        ? { loadTossPayments: (window as any).TossPayments }
+        : await import('@tosspayments/tosspayments-sdk');
+      
+      // CDN 방식: window.TossPayments가 있으면 사용
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
+      
+      let tossPayments;
+      if (typeof (window as any).TossPayments !== 'undefined') {
+        // CDN 로드 방식
+        tossPayments = await (window as any).TossPayments(clientKey);
+      } else {
+        // npm 모듈 방식 fallback
+        tossPayments = await loadTossPayments(clientKey);
+      }
+      
+      const payment = tossPayments.payment({ customerKey: user?.id || 'ANONYMOUS' });
+      
+      await payment.requestPayment({
+        method: 'CARD',
+        amount: { currency: 'KRW', value: 45000 },
+        orderId: `order_${new Date().getTime()}`,
+        orderName: '한경 언더라인 독서클럽 3개월권',
+        successUrl: `${window.location.origin}/success`,
+        failUrl: `${window.location.origin}/fail`,
+        customerEmail: user?.email || '',
+        customerName: user?.user_metadata?.name || '구독자',
+        customerMobilePhone: (user?.user_metadata?.phone || '').replace(/-/g, ''),
       });
-    } catch (err) { console.error(err); alert('결제창을 띄우는 데 실패했습니다.'); }
+    } catch (err: any) {
+      // 사용자가 결제창을 닫은 경우 (PAY_PROCESS_CANCELED)
+      if (err?.code === 'PAY_PROCESS_CANCELED' || err?.code === 'USER_CANCEL') {
+        console.log('결제가 취소되었습니다.');
+        return;
+      }
+      console.error(err);
+      alert('결제창을 띄우는 데 실패했습니다.');
+    }
   };
 
   useEffect(() => {
