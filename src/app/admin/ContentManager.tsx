@@ -289,7 +289,7 @@ export default function ContentManager() {
             {/* Books Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '1.2rem', margin: 0 }}>도서 목록 <span style={{ color: '#8a8478', fontSize: '1rem', fontWeight: 400 }}>{activeCycle.books?.length || 0}권</span></h3>
-              <button onClick={() => { setIsCreatingBook(true); setEditingBook({ title:'', author:'', genre:'', cover:'', tags:[], description:'', lecture:null, ebook_url:'' }); }} style={{ padding: '8px 16px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>+ 도서 추가</button>
+              <button onClick={() => { setIsCreatingBook(true); setEditingBook({ title:'', author:'', genre:'', cover:'', tags:[], description:'', lecture:null }); }} style={{ padding: '8px 16px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>+ 도서 추가</button>
             </div>
 
             {/* Books List */}
@@ -387,22 +387,48 @@ export default function ContentManager() {
 }
 
 function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) => void, onCancel: () => void }) {
-  const [formData, setFormData] = useState({ ...book, tagsStr: (book.tags || []).join(', ') });
+  const DRAFT_KEY = 'bookEditDraft';
+  const GENRE_OPTIONS = ['경제·경영', '인문사회', '자기계발', '재테크', '소설', '예술', '건강'];
+
+  // 초기값: localStorage에 임시저장 데이터가 있으면 복원 여부 확인
+  const [formData, setFormData] = useState(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem(DRAFT_KEY) : null;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // 같은 도서를 편집 중이거나, 새로 만드는 중인지 확인
+        if ((!book.id && !parsed._id) || parsed._id === book.id) {
+          const useDraft = confirm('임시저장된 데이터가 있습니다. 불러올까요?\n\n취소를 누르면 새로 작성합니다.');
+          if (useDraft) return { ...parsed, tagsStr: parsed.tagsStr || (parsed.tags || []).join(', ') };
+        }
+      } catch {}
+    }
+    return { ...book, tagsStr: (book.tags || []).join(', ') };
+  });
 
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
     if (type === 'checkbox') {
-      setFormData({ ...formData, lecture: checked ? { desc: '', perks: [] } : null });
+      setFormData((prev: any) => ({ ...prev, lecture: checked ? { desc: '', perks: [] } : null }));
     } else if (name.startsWith('lecture.')) {
       const field = name.split('.')[1];
-      setFormData({ ...formData, lecture: { ...formData.lecture, [field]: value } });
+      setFormData((prev: any) => ({ ...prev, lecture: { ...prev.lecture, [field]: value } }));
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData((prev: any) => ({ ...prev, [name]: value }));
     }
   };
 
+  // 임시저장
+  const handleDraftSave = () => {
+    const draftData = { ...formData, _id: book.id || null };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+    alert('임시저장 완료! 다음에 이 폼을 열면 자동으로 복원됩니다.');
+  };
+
+  // 저장 시 임시저장 데이터 삭제
   const handleSubmit = () => {
     if (!formData.title || !formData.author) { alert('제목과 저자를 입력해주세요.'); return; }
+    localStorage.removeItem(DRAFT_KEY);
     onSave({
       ...formData,
       tags: formData.tagsStr.split(',').map((t: string) => t.trim()).filter(Boolean),
@@ -413,13 +439,29 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
     });
   };
 
+  // 취소 시 임시저장 데이터 삭제할지 확인
+  const handleCancel = () => {
+    const hasDraft = localStorage.getItem(DRAFT_KEY);
+    if (hasDraft) {
+      const keep = confirm('임시저장 데이터를 유지할까요?\n\n확인: 유지 / 취소: 삭제');
+      if (!keep) localStorage.removeItem(DRAFT_KEY);
+    }
+    onCancel();
+  };
+
   return (
     <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', border: '2px solid #1a1815' }}>
       <h4 style={{ margin: '0 0 16px 0', fontSize: '1.1rem' }}>도서 편집</h4>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
         <div><label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>제목 *</label><input name="title" value={formData.title} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} /></div>
         <div><label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>저자 *</label><input name="author" value={formData.author} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} /></div>
-        <div><label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>장르</label><input name="genre" value={formData.genre || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} /></div>
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>장르</label>
+          <select name="genre" value={formData.genre || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', background: '#fff', fontSize: '0.88rem', cursor: 'pointer' }}>
+            <option value="">분야 선택</option>
+            {GENRE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+          </select>
+        </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4px' }}>
             <label style={{ fontSize: '0.8rem' }}>표지 URL</label>
@@ -456,8 +498,8 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
         </div>
       </div>
       <div style={{ marginBottom: '12px' }}>
-        <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>📖 E북 링크 URL <span style={{ color: '#8a8478', fontWeight: 400 }}>(비워두면 버튼 숨김)</span></label>
-        <input name="ebook_url" value={formData.ebook_url || ''} onChange={handleChange} placeholder="https://..." style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
+        <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>📦 ISBN <span style={{ color: '#8a8478', fontWeight: 400 }}>(발송 관리용 · 독자에게 미노출)</span></label>
+        <input name="isbn" value={formData.isbn || ''} onChange={handleChange} placeholder="9788900000000" style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px', fontFamily: 'monospace' }} />
       </div>
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>태그 (쉼표로 구분)</label>
@@ -523,9 +565,11 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
         )}
       </div>
       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-        <button onClick={onCancel} style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: 'pointer' }}>취소</button>
+        <button onClick={handleCancel} style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: 'pointer' }}>취소</button>
+        <button onClick={handleDraftSave} style={{ padding: '8px 16px', background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>💾 임시저장</button>
         <button onClick={handleSubmit} style={{ padding: '8px 16px', background: '#1a1815', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>저장</button>
       </div>
     </div>
   );
 }
+

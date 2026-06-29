@@ -15,6 +15,7 @@ export default function BooksPage() {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const scrollPosRef = useRef<number>(0);
+  const [agreeTerms, setAgreeTerms] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -125,6 +126,7 @@ export default function BooksPage() {
   const openDetail = (idx: number) => {
     scrollPosRef.current = window.scrollY;
     setDetailIdx(idx); setIsDetailOpen(true);
+    window.history.pushState({ bookDetail: true }, '');
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
@@ -132,6 +134,18 @@ export default function BooksPage() {
     setIsDetailOpen(false);
     setTimeout(() => { window.scrollTo({ top: scrollPosRef.current, behavior: 'instant' }); }, 0);
   };
+
+  // 브라우저 뒤로가기 시 상세 뷰 닫기
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isDetailOpen) {
+        setIsDetailOpen(false);
+        setTimeout(() => { window.scrollTo({ top: scrollPosRef.current, behavior: 'instant' }); }, 0);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isDetailOpen]);
 
   const activeBook = detailIdx !== null ? books[detailIdx] : null;
 
@@ -225,17 +239,6 @@ export default function BooksPage() {
                 <div className="plan-row"><span className="l">구독권</span><span className="r">3개월권</span></div>
                 <div className="plan-row"><span className="l">도서 선택</span><span className="r">3개월간 3권</span></div>
                 <div className="plan-row"><span className="l">구독 금액</span><span className="r" style={{ color: 'var(--accent)' }}>45,000원</span></div>
-                {activeBook.ebook_url ? (
-                  <a href={activeBook.ebook_url} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'block', width: '100%', marginTop: '18px', padding: '13px', borderRadius: '100px', border: '1.5px solid var(--accent)', background: 'transparent', color: 'var(--accent)', fontSize: '0.93rem', fontWeight: 600, fontFamily: 'var(--sans)', textAlign: 'center', textDecoration: 'none', transition: 'background 0.2s, color 0.2s', cursor: 'pointer' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--accent)'; }}
-                  >📖 E북 보기</a>
-                ) : (
-                  <button disabled
-                    style={{ display: 'block', width: '100%', marginTop: '18px', padding: '13px', borderRadius: '100px', border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.93rem', fontWeight: 600, fontFamily: 'var(--sans)', textAlign: 'center', cursor: 'not-allowed', opacity: 0.6 }}
-                  >📖 E북 준비중</button>
-                )}
                 <button className={`dv-add-btn ${detailIdx !== null && selected.has(detailIdx) ? 'added' : ''}`} onClick={() => detailIdx !== null && toggleBook(detailIdx)}>
                   {detailIdx !== null && selected.has(detailIdx) ? '✓ 담겼어요' : '+ 내 목록에 담기'}
                 </button>
@@ -260,7 +263,7 @@ export default function BooksPage() {
         </div>
       ) : (
         /* ===== BOOK LIST VIEW ===== */
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '48px 5vw 80px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 5vw 80px' }}>
           {/* Page Header */}
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <p style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.14em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '12px' }}>BOOK CURATION</p>
@@ -278,16 +281,21 @@ export default function BooksPage() {
                   <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)', color: '#fff', fontSize: '0.75rem', fontWeight: 700, padding: '6px 16px', borderRadius: '30px', zIndex: 2, boxShadow: '0 4px 12px rgba(252,102,64,0.4)' }}>★ 이번 기수 대표 도서</div>
                   <div style={{ display: 'flex', justifyContent: 'center', zIndex: 1 }}>
                     <div style={{ perspective: '1000px' }}>
-                      <div className="dv-cover" style={{ cursor: 'pointer' }} onClick={() => openDetail(finalRecIdx)}>
-                        <img src={recommendedBook.img} alt={recommendedBook.title} />
+                      <div style={{ width: '220px', borderRadius: '4px 12px 12px 4px', flexShrink: 0, position: 'relative', overflow: 'hidden', boxShadow: '-6px 8px 32px rgba(0,0,0,0.35)', cursor: 'pointer' }} onClick={() => openDetail(finalRecIdx)}>
+                        <img src={recommendedBook.img} alt={recommendedBook.title} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                        <div style={{ content: "''", position: 'absolute', left: 0, top: 0, bottom: 0, width: '12px', background: 'rgba(0,0,0,0.2)' }} />
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', zIndex: 1 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', zIndex: 1, minWidth: 0 }}>
                     <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{recommendedBook.genre}</span>
                     <h3 style={{ fontFamily: 'var(--serif)', fontSize: '2.1rem', fontWeight: 700, marginBottom: '10px', color: '#fff', lineHeight: 1.3, cursor: 'pointer' }} onClick={() => openDetail(finalRecIdx)}>{recommendedBook.title}</h3>
                     <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.85)', marginBottom: '18px' }}>{recommendedBook.author}</p>
-                    <p style={{ fontSize: '0.92rem', color: 'rgba(255,255,255,0.75)', lineHeight: '1.8', marginBottom: '24px', wordBreak: 'keep-all' }}>{recommendedBook.desc}</p>
+                    <div style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: '1.8', marginBottom: '24px', wordBreak: 'keep-all', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical' as any }}>
+                      {(recommendedBook.desc || '').replace(/<[^>]*>/g, '').split('\n').filter((line: string) => line.trim()).slice(0, 5).map((line: string, i: number) => (
+                        <span key={i}>{line.trim()}{i < 4 && <br/>}</span>
+                      ))}
+                    </div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '28px' }}>
                       {recommendedBook.tags.map((t: string) => (
                         <span key={t} style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.12)', padding: '4px 12px', borderRadius: '20px', color: 'rgba(255,255,255,0.85)' }}>{t}</span>
@@ -308,7 +316,7 @@ export default function BooksPage() {
               <h3 style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem', fontWeight: 700, textAlign: 'left', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
                 도서 큐레이션 풀
               </h3>
-              <div className="book-grid" id="bookShelf" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '28px 20px', marginBottom: '40px' }}>
+              <div className="book-grid" id="bookShelf" style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '28px 20px', marginBottom: '40px' }}>
                 {otherBooks.map(({ book, originalIdx }) => (
                   <div key={book.id} className={`book-card ${selected.has(originalIdx) ? 'selected' : ''}`}>
                     <div className="book-card-inner">
@@ -348,11 +356,11 @@ export default function BooksPage() {
 
       {/* PAYMENT MODAL */}
       <div className={`modal-overlay ${isPaymentOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsPaymentOpen(false); }}>
-        <div className="modal">
+        <div className="modal" style={{ maxHeight: '85vh', overflowY: 'auto' }}>
           <button className="modal-close" onClick={() => setIsPaymentOpen(false)}>✕</button>
-          <div className="modal-logo"><img src="/logo.png" alt="한경 언더라인 독서클럽" className="brand-logo" /></div>
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '22px' }} /></div>
           <h3>구독 신청</h3>
-          <p className="modal-sub">선택하신 3권이 담겼습니다. 구독을 시작하시면 배송됩니다.</p>
+          <p className="modal-sub">선택하신 3권이 담겼습니다.</p>
           <div className="selected-books-preview">
             {Array.from(selected).map((idx) => books[idx] && (
               <div key={idx} className="preview-book" style={{ background: books[idx].bg }}>
@@ -367,7 +375,45 @@ export default function BooksPage() {
             <div className="plan-row"><span className="label">저자 강연권</span><span className="value">포함</span></div>
             <div className="plan-row total"><span className="label">합계</span><span className="value">45,000원</span></div>
           </div>
-          <button className="modal-btn" onClick={handlePayment} style={{ marginTop: '16px' }}>45,000원 결제하기</button>
+
+          {/* 배송/환불 안내 */}
+          <div style={{ margin: '16px 0', padding: '14px 16px', background: '#f9fafb', borderRadius: '10px', fontSize: '0.78rem', color: '#6b7280', lineHeight: 1.7 }}>
+            <p style={{ fontWeight: 600, color: '#374151', marginBottom: '6px' }}>📦 배송 안내</p>
+            <p>• 결제 완료 후 영업일 기준 3~5일 이내 발송됩니다.</p>
+            <p>• 웰컴 굿즈는 최초 1회 무료 배송됩니다.</p>
+            <p style={{ fontWeight: 600, color: '#374151', marginTop: '10px', marginBottom: '6px' }}>↩️ 환불 안내</p>
+            <p>• 결제일로부터 7일 이내 청약철회 시 전액 환불 가능</p>
+            <p>• 도서/굿즈 발송 후에는 제공된 혜택 차감 후 환불</p>
+            <p>• 환불 문의: hankbp@naver.com</p>
+          </div>
+
+          {/* 약관 동의 */}
+          <div style={{ margin: '12px 0 16px' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', fontSize: '0.82rem', color: '#374151', lineHeight: 1.5 }}>
+              <input
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                style={{ marginTop: '3px', accentColor: 'var(--accent)', width: '16px', height: '16px', flexShrink: 0 }}
+              />
+              <span>
+                <strong style={{ color: 'var(--text)' }}>[필수]</strong>{' '}
+                <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={(e) => { e.preventDefault(); window.open('javascript:void(0)'); /* Footer의 약관 참조 */ }}>이용약관</span>,{' '}
+                <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>개인정보처리방침</span>,{' '}
+                <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>환불규정</span>에 동의합니다.
+              </span>
+            </label>
+          </div>
+
+          <button
+            className="modal-btn"
+            onClick={handlePayment}
+            disabled={!agreeTerms}
+            style={{ marginTop: '4px', opacity: agreeTerms ? 1 : 0.5, cursor: agreeTerms ? 'pointer' : 'not-allowed' }}
+          >
+            45,000원 결제하기
+          </button>
+          {!agreeTerms && <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#ef4444', marginTop: '8px' }}>약관에 동의해주세요.</p>}
         </div>
       </div>
     </div>
