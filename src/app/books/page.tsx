@@ -36,22 +36,14 @@ export default function BooksPage() {
 
   const handlePayment = async () => {
     try {
-      const { loadTossPayments } = (window as any).TossPayments
-        ? { loadTossPayments: (window as any).TossPayments }
-        : await import('@tosspayments/tosspayments-sdk');
-      
-      // CDN 방식: window.TossPayments가 있으면 사용
       const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
       
-      let tossPayments;
-      if (typeof (window as any).TossPayments !== 'undefined') {
-        // CDN 로드 방식
-        tossPayments = await (window as any).TossPayments(clientKey);
-      } else {
-        // npm 모듈 방식 fallback
-        tossPayments = await loadTossPayments(clientKey);
+      if (typeof (window as any).TossPayments === 'undefined') {
+        alert('결제 라이브러리가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        return;
       }
       
+      const tossPayments = await (window as any).TossPayments(clientKey);
       const payment = tossPayments.payment({ customerKey: user?.id || 'ANONYMOUS' });
       
       await payment.requestPayment({
@@ -66,7 +58,6 @@ export default function BooksPage() {
         customerMobilePhone: (user?.user_metadata?.phone || '').replace(/-/g, ''),
       });
     } catch (err: any) {
-      // 사용자가 결제창을 닫은 경우 (PAY_PROCESS_CANCELED)
       if (err?.code === 'PAY_PROCESS_CANCELED' || err?.code === 'USER_CANCEL') {
         console.log('결제가 취소되었습니다.');
         return;

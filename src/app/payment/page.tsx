@@ -37,13 +37,13 @@ export default function PaymentPage() {
     try {
       const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
       
-      let tossPayments;
-      if (typeof (window as any).TossPayments !== 'undefined') {
-        tossPayments = await (window as any).TossPayments(clientKey);
-      } else {
-        const { loadTossPayments } = await import('@tosspayments/tosspayments-sdk');
-        tossPayments = await loadTossPayments(clientKey);
+      if (typeof (window as any).TossPayments === 'undefined') {
+        alert('결제 라이브러리가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        setLoading(false);
+        return;
       }
+      
+      const tossPayments = await (window as any).TossPayments(clientKey);
       
       const payment = tossPayments.payment({ customerKey: user?.id || 'ANONYMOUS' });
       
