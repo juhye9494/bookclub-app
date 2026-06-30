@@ -21,6 +21,8 @@ export default function Header() {
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -60,7 +62,7 @@ export default function Header() {
         alert('모든 정보를 입력해주세요.');
         return;
       }
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email, password,
         options: {
           data: {
@@ -73,9 +75,19 @@ export default function Header() {
         alert('회원가입 실패: ' + error.message);
         return;
       }
-      alert('회원가입 성공!');
-      setIsLoginOpen(false);
-      window.dispatchEvent(new CustomEvent('auth-success'));
+      // 이메일 인증이 필요한 경우 (confirmed_at이 null)
+      if (data.user && !data.user.confirmed_at) {
+        setVerificationEmail(email);
+        setIsLoginOpen(false);
+        setEmailVerificationSent(true);
+        // 폼 초기화
+        setEmail(''); setPassword(''); setName(''); setPhone('');
+        setAddress(''); setDetailAddress(''); setZonecode('');
+      } else {
+        alert('회원가입 성공!');
+        setIsLoginOpen(false);
+        window.dispatchEvent(new CustomEvent('auth-success'));
+      }
     }
   };
 
@@ -226,6 +238,28 @@ export default function Header() {
           <p className="modal-divider">
             <span className="modal-link" style={{ cursor: 'pointer' }} onClick={() => { setIsResetMode(false); setIsLoginOpen(true); setIsLoginMode(true); }}>로그인으로 돌아가기</span>
           </p>
+        </div>
+      </div>
+
+      {/* EMAIL VERIFICATION MODAL */}
+      <div className={`modal-overlay ${emailVerificationSent ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setEmailVerificationSent(false); }}>
+        <div className="modal">
+          <button className="modal-close" onClick={() => setEmailVerificationSent(false)}>✕</button>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '24px' }} /></div>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, #e8f5e9, #c8e6c9)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '28px' }}>✉️</div>
+            <h3 style={{ marginBottom: '12px' }}>이메일 인증을 완료해주세요</h3>
+            <p className="modal-sub" style={{ lineHeight: 1.7 }}>
+              <strong style={{ color: 'var(--accent)' }}>{verificationEmail}</strong> 으로<br/>
+              인증 메일을 발송했습니다.<br/><br/>
+              이메일에 포함된 인증 링크를 클릭하시면<br/>
+              회원가입이 완료됩니다.
+            </p>
+          </div>
+          <div style={{ background: '#f8f9fa', borderRadius: '12px', padding: '16px', marginBottom: '20px', fontSize: '0.82rem', color: '#666', lineHeight: 1.6 }}>
+            💡 메일이 보이지 않으면 스팸함을 확인해주세요.
+          </div>
+          <button className="modal-btn" onClick={() => { setEmailVerificationSent(false); setIsLoginOpen(true); setIsLoginMode(true); }}>로그인하러 가기</button>
         </div>
       </div>
 
