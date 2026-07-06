@@ -75,7 +75,7 @@ export default function Home() {
           {/* HERO */}
           <section className="hero" style={{ paddingBottom: '40px' }}>
             <div className="hero-title-container">
-              <p className="hero-slogan">한 권의 책, 한 줄의 밑줄이 당신의 경험을 더 넓혀줍니다.</p>
+              <p className="hero-slogan">한 권의 책, 하나의 밑줄이 당신의 경험을 더 넓혀줍니다.</p>
               <h1 className="hero-underline-title">
                 <span className="underline-draw"></span>
                 <span className="text-reveal-container">
