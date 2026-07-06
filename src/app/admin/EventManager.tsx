@@ -16,12 +16,12 @@ const SEED_EVENTS = [
   },
   {
     id: 'ev-2',
-    title: '한경 석세스 클럽 2026 네트워킹 디너 "Success Night"',
+    title: '한경 언더라인 2026 네트워킹 디너 "Success Night"',
     category: '패밀리행사',
     date: '2026-07-10 (금) 18:30',
     location: '포시즌스 호텔 서울 그랜드볼룸',
     cover: '/uploads/networking_dinner_event.png',
-    description: '한경 석세스 클럽의 우수 멤버 및 오피니언 리더들이 함께 모여 인사이트를 나누고 네트워크를 형성하는 연례 네트워킹 행사입니다.<br/><br/><strong>[행사 구성]</strong><br/>• Part 1: 2026 하반기 경제 트렌드 스페셜 강연<br/>• Part 2: 멤버십 갈라 디너 및 네트워킹 세션<br/>• Part 3: 행운권 추첨 및 특별 기념품 증정',
+    description: '한경 언더라인의 우수 멤버 및 오피니언 리더들이 함께 모여 인사이트를 나누고 네트워크를 형성하는 연례 네트워킹 행사입니다.<br/><br/><strong>[행사 구성]</strong><br/>• Part 1: 2026 하반기 경제 트렌드 스페셜 강연<br/>• Part 2: 멤버십 갈라 디너 및 네트워킹 세션<br/>• Part 3: 행운권 추첨 및 특별 기념품 증정',
     status: '진행예정',
     order_idx: 1
   },
@@ -32,7 +32,7 @@ const SEED_EVENTS = [
     date: '2026-05-01 ~ 2026-06-30',
     location: '예술의전당 한가람미술관',
     cover: '/uploads/art_exhibition_event.png',
-    description: '20세기 현대 미술의 거장, 베르나르 뷔페의 대형 회고전에 한경 석세스 클럽 회원 여러분을 무료 초대합니다.<br/><br/><strong>[제공 혜택]</strong><br/>• 골드/프리미엄 멤버: 전시 무료 관람권 2매 증정<br/>• 일반 멤버: 현장 티켓 30% 특별 할인<br/>• 오디오 가이드 모바일 쿠폰 무료 배포',
+    description: '20세기 현대 미술의 거장, 베르나르 뷔페의 대형 회고전에 한경 언더라인 회원 여러분을 무료 초대합니다.<br/><br/><strong>[제공 혜택]</strong><br/>• 골드/프리미엄 멤버: 전시 무료 관람권 2매 증정<br/>• 일반 멤버: 현장 티켓 30% 특별 할인<br/>• 오디오 가이드 모바일 쿠폰 무료 배포',
     status: '모집중',
     order_idx: 2
   }
