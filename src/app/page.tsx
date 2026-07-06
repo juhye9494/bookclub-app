@@ -154,6 +154,84 @@ export default function Home() {
               @keyframes fadeUpSlogan { to { opacity: 1; transform: translateY(0); } }
               @keyframes fadeUpSub { to { opacity: 1; transform: translateY(0); } }
             `}</style>
+
+            {/* HERO BOOK ROLLING */}
+            {books.length > 0 && (
+              <div className="hero-book-rolling" style={{ maxWidth: '960px', width: '100%', marginTop: '60px', opacity: 0, animation: 'fadeUpHeroBooks 0.8s 2.8s ease forwards' }}>
+                <style>{`
+                  @keyframes fadeUpHeroBooks {
+                    from { opacity: 0; transform: translateY(16px); }
+                    to { opacity: 1; transform: translateY(0); }
+                  }
+                  .hero-book-rolling {
+                    overflow: hidden;
+                    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+                    mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+                  }
+                  .hero-rolling-track {
+                    display: flex;
+                    gap: 24px;
+                    width: max-content;
+                    animation: heroBookScroll 40s linear infinite;
+                  }
+                  @keyframes heroBookScroll {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                  }
+                  .hero-rolling-item {
+                    flex-shrink: 0;
+                    width: 120px;
+                    text-align: center;
+                    pointer-events: none;
+                    user-select: none;
+                  }
+                  .hero-rolling-cover {
+                    width: 120px;
+                    height: 180px;
+                    border-radius: 4px 10px 10px 4px;
+                    overflow: hidden;
+                    box-shadow: -3px 5px 16px rgba(0,0,0,0.15);
+                    margin-bottom: 10px;
+                  }
+                  .hero-rolling-cover img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: block;
+                  }
+                  .hero-rolling-title {
+                    font-size: 0.72rem;
+                    font-weight: 600;
+                    color: var(--text);
+                    line-height: 1.35;
+                    margin-bottom: 2px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                  }
+                  .hero-rolling-author {
+                    font-size: 0.65rem;
+                    color: var(--text-muted);
+                  }
+                  @media (max-width: 600px) {
+                    .hero-rolling-item { width: 100px; }
+                    .hero-rolling-cover { width: 100px; height: 150px; }
+                    .hero-rolling-track { gap: 16px; }
+                  }
+                `}</style>
+                <div className="hero-rolling-track">
+                  {[...books.slice(0, 10), ...books.slice(0, 10)].map((book, i) => (
+                    <div key={i} className="hero-rolling-item">
+                      <div className="hero-rolling-cover">
+                        <img src={book.img} alt={book.title} />
+                      </div>
+                      <p className="hero-rolling-title">{book.title}</p>
+                      <p className="hero-rolling-author">{book.author}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         </>
 
