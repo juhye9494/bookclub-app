@@ -230,6 +230,11 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+                <div style={{ textAlign: 'center', marginTop: '32px' }}>
+                  <Link href="/books" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 36px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px rgba(252,102,64,0.35)', textDecoration: 'none', transition: 'all 0.2s' }}>
+                    전체 도서 보러가기 →
+                  </Link>
+                </div>
               </div>
             )}
           </section>
@@ -347,84 +352,6 @@ export default function Home() {
           <p className="section-label plan-label reveal visible">구독 플랜</p>
           <h2 className="section-title plan-title reveal visible">지금, 한경 언더라인 독서클럽을<br />시작하세요.</h2>
 
-          {/* Book Rolling Carousel */}
-          {books.length > 0 && (
-            <div className="book-rolling-wrapper">
-              <style>{`
-                .book-rolling-wrapper {
-                  width: 100%;
-                  overflow: hidden;
-                  margin: 32px 0 40px;
-                  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%);
-                  mask-image: linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%);
-                }
-                .book-rolling-track {
-                  display: flex;
-                  gap: 24px;
-                  width: max-content;
-                  animation: bookScroll 35s linear infinite;
-                }
-                .book-rolling-track:hover {
-                  animation-play-state: paused;
-                }
-                @keyframes bookScroll {
-                  0% { transform: translateX(0); }
-                  100% { transform: translateX(-50%); }
-                }
-                .rolling-book-item {
-                  flex-shrink: 0;
-                  width: 120px;
-                  text-align: center;
-                  pointer-events: none;
-                  user-select: none;
-                }
-                .rolling-book-cover {
-                  width: 120px;
-                  height: 180px;
-                  border-radius: 4px 10px 10px 4px;
-                  overflow: hidden;
-                  box-shadow: -3px 5px 16px rgba(0,0,0,0.35);
-                  margin-bottom: 10px;
-                }
-                .rolling-book-cover img {
-                  width: 100%;
-                  height: 100%;
-                  object-fit: cover;
-                  display: block;
-                }
-                .rolling-book-title {
-                  font-size: 0.72rem;
-                  font-weight: 600;
-                  color: rgba(255,255,255,0.75);
-                  line-height: 1.35;
-                  margin-bottom: 2px;
-                  white-space: nowrap;
-                  overflow: hidden;
-                  text-overflow: ellipsis;
-                }
-                .rolling-book-author {
-                  font-size: 0.65rem;
-                  color: rgba(255,255,255,0.4);
-                }
-                @media (max-width: 600px) {
-                  .rolling-book-item { width: 100px; }
-                  .rolling-book-cover { width: 100px; height: 150px; }
-                  .book-rolling-track { gap: 16px; }
-                }
-              `}</style>
-              <div className="book-rolling-track">
-                {[...books.slice(0, 10), ...books.slice(0, 10)].map((book, i) => (
-                  <div key={i} className="rolling-book-item">
-                    <div className="rolling-book-cover">
-                      <img src={book.img} alt={book.title} />
-                    </div>
-                    <p className="rolling-book-title">{book.title}</p>
-                    <p className="rolling-book-author">{book.author}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="plan-card reveal visible">
             <p className="plan-name">한경 언더라인 독서클럽 3개월권</p>
