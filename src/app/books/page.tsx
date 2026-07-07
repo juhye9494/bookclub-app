@@ -316,9 +316,9 @@ export default function BooksPage() {
               <div className="book-grid" id="bookShelf" style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '28px 20px', marginBottom: '40px' }}>
                 {otherBooks.map(({ book, originalIdx }) => (
                   <div key={book.id} className={`book-card ${selected.has(originalIdx) ? 'selected' : ''}`}>
-                    <div className="book-card-inner">
-                      <div className="book-cover" style={{ cursor: 'pointer', position: 'relative' }} onClick={() => openDetail(originalIdx)}>
-                        {book.is_new && <div style={{ position: 'absolute', top: '-6px', left: '-6px', width: '38px', height: '38px', background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)', color: '#fff', fontSize: '0.6rem', fontWeight: 800, borderRadius: '50%', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.03em', boxShadow: '0 2px 8px rgba(231,76,60,0.5), inset 0 -1px 2px rgba(0,0,0,0.15)', transform: 'rotate(-12deg)', border: '2px solid #fff' }}>NEW</div>}
+                    <div className="book-card-inner" style={{ position: 'relative' }}>
+                      {book.is_new && <div style={{ position: 'absolute', top: '-8px', left: '-8px', width: '40px', height: '40px', background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)', color: '#fff', fontSize: '0.6rem', fontWeight: 800, borderRadius: '50%', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.03em', boxShadow: '0 3px 10px rgba(231,76,60,0.5)', transform: 'rotate(-12deg)' }}>NEW</div>}
+                      <div className="book-cover" style={{ cursor: 'pointer' }} onClick={() => openDetail(originalIdx)}>
                         {book.tags.includes('강연 포함') && <div className="book-lecture-badge">강연 포함</div>}
                         <img src={book.img} alt={book.title} />
                       </div>
