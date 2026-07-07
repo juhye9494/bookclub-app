@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
@@ -68,19 +68,34 @@ export default function Home() {
     loadBooks();
   }, []);
 
+  // Scroll reveal observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+    );
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [books]);
 
   return (
     <>
         <>
           {/* HERO */}
-          <section className="hero" style={{ paddingBottom: '40px' }}>
+          <section className="hero" style={{ paddingBottom: '40px', minHeight: 'auto' }}>
             <div className="hero-title-container">
               <p className="hero-slogan">한 권의 책, 하나의 밑줄이 당신의 경험을 더 넓혀줍니다.</p>
               <h1 className="hero-underline-title">
                 <span className="underline-draw"></span>
                 <span className="text-reveal-container">
                   {'언더라인'.split('').map((char, i) => (
-                    <span key={i} className="char-reveal" style={{ animationDelay: `${0.5 + i * 0.35}s` }}>{char}</span>
+                    <span key={i} className="char-reveal" style={{ animationDelay: `${0.3 + i * 0.25}s` }}>{char}</span>
                   ))}
                 </span>
               </h1>
@@ -94,6 +109,10 @@ export default function Home() {
             {/* CSS styles for Hero animation */}
             <style>{`
               @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap');
+              .hero {
+                min-height: auto !important;
+                justify-content: flex-start !important;
+              }
               .hero-title-container {
                 display: flex;
                 flex-direction: column;
@@ -108,7 +127,7 @@ export default function Home() {
                 margin-bottom: 16px;
                 opacity: 0;
                 transform: translateY(12px);
-                animation: fadeUpSlogan 0.8s 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+                animation: fadeUpSlogan 0.8s 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
               }
               .hero-underline-title {
                 position: relative;
@@ -130,7 +149,7 @@ export default function Home() {
                 background-color: var(--accent);
                 transform: scaleX(0);
                 transform-origin: left;
-                animation: drawLine 1.8s 0.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                animation: drawLine 1.2s 0.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
               }
               .text-reveal-container {
                 display: inline-block;
@@ -138,7 +157,7 @@ export default function Home() {
               .char-reveal {
                 display: inline-block;
                 opacity: 0;
-                animation: charRevealAnim 0.6s ease forwards;
+                animation: charRevealAnim 0.5s ease forwards;
               }
               @keyframes charRevealAnim {
                 from { opacity: 0; }
@@ -147,7 +166,7 @@ export default function Home() {
               .hero-sub-animate {
                 opacity: 0;
                 transform: translateY(12px);
-                animation: fadeUpSub 0.8s 2.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+                animation: fadeUpSub 0.8s 1.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
               }
               @keyframes drawLine { to { transform: scaleX(1); } }
               @keyframes revealText { to { opacity: 1; transform: translateY(0); } }
@@ -157,7 +176,7 @@ export default function Home() {
 
             {/* HERO BOOK ROLLING */}
             {books.length > 0 && (
-              <div className="hero-book-rolling" style={{ maxWidth: '960px', width: '100%', marginTop: '60px', opacity: 0, animation: 'fadeUpHeroBooks 0.8s 2.8s ease forwards' }}>
+              <div className="hero-book-rolling" style={{ maxWidth: '960px', width: '100%', marginTop: '48px', opacity: 0, animation: 'fadeUpHeroBooks 0.6s 1.8s ease forwards' }}>
                 <style>{`
                   @keyframes fadeUpHeroBooks {
                     from { opacity: 0; transform: translateY(16px); }
@@ -243,30 +262,30 @@ export default function Home() {
       {/* 가입 혜택 */}
       <section className="service-section">
         <div className="service-inner">
-          <div className="service-header reveal visible">
+          <div className="service-header reveal">
             <p className="section-label">가입 혜택</p>
             <h2 className="section-title">다양한 혜택으로<br />책 읽는 즐거움이 커집니다.</h2>
           </div>
           <div className="service-cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-            <div className="service-card reveal visible" style={{ transitionDelay: '0.1s' }}>
+            <div className="service-card reveal" style={{ transitionDelay: '0.1s' }}>
               <div className="card-icon"><img src="/uploads/benefit_welcome.png" alt="웰컴 굿즈" /></div>
               <p className="card-tag">독서 습관을 만드는</p>
               <h3 className="card-title">웰컴 굿즈</h3>
               <p className="card-desc">30분을 기록할 수 있는 모래시계와 독서노트, 편집자 레터를 드립니다.<br />(가입 시, 최초 1회 무료 배송)</p>
             </div>
-            <div className="service-card reveal visible" style={{ transitionDelay: '0.2s' }}>
+            <div className="service-card reveal" style={{ transitionDelay: '0.2s' }}>
               <div className="card-icon"><img src="/uploads/benefit_booktalk.png" alt="북토크" /></div>
               <p className="card-tag">시즌 대표 도서</p>
               <h3 className="card-title">무료 북토크 초대</h3>
               <p className="card-desc">월 1회 진행되는 오프라인 저자 북토크에 회원 우선 혜택으로 무료 초청해 드립니다.</p>
             </div>
-            <div className="service-card reveal visible" style={{ transitionDelay: '0.3s' }}>
+            <div className="service-card reveal" style={{ transitionDelay: '0.3s' }}>
               <div className="card-icon"><img src="/uploads/benefit_ebook.png" alt="전자책" /></div>
               <p className="card-tag">언제 어디서나</p>
               <h3 className="card-title">전자책 3종</h3>
               <p className="card-desc">제공되는 한경 전자책 중 원하는 3종을 선택하여 무료로 이용하실 수 있습니다.</p>
             </div>
-            <div className="service-card reveal visible" style={{ transitionDelay: '0.4s' }}>
+            <div className="service-card reveal" style={{ transitionDelay: '0.4s' }}>
               <div className="card-icon"><img src="/uploads/benefit_arte.jpg" alt="아르떼/필" /></div>
               <p className="card-tag">품격 있는 문화 생활</p>
               <h3 className="card-title">한경 아르떼/필 티켓</h3>
@@ -279,7 +298,7 @@ export default function Home() {
       {/* 북클럽 소개 */}
       <section className="service-section" style={{ background: 'var(--bg)' }}>
         <div className="service-inner">
-          <div className="service-header reveal visible">
+          <div className="service-header reveal">
             <p className="section-label">북클럽 소개</p>
             <h2 className="section-title">하루 30분,<br />삶이 바뀌는 독서 루틴</h2>
             <p className="service-lead">한경 언더라인 독서클럽</p>
@@ -291,31 +310,31 @@ export default function Home() {
       {/* FLOW */}
       <section className="flow-section">
         <div className="flow-inner">
-          <div className="flow-header reveal visible">
+          <div className="flow-header reveal">
             <p className="section-label">가입 플로우</p>
             <h2 className="section-title">시작은 간단합니다</h2>
             <p className="section-desc">4단계로 완성되는 나만의 독서 생활</p>
           </div>
           <div className="flow-steps">
-            <div className="flow-step reveal visible" style={{ transitionDelay: '0.05s' }}>
+            <div className="flow-step reveal" style={{ transitionDelay: '0.05s' }}>
               <div className="step-circle">01</div>
               <p className="step-num">STEP 1</p>
               <h4 className="step-title">북클럽 가입</h4>
               <p className="step-desc">시즌별 가입 진행</p>
             </div>
-            <div className="flow-step reveal visible" style={{ transitionDelay: '0.15s' }}>
+            <div className="flow-step reveal" style={{ transitionDelay: '0.15s' }}>
               <div className="step-circle">02</div>
               <p className="step-num">STEP 2</p>
               <h4 className="step-title">웰컴 굿즈 수령</h4>
               <p className="step-desc">가입 즉시<br />집으로 배송</p>
             </div>
-            <div className="flow-step reveal visible" style={{ transitionDelay: '0.25s' }}>
+            <div className="flow-step reveal" style={{ transitionDelay: '0.25s' }}>
               <div className="step-circle">03</div>
               <p className="step-num">STEP 3</p>
               <h4 className="step-title">도서 선택</h4>
               <p className="step-desc">3개월간 총 3권<br />자유 선택</p>
             </div>
-            <div className="flow-step reveal visible" style={{ transitionDelay: '0.35s' }}>
+            <div className="flow-step reveal" style={{ transitionDelay: '0.35s' }}>
               <div className="step-circle">04</div>
               <p className="step-num">STEP 4</p>
               <h4 className="step-title">집으로 배송</h4>
@@ -328,11 +347,11 @@ export default function Home() {
       {/* REVIEWS */}
       <section className="review-section">
         <div className="review-inner">
-          <div className="review-header reveal visible">
+          <div className="review-header reveal">
             <p className="section-label">고객 후기</p>
             <h2 className="section-title">회원들이 직접<br />전하는 이야기</h2>
           </div>
-          <div className="review-marquee reveal visible">
+          <div className="review-marquee reveal">
             <div className="marquee-track">
               {[...REVIEWS, ...REVIEWS].map((r, i) => (
                 <div key={i} className="review-card mini">
@@ -349,11 +368,11 @@ export default function Home() {
       {/* PLAN */}
       <section className="plan-section" id="plan">
         <div className="plan-inner">
-          <p className="section-label plan-label reveal visible">구독 플랜</p>
-          <h2 className="section-title plan-title reveal visible">지금, 한경 언더라인 독서클럽을<br />시작하세요.</h2>
+          <p className="section-label plan-label reveal">구독 플랜</p>
+          <h2 className="section-title plan-title reveal">지금, 한경 언더라인 독서클럽을<br />시작하세요.</h2>
 
 
-          <div className="plan-card reveal visible">
+          <div className="plan-card reveal">
             <p className="plan-name">한경 언더라인 독서클럽 3개월권</p>
             <p className="plan-price">45,000<span>원</span></p>
             <p className="plan-period">3개월 구독 · 일시납</p>
