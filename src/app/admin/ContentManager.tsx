@@ -289,7 +289,7 @@ export default function ContentManager() {
             {/* Books Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '1.2rem', margin: 0 }}>도서 목록 <span style={{ color: '#8a8478', fontSize: '1rem', fontWeight: 400 }}>{activeCycle.books?.length || 0}권</span></h3>
-              <button onClick={() => { setIsCreatingBook(true); setEditingBook({ title:'', author:'', genre:'', cover:'', tags:[], description:'', lecture:null }); }} style={{ padding: '8px 16px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>+ 도서 추가</button>
+              <button onClick={() => { setIsCreatingBook(true); setEditingBook({ title:'', author:'', genre:'', cover:'', tags:[], description:'', lecture:null, is_new:false }); }} style={{ padding: '8px 16px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>+ 도서 추가</button>
             </div>
 
             {/* Books List */}
@@ -310,7 +310,7 @@ export default function ContentManager() {
                         {book.cover ? <img src={book.cover} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="cover"/> : book.title.slice(0, 5)}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#1a1815', marginBottom: '4px' }}>{book.title}</div>
+                        <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#1a1815', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>{book.title}{book.is_new && <span style={{ fontSize: '0.65rem', background: '#e74c3c', color: '#fff', padding: '1px 6px', borderRadius: '3px', fontWeight: 700 }}>NEW</span>}</div>
                         <div style={{ fontSize: '0.8rem', color: '#8a8478', marginBottom: '8px' }}>{book.author} · {book.genre}</div>
                         <div style={{ display: 'flex', gap: '6px' }}>
                           {(book.tags||[]).map((t: string) => <span key={t} style={{ fontSize: '0.7rem', background: '#f3ede2', padding: '2px 8px', borderRadius: '12px', color: '#4a463f' }}>{t}</span>)}
@@ -547,6 +547,9 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
         <textarea id="description-textarea" name="description" value={formData.description || ''} onChange={handleChange} style={{ width: '100%', padding: '12px', border: '1px solid #cfc8b8', borderRadius: '4px', minHeight: '300px', fontFamily: 'inherit', lineHeight: '1.6', resize: 'vertical' }} />
       </div>
       <div style={{ marginBottom: '16px', background: '#f9f9f9', padding: '12px', borderRadius: '6px', border: '1px solid #e5dfd2' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: 600, marginBottom: '10px' }}>
+          <input type="checkbox" checked={!!formData.is_new} onChange={(e) => setFormData((prev: any) => ({ ...prev, is_new: e.target.checked }))} /> 🆕 신간 도서 (NEW 표시)
+        </label>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', cursor: 'pointer', fontWeight: 600 }}>
           <input type="checkbox" checked={!!formData.lecture} onChange={handleChange} /> 저자 강연권 포함
         </label>

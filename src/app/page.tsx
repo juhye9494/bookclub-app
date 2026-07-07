@@ -87,8 +87,8 @@ export default function Home() {
             </div>
              <p className="hero-sub hero-sub-animate" style={{ maxWidth: '640px', marginTop: '40px' }}>
               하루 딱 30분, 3개월<br />
-              경제·경영·인문·예술을 넘나드는 즐거운 독서 경험을 만나보세요.<br />
-              한경 언더라인 독서클럽이 성장의 여정을 함께합니다.
+              한경 언더라인에서만 만나볼 수 있는 다양한 혜택과 함께<br />
+              경제·경영·인문·예술을 넘나드는 즐거운 독서 경험을 시작해보세요.
             </p>
 
             {/* CSS styles for Hero animation */}

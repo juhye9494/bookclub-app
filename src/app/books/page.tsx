@@ -87,7 +87,8 @@ export default function BooksPage() {
               id: b.id, title: b.title, author: b.author, genre: b.genre,
               color: `book-${(i % 6) + 1}`, bg: b.bg || c.bg, bgDark: b.bgDark || c.bgDark,
               img: b.cover, tags: b.tags || [], desc: b.description, lecture: b.lecture,
-              ebook_url: b.ebook_url || '', benefit: b.lecture ? '+ 저자 강연권' : ''
+              ebook_url: b.ebook_url || '', benefit: b.lecture ? '+ 저자 강연권' : '',
+              is_new: b.is_new || false
             };
           });
           setBooks(formatted);
@@ -259,7 +260,12 @@ export default function BooksPage() {
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <p style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.14em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '12px' }}>BOOK CURATION</p>
             <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 700, lineHeight: 1.3, marginBottom: '16px' }}>이번 시즌 도서를 골라보세요</h1>
-            <p style={{ fontSize: '0.95rem', color: 'var(--text-mid)', lineHeight: 1.7 }}>3개월간 총 3권을 자유롭게 선택하실 수 있습니다.</p>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-mid)', lineHeight: 1.7, marginBottom: '0' }}>3개월간 총 3권의 도서를 자유롭게 선택하실 수 있습니다.</p>
+            <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+              <p style={{ margin: 0 }}>• 도서는 3권을 한 번에 신청하시거나, 1권씩 나누어 신청하실 수 있습니다.</p>
+              <p style={{ margin: 0 }}>• 도서는 신청 시점에 맞춰 순차적으로 발송되며, 주 1회 진행됩니다.</p>
+              <p style={{ margin: 0 }}>• 신간 도서는 매월 초 홈페이지를 통해 업데이트됩니다.</p>
+            </div>
           </div>
 
           {loadingBooks ? (
@@ -311,7 +317,8 @@ export default function BooksPage() {
                 {otherBooks.map(({ book, originalIdx }) => (
                   <div key={book.id} className={`book-card ${selected.has(originalIdx) ? 'selected' : ''}`}>
                     <div className="book-card-inner">
-                      <div className="book-cover" style={{ cursor: 'pointer' }} onClick={() => openDetail(originalIdx)}>
+                      <div className="book-cover" style={{ cursor: 'pointer', position: 'relative' }} onClick={() => openDetail(originalIdx)}>
+                        {book.is_new && <div style={{ position: 'absolute', top: '8px', left: '8px', background: '#e74c3c', color: '#fff', fontSize: '0.65rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', zIndex: 2, letterSpacing: '0.05em', boxShadow: '0 2px 8px rgba(231,76,60,0.4)' }}>NEW</div>}
                         {book.tags.includes('강연 포함') && <div className="book-lecture-badge">강연 포함</div>}
                         <img src={book.img} alt={book.title} />
                       </div>
