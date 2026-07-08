@@ -256,6 +256,37 @@ export default function BooksPage() {
       ) : (
         /* ===== BOOK LIST VIEW ===== */
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 5vw 80px' }}>
+
+          {/* FLOATING CART BAR */}
+          {selected.size > 0 && (
+            <div style={{ position: 'fixed', top: '64px', left: 0, right: 0, zIndex: 100, display: 'flex', justifyContent: 'center', padding: '0 16px', pointerEvents: 'none', animation: 'cartSlideIn 0.3s ease' }}>
+              <style>{`
+                @keyframes cartSlideIn {
+                  from { opacity: 0; transform: translateY(-12px); }
+                  to { opacity: 1; transform: translateY(0); }
+                }
+              `}</style>
+              <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '14px', background: 'rgba(26,24,21,0.92)', backdropFilter: 'blur(12px)', padding: '10px 12px 10px 16px', borderRadius: '100px', boxShadow: '0 4px 24px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', maxWidth: '520px', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: '1.1rem' }}>🛒</span>
+                  <div style={{ display: 'flex', gap: '6px', overflow: 'hidden' }}>
+                    {Array.from(selected).map((idx) => books[idx] && (
+                      <div key={idx} style={{ width: '32px', height: '44px', borderRadius: '3px 6px 6px 3px', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(255,255,255,0.15)' }}>
+                        <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap' }}>{selected.size}권 선택 (최대 3권)</span>
+                </div>
+                <button onClick={() => {
+                  if (user) { setIsPaymentOpen(true); }
+                  else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
+                }} style={{ padding: '8px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 12px rgba(252,102,64,0.4)' }}>
+                  신청하기
+                </button>
+              </div>
+            </div>
+          )}
           {/* Page Header */}
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <p style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.14em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '12px' }}>BOOK CURATION</p>
@@ -335,14 +366,14 @@ export default function BooksPage() {
 
               {/* Footer / Selection bar */}
               <div className="shelf-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '32px', marginTop: '24px' }}>
-                <p className="shelf-hint">원하는 책 3권을 골라보세요</p>
+                <p className="shelf-hint">{selected.size === 0 ? '원하는 책을 골라보세요 (최대 3권)' : `${selected.size}권이 담겼어요!`}</p>
                 <div className="shelf-counter">
                   <div className="counter-dots">
                     {[0, 1, 2].map((dot) => (<div key={dot} className={`counter-dot ${dot < selected.size ? 'filled' : ''}`}></div>))}
                   </div>
                   <span>{selected.size} / 3권</span>
                 </div>
-                <button className={`btn-delivery ${selected.size === MAX_SELECT ? 'visible' : ''}`} onClick={() => {
+                <button className={`btn-delivery ${selected.size > 0 ? 'visible' : ''}`} onClick={() => {
                   if (user) { setIsPaymentOpen(true); }
                   else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
                 }}>선택한 {selected.size}권 신청하기</button>
@@ -358,7 +389,7 @@ export default function BooksPage() {
           <button className="modal-close" onClick={() => setIsPaymentOpen(false)}>✕</button>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '22px' }} /></div>
           <h3>구독 신청</h3>
-          <p className="modal-sub">선택하신 3권이 담겼습니다.</p>
+          <p className="modal-sub">선택하신 {selected.size}권이 담겼습니다.{selected.size < 3 && ` (나머지 ${3 - selected.size}권은 나중에 추가 선택 가능)`}</p>
           <div className="selected-books-preview">
             {Array.from(selected).map((idx) => books[idx] && (
               <div key={idx} className="preview-book" style={{ background: books[idx].bg }}>
@@ -368,7 +399,7 @@ export default function BooksPage() {
           </div>
           <div className="plan-detail">
             <div className="plan-row"><span className="label">구독 플랜</span><span className="value">3개월권</span></div>
-            <div className="plan-row"><span className="label">도서 3권</span><span className="value">포함</span></div>
+            <div className="plan-row"><span className="label">선택 도서</span><span className="value">{selected.size}권 (최대 3권)</span></div>
             <div className="plan-row"><span className="label">웰컴 굿즈</span><span className="value">무료 증정</span></div>
             <div className="plan-row"><span className="label">저자 강연권</span><span className="value">포함</span></div>
             <div className="plan-row total"><span className="label">합계</span><span className="value">45,000원</span></div>
