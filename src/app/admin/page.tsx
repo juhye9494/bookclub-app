@@ -7,11 +7,11 @@ import ContentManager from './ContentManager';
 import EventManager from './EventManager';
 import InsightManager from './InsightManager';
 import MembersManager from './MembersManager';
+import ShippingManager from './ShippingManager';
 
 export default function AdminPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,16 +32,6 @@ export default function AdminPage() {
       }
       
       setUser(session.user);
-
-      // 전체 주문 가져오기
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        setOrders(data);
-      }
       setLoading(false);
     }
 
@@ -59,60 +49,6 @@ export default function AdminPage() {
       subscription.unsubscribe();
     };
   }, [router]);
-
-  // 배송 상태 변경 함수
-  const updateStatus = async (orderId: string, newStatus: string) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ order_status: newStatus })
-      .eq('id', orderId);
-
-    if (error) {
-      alert('상태 업데이트에 실패했습니다.');
-    } else {
-      setOrders(orders.map(o => o.id === orderId ? { ...o, order_status: newStatus } : o));
-    }
-  };
-
-  // 엑셀(CSV) 다운로드 함수
-  const downloadCSV = () => {
-    if (orders.length === 0) return;
-    
-    // CSV 헤더
-    const headers = ['주문일자', '주문번호', '고객명', '연락처', '배송주소', '상태', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3'];
-    
-    // CSV 데이터 행 만들기
-    const rows = orders.map(order => {
-      const date = new Date(order.created_at).toLocaleDateString();
-      const books = order.selected_books || [];
-      
-      return [
-        date,
-        order.payment_order_id,
-        order.user_name,
-        order.user_phone,
-        `"${order.user_address}"`, // 주소에 쉼표가 있을 수 있으므로 따옴표로 감쌈
-        order.order_status,
-        books[0]?.title || '',
-        books[0]?.isbn || '',
-        books[1]?.title || '',
-        books[1]?.isbn || '',
-        books[2]?.title || '',
-        books[2]?.isbn || ''
-      ].join(',');
-    });
-
-    const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n'); // \uFEFF는 엑셀 한글 깨짐 방지용 BOM
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `한경언더라인독서클럽_주문목록_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const [activeTab, setActiveTab] = useState('shipping'); // 'shipping', 'content', 'members'
 
@@ -161,71 +97,7 @@ export default function AdminPage() {
 
         {/* TAB 1: SHIPPING */}
         {activeTab === 'shipping' && (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>전체 주문 목록 ({orders.length}건)</h1>
-              <button onClick={downloadCSV} style={{ padding: '10px 20px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
-                📥 엑셀(CSV) 다운로드
-              </button>
-            </div>
-
-        <div style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1100px' }}>
-            <thead>
-              <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                <th style={{ padding: '14px 12px', fontSize: '0.78rem', color: '#6b7280', fontWeight: 600 }}>주문일자</th>
-                <th style={{ padding: '14px 12px', fontSize: '0.78rem', color: '#6b7280', fontWeight: 600 }}>고객명</th>
-                <th style={{ padding: '14px 12px', fontSize: '0.78rem', color: '#6b7280', fontWeight: 600 }}>연락처</th>
-                <th style={{ padding: '14px 12px', fontSize: '0.78rem', color: '#6b7280', fontWeight: 600 }}>배송주소</th>
-                <th style={{ padding: '14px 12px', fontSize: '0.78rem', color: '#6b7280', fontWeight: 600 }}>도서 / ISBN</th>
-                <th style={{ padding: '14px 12px', fontSize: '0.78rem', color: '#6b7280', fontWeight: 600 }}>상태</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>주문 내역이 없습니다.</td>
-                </tr>
-              ) : (
-                orders.map(order => (
-                  <tr key={order.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '14px 12px', fontSize: '0.82rem', color: '#374151', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </td>
-                    <td style={{ padding: '14px 12px', fontSize: '0.85rem', fontWeight: 600, color: '#111', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                      {order.user_name}
-                    </td>
-                    <td style={{ padding: '14px 12px', fontSize: '0.82rem', color: '#6b7280', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                      {order.user_phone}
-                    </td>
-                    <td style={{ padding: '14px 12px', fontSize: '0.78rem', color: '#6b7280', verticalAlign: 'top', maxWidth: '220px' }}>
-                      {order.user_address}
-                    </td>
-                    <td style={{ padding: '14px 12px', fontSize: '0.8rem', color: '#374151', verticalAlign: 'top' }}>
-                      {(order.selected_books || []).map((b: any, idx: number) => (
-                        <div key={idx} style={{ marginBottom: idx < order.selected_books.length - 1 ? '6px' : 0, paddingBottom: idx < order.selected_books.length - 1 ? '6px' : 0, borderBottom: idx < order.selected_books.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
-                          <span style={{ fontWeight: 500 }}>{b.title}</span>
-                          {b.isbn && <span style={{ display: 'block', fontSize: '0.72rem', color: '#9ca3af', fontFamily: 'monospace' }}>ISBN: {b.isbn}</span>}
-                        </div>
-                      ))}
-                    </td>
-                    <td style={{ padding: '14px 12px', verticalAlign: 'top' }}>
-                      <select 
-                        value={order.order_status}
-                        onChange={(e) => updateStatus(order.id, e.target.value)}
-                        style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.82rem', background: order.order_status === '배송중' ? '#eef5ff' : order.order_status === '배송완료' ? '#ecfdf5' : '#fff' }}
-                      >
-                        <option value="배송준비중">배송준비중</option>
-                        <option value="배송중">배송중</option>
-                        <option value="배송완료">배송완료</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+          <ShippingManager />
           </>
         )}
 
