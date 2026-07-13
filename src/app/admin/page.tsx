@@ -98,7 +98,6 @@ export default function AdminPage() {
         {/* TAB 1: SHIPPING */}
         {activeTab === 'shipping' && (
           <ShippingManager />
-          </>
         )}
 
         {/* TAB 2: CONTENT */}
