@@ -154,25 +154,6 @@ export default function ContentManager() {
     await loadData();
   };
 
-  const resetData = async () => {
-    if (confirm('기본 예시 데이터를 다시 불러오시겠습니까? 기존 데이터는 모두 지워지고 초기화됩니다.')) {
-      setLoading(true);
-      for (const c of cycles) {
-        await supabase.from('books').delete().eq('cycle_id', c.id);
-        await supabase.from('cycles').delete().eq('id', c.id);
-      }
-      for (const c of SEED_CYCLES) {
-        await supabase.from('cycles').insert({ id: c.id, label: c.label, start_date: c.start_date, end_date: c.end_date, status: c.status });
-        if (c.books.length > 0) {
-          const mappedBooks = c.books.map(b => ({ ...b, cycle_id: c.id }));
-          await supabase.from('books').insert(mappedBooks);
-        }
-      }
-      setActiveId(SEED_CYCLES[0].id);
-      await loadData();
-    }
-  };
-
   // Book Actions
   const handleDeleteBook = async (bookId: string) => {
     if (!confirm('이 도서를 삭제하시겠습니까?')) return;
@@ -237,7 +218,6 @@ export default function ContentManager() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1a1815' }}>시즌 (3개월)</h3>
           <div>
-            <button onClick={resetData} style={{ fontSize: '0.75rem', padding: '4px 8px', background: '#e5e7eb', border: 'none', borderRadius: '4px', cursor: 'pointer', marginRight: '6px' }}>초기화</button>
             <button onClick={openCreateSeason} style={{ fontSize: '1rem', padding: '2px 8px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>+</button>
           </div>
         </div>

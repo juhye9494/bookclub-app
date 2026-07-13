@@ -148,27 +148,6 @@ export default function EventManager() {
     }
   };
 
-  const resetEventsData = async () => {
-    if (confirm('기본 예시 이벤트 데이터를 다시 불러오시겠습니까? 기존 이벤트 데이터는 모두 지워지고 초기화됩니다.')) {
-      setLoading(true);
-      try {
-        // Delete all
-        for (const ev of events) {
-          await supabase.from('events').delete().eq('id', ev.id);
-        }
-        // Insert seeds
-        for (const ev of SEED_EVENTS) {
-          await supabase.from('events').insert(ev);
-        }
-        alert('이벤트가 기본 데이터로 초기화되었습니다.');
-        await loadEvents();
-      } catch (err: any) {
-        alert('초기화 실패 (테이블이 아직 생성되지 않았을 수 있습니다): ' + err.message);
-        setLoading(false);
-      }
-    }
-  };
-
   if (loading && events.length === 0) return <div style={{ padding: '40px', textAlign: 'center' }}>이벤트 목록 불러오는 중...</div>;
 
   return (
@@ -181,12 +160,6 @@ export default function EventManager() {
           <p style={{ fontSize: '0.8rem', color: '#8a8478', marginTop: '4px' }}>저자강연, 패밀리행사, 문화제휴 항목을 생성하고 정렬할 수 있습니다.</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            onClick={resetEventsData} 
-            style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}
-          >
-            기본 데이터 채우기(초기화)
-          </button>
           <button 
             onClick={handleAddEventClick} 
             style={{ padding: '8px 16px', background: '#fc6640', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
