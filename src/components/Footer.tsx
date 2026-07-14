@@ -23,8 +23,12 @@ export default function Footer() {
             <div><strong>호스팅서비스제공자</strong>(주)한경매거진앤북</div>
           </div>
           <div className="footer-contact">
-            📞 02-360-4555<br />
-            📧 hankbp@naver.com
+            📞 02-360-4555
+            <div style={{ marginTop: '10px' }}>
+              <Link href="/inquiry" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: 'var(--accent)', color: '#fff', borderRadius: '100px', fontSize: '0.82rem', fontWeight: 600, textDecoration: 'none', transition: 'opacity 0.2s' }}>
+                ✉️ 1:1 문의하기
+              </Link>
+            </div>
             <div style={{ marginTop: '14px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button type="button" className="footer-policy-btn" onClick={() => setIsTermsOpen(true)}>이용약관</button>
               <button type="button" className="footer-policy-btn" onClick={() => setIsRefundOpen(true)}>환불정책</button>

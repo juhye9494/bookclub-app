@@ -8,6 +8,7 @@ import EventManager from './EventManager';
 import InsightManager from './InsightManager';
 import MembersManager from './MembersManager';
 import ShippingManager from './ShippingManager';
+import InquiryManager from './InquiryManager';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -93,6 +94,12 @@ export default function AdminPage() {
           >
             👥 회원 관리
           </button>
+          <button 
+            onClick={() => setActiveTab('inquiry')} 
+            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'inquiry' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'inquiry' ? 700 : 500, color: activeTab === 'inquiry' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            💬 1:1 문의
+          </button>
         </div>
 
         {/* TAB 1: SHIPPING */}
@@ -118,6 +125,11 @@ export default function AdminPage() {
         {/* TAB 3: MEMBERS */}
         {activeTab === 'members' && (
           <MembersManager />
+        )}
+
+        {/* TAB: INQUIRY */}
+        {activeTab === 'inquiry' && (
+          <InquiryManager />
         )}
       </main>
     </div>

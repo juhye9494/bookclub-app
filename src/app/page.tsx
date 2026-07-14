@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
@@ -387,7 +387,7 @@ export default function Home() {
             </p>
             <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.85, display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <p>※ 한경 언더라인 독서클럽은 3개월 단위의 시즌제 멤버십 서비스로 운영됩니다.</p>
-              <p>※ 구독 문의 : 이메일 hankbp@naver.com (운영시간 10:00 ~ 16:00, 주말·공휴일·점심시간 제외)</p>
+              <p>※ 구독 문의 : 전화 02-360-4555 (운영시간 10:00 ~ 16:00, 주말·공휴일·점심시간 제외) 또는 하단 1:1 문의</p>
               
               <p style={{ marginTop: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '14px' }}>
                 ── 중도해약 및 환불 안내 ──

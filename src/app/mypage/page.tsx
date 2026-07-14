@@ -16,6 +16,8 @@ export default function MyPage() {
   const [activitySubTab, setActivitySubTab] = useState<'groups' | 'events'>('groups');
   const [groupParticipations, setGroupParticipations] = useState<any[]>([]);
   const [eventParticipations, setEventParticipations] = useState<any[]>([]);
+  const [inquiries, setInquiries] = useState<any[]>([]);
+  const [expandedInquiry, setExpandedInquiry] = useState<string | null>(null);
 
   // Profile edit state
   const [name, setName] = useState('');
@@ -79,6 +81,9 @@ export default function MyPage() {
       const { data: ep } = await supabase.from('event_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
       if (ep) setEventParticipations(ep);
 
+      const { data: inq } = await supabase.from('inquiries').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+      if (inq) setInquiries(inq);
+
       setLoading(false);
     }
     fetchData();
@@ -128,6 +133,7 @@ export default function MyPage() {
             { key: 'orders' as TabType, label: '📦 구독내역' },
             { key: 'profile' as TabType, label: '👤 내 정보 수정' },
             { key: 'activity' as TabType, label: '📋 활동내역' },
+            { key: 'inquiry' as TabType, label: '💬 1:1 문의' },
           ]).map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               style={{
@@ -366,9 +372,66 @@ export default function MyPage() {
             {/* 고객센터 안내 */}
             <div style={{ background: '#f9fafb', borderRadius: '16px', padding: '20px 24px', fontSize: '0.84rem', color: '#6b7280', lineHeight: 1.8 }}>
               <p style={{ fontWeight: 600, color: '#374151', marginBottom: '4px' }}>문의 안내</p>
-              <p>이메일: hankbp@naver.com</p>
               <p>전화: 02-360-4555</p>
             </div>
+          </div>
+        )}
+
+        {/* 탭 4: 1:1 문의 */}
+        {activeTab === 'inquiry' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>내 문의 내역</h3>
+              <Link href="/inquiry" style={{ padding: '8px 20px', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: '100px', fontSize: '0.85rem', fontWeight: 600 }}>➕ 새 문의 작성</Link>
+            </div>
+            {inquiries.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 0', background: '#fff', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>💬</div>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>문의 내역이 없습니다.</p>
+                <Link href="/inquiry" style={{ padding: '10px 24px', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: '100px', fontWeight: 600, fontSize: '0.88rem' }}>1:1 문의하기</Link>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {inquiries.map(inq => (
+                  <div key={inq.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div onClick={() => setExpandedInquiry(expandedInquiry === inq.id ? null : inq.id)}
+                      style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ padding: '2px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700, background: '#fef3c7', color: '#92400e' }}>{inq.category}</span>
+                          <span style={{
+                            padding: '2px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700,
+                            background: inq.status === '답변완료' ? '#d1fae5' : '#f3f4f6',
+                            color: inq.status === '답변완료' ? '#059669' : '#6b7280'
+                          }}>{inq.status}</span>
+                        </div>
+                        <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{inq.title}</p>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date(inq.created_at).toLocaleDateString('ko-KR')}</p>
+                      </div>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{expandedInquiry === inq.id ? '▲' : '▼'}</span>
+                    </div>
+                    {expandedInquiry === inq.id && (
+                      <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--border)' }}>
+                        <div style={{ padding: '16px 0', fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-mid)', whiteSpace: 'pre-wrap' }}>{inq.content}</div>
+                        {inq.attachment_url && (
+                          <a href={inq.attachment_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.82rem', color: 'var(--accent)' }}>📎 첨부파일 보기</a>
+                        )}
+                        {inq.admin_reply ? (
+                          <div style={{ marginTop: '16px', padding: '16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
+                            <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#059669', marginBottom: '8px' }}>📩 담변</p>
+                            <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: '#374151', whiteSpace: 'pre-wrap' }}>{inq.admin_reply}</p>
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: '16px', padding: '12px', background: '#f9fafb', borderRadius: '10px', textAlign: 'center' }}>
+                            <p style={{ fontSize: '0.82rem', color: '#9ca3af' }}>담변 대기 중입니다.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
