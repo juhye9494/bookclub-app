@@ -43,6 +43,47 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('전체');
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [applying, setApplying] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleEventApply = async () => {
+    if (!user) {
+      window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
+      return;
+    }
+    if (!selectedEvent) return;
+    setApplying(true);
+    try {
+      // 중복 신청 체크
+      const { data: existing } = await supabase.from('event_participants').select('id').eq('event_id', selectedEvent.id).eq('user_id', user.id);
+      if (existing && existing.length > 0) {
+        alert('이미 신청하신 이벤트입니다.');
+        setApplying(false);
+        return;
+      }
+      await supabase.from('event_participants').insert([{
+        event_id: selectedEvent.id,
+        user_id: user.id,
+        user_email: user.email,
+        user_name: user.user_metadata?.name || user.email,
+        event_title: selectedEvent.title,
+      }]);
+      alert('신청 완료! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
+    } catch (err) {
+      alert('신청 중 오류가 발생했습니다.');
+    }
+    setApplying(false);
+  };
 
   useEffect(() => {
     async function fetchEvents() {
@@ -349,10 +390,11 @@ export default function EventsPage() {
                 </button>
                 {selectedEvent.status !== '종료' ? (
                   <button 
-                    onClick={() => alert('한경 언더라인 회원 이벤트 참여 신청이 성공적으로 접수되었습니다. 담당자가 순차적으로 개별 연락(SMS/이메일) 드릴 예정입니다.')}
-                    style={{ flex: 2, padding: '14px 20px', border: 'none', background: 'var(--accent)', color: '#fff', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+                    onClick={handleEventApply}
+                    disabled={applying}
+                    style={{ flex: 2, padding: '14px 20px', border: 'none', background: 'var(--accent)', color: '#fff', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 600, cursor: applying ? 'not-allowed' : 'pointer', transition: 'all 0.2s', opacity: applying ? 0.7 : 1 }}
                   >
-                    이벤트 참여 신청하기
+                    {applying ? '신청 중...' : '이벤트 참여 신청하기'}
                   </button>
                 ) : (
                   <button 

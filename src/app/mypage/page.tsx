@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import DaumPostcodeEmbed from 'react-daum-postcode';
 
-type TabType = 'orders' | 'profile';
+type TabType = 'orders' | 'profile' | 'activity' | 'inquiry';
 
 export default function MyPage() {
   const router = useRouter();
@@ -13,6 +13,9 @@ export default function MyPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('orders');
+  const [activitySubTab, setActivitySubTab] = useState<'groups' | 'events'>('groups');
+  const [groupParticipations, setGroupParticipations] = useState<any[]>([]);
+  const [eventParticipations, setEventParticipations] = useState<any[]>([]);
 
   // Profile edit state
   const [name, setName] = useState('');
@@ -68,6 +71,14 @@ export default function MyPage() {
         .order('created_at', { ascending: false });
 
       if (data) setOrders(data);
+
+      // 활동내역 가져오기
+      const { data: gp } = await supabase.from('group_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+      if (gp) setGroupParticipations(gp);
+
+      const { data: ep } = await supabase.from('event_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+      if (ep) setEventParticipations(ep);
+
       setLoading(false);
     }
     fetchData();
@@ -114,8 +125,9 @@ export default function MyPage() {
         {/* 탭 네비게이션 */}
         <div style={{ display: 'flex', gap: '0', borderBottom: '2px solid var(--border)', marginBottom: '32px', marginTop: '24px' }}>
           {([
-            { key: 'orders' as TabType, label: '📦 구독 내역' },
+            { key: 'orders' as TabType, label: '📦 구독내역' },
             { key: 'profile' as TabType, label: '👤 내 정보 수정' },
+            { key: 'activity' as TabType, label: '📋 활동내역' },
           ]).map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               style={{
@@ -192,6 +204,94 @@ export default function MyPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* 탭 3: 활동내역 */}
+        {activeTab === 'activity' && (
+          <div>
+            {/* 서브탭 */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+              {[
+                { key: 'groups' as const, label: '독서모임', icon: '📚' },
+                { key: 'events' as const, label: '이벤트', icon: '🎟️' },
+              ].map(st => (
+                <button key={st.key} onClick={() => setActivitySubTab(st.key)}
+                  style={{ padding: '10px 20px', borderRadius: '100px', border: activitySubTab === st.key ? 'none' : '1px solid var(--border)', background: activitySubTab === st.key ? 'var(--accent)' : '#fff', color: activitySubTab === st.key ? '#fff' : 'var(--text-mid)', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>
+                  {st.icon} {st.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 독서모임 */}
+            {activitySubTab === 'groups' && (
+              groupParticipations.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 0', background: '#fff', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                  <p style={{ color: 'var(--text-muted)' }}>소모임 활동 내역이 없습니다.</p>
+                </div>
+              ) : (
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f9fafb', borderBottom: '2px solid var(--border)' }}>
+                        <th style={{ padding: '14px 16px', fontSize: '0.8rem', fontWeight: 700, color: '#6b7280', textAlign: 'left' }}>신청일자</th>
+                        <th style={{ padding: '14px 16px', fontSize: '0.8rem', fontWeight: 700, color: '#6b7280', textAlign: 'left' }}>내용</th>
+                        <th style={{ padding: '14px 16px', fontSize: '0.8rem', fontWeight: 700, color: '#6b7280', textAlign: 'left' }}>진행사항</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupParticipations.map((gp) => (
+                        <tr key={gp.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                          <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-mid)', whiteSpace: 'nowrap' }}>{new Date(gp.created_at).toLocaleDateString('ko-KR')}</td>
+                          <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 600 }}>
+                            {gp.role === 'leader' ? (
+                              <span><span style={{ color: 'var(--accent)', fontWeight: 700 }}>[개설]</span> {gp.group_title}</span>
+                            ) : gp.group_title}
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: gp.role === 'leader' ? '#dbeafe' : '#d1fae5', color: gp.role === 'leader' ? '#2563eb' : '#059669' }}>
+                              {gp.role === 'leader' ? '모집중' : '신청완료'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            )}
+
+            {/* 이벤트 */}
+            {activitySubTab === 'events' && (
+              eventParticipations.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 0', background: '#fff', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                  <p style={{ color: 'var(--text-muted)' }}>이벤트 신청 내역이 없습니다.</p>
+                </div>
+              ) : (
+                <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f9fafb', borderBottom: '2px solid var(--border)' }}>
+                        <th style={{ padding: '14px 16px', fontSize: '0.8rem', fontWeight: 700, color: '#6b7280', textAlign: 'left' }}>신청일자</th>
+                        <th style={{ padding: '14px 16px', fontSize: '0.8rem', fontWeight: 700, color: '#6b7280', textAlign: 'left' }}>내용</th>
+                        <th style={{ padding: '14px 16px', fontSize: '0.8rem', fontWeight: 700, color: '#6b7280', textAlign: 'left' }}>진행사항</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {eventParticipations.map((ep) => (
+                        <tr key={ep.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                          <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-mid)', whiteSpace: 'nowrap' }}>{new Date(ep.created_at).toLocaleDateString('ko-KR')}</td>
+                          <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 600 }}>{ep.event_title}</td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: '#d1fae5', color: '#059669' }}>신청완료</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            )}
+          </div>
         )}
 
         {/* 탭 2: 내 정보 수정 */}

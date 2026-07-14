@@ -61,6 +61,18 @@ export default function GroupsPage() {
   const [authorBook, setAuthorBook] = useState('');
   const [authorReason, setAuthorReason] = useState('');
 
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   useEffect(() => {
     const saved = localStorage.getItem('bookclub_groups');
     if (saved) {
@@ -81,7 +93,11 @@ export default function GroupsPage() {
     }
   }, []);
 
-  const handleJoin = (groupId: string) => {
+  const handleJoin = async (groupId: string) => {
+    if (!user) {
+      window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
+      return;
+    }
     const targetGroup = groups.find(g => g.id === groupId);
     if (!targetGroup) return;
 
@@ -94,16 +110,13 @@ export default function GroupsPage() {
 
       const updatedGroups = groups.map(g => {
         if (g.id === groupId) {
-          return {
-            ...g,
-            membersCount: Math.max(g.membersCount - 1, 0),
-            status: '모집중'
-          };
+          return { ...g, membersCount: Math.max(g.membersCount - 1, 0), status: '모집중' };
         }
         return g;
       });
       setGroups(updatedGroups);
       localStorage.setItem('bookclub_groups', JSON.stringify(updatedGroups));
+      await supabase.from('group_participants').delete().eq('group_id', groupId).eq('user_id', user.id);
       alert('소모임 탈퇴가 완료되었습니다.');
     } else {
       // Join
@@ -120,21 +133,29 @@ export default function GroupsPage() {
       const updatedGroups = groups.map(g => {
         if (g.id === groupId) {
           const newCount = g.membersCount + 1;
-          return {
-            ...g,
-            membersCount: newCount,
-            status: newCount >= g.maxMembers ? '모집마감' : '모집중'
-          };
+          return { ...g, membersCount: newCount, status: newCount >= g.maxMembers ? '모집마감' : '모집중' };
         }
         return g;
       });
       setGroups(updatedGroups);
       localStorage.setItem('bookclub_groups', JSON.stringify(updatedGroups));
-      alert('소모임 참가 신청이 완료되었습니다! 가입 승인 문자가 곧 발송됩니다.');
+      await supabase.from('group_participants').insert([{
+        group_id: groupId,
+        user_id: user.id,
+        user_email: user.email,
+        user_name: user.user_metadata?.name || user.email,
+        role: 'member',
+        group_title: targetGroup.title,
+      }]);
+      alert('소모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
     }
   };
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
+    if (!user) {
+      window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
+      return;
+    }
     if (!newTitle || !newDesc || !newBook || !newLeader) {
       alert('모든 필수 정보를 입력해 주세요.');
       return;
@@ -168,6 +189,16 @@ export default function GroupsPage() {
     updatedCreated.add(newGroup.id);
     setMyCreatedGroups(updatedCreated);
     localStorage.setItem('my_created_groups', JSON.stringify(Array.from(updatedCreated)));
+
+    // DB에 방장으로 저장
+    await supabase.from('group_participants').insert([{
+      group_id: newGroup.id,
+      user_id: user.id,
+      user_email: user.email,
+      user_name: user.user_metadata?.name || user.email,
+      role: 'leader',
+      group_title: newGroup.title,
+    }]);
 
     // Reset forms
     setNewTitle('');

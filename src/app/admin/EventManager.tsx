@@ -43,6 +43,8 @@ export default function EventManager() {
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [participants, setParticipants] = useState<Record<string, any[]>>({});
+  const [viewingParticipants, setViewingParticipants] = useState<string | null>(null);
 
   const loadEvents = async () => {
     setLoading(true);
@@ -148,6 +150,20 @@ export default function EventManager() {
     }
   };
 
+  const loadParticipants = async () => {
+    const { data } = await supabase.from('event_participants').select('*').order('created_at', { ascending: false });
+    if (data) {
+      const grouped: Record<string, any[]> = {};
+      data.forEach(p => {
+        if (!grouped[p.event_id]) grouped[p.event_id] = [];
+        grouped[p.event_id].push(p);
+      });
+      setParticipants(grouped);
+    }
+  };
+
+  useEffect(() => { loadParticipants(); }, [events]);
+
   if (loading && events.length === 0) return <div style={{ padding: '40px', textAlign: 'center' }}>이벤트 목록 불러오는 중...</div>;
 
   return (
@@ -189,6 +205,7 @@ export default function EventManager() {
                   onCancel={() => setEditingEvent(null)} 
                 />
               ) : (
+                <>
                 <div style={{ display: 'flex', background: '#fff', padding: '16px', borderRadius: '10px', border: '1px solid #e5dfd2', gap: '16px', alignItems: 'center' }}>
                   {/* Sorting Buttons */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -234,7 +251,13 @@ export default function EventManager() {
                   </div>
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button 
+                      onClick={() => setViewingParticipants(viewingParticipants === ev.id ? null : ev.id)}
+                      style={{ padding: '6px 12px', background: (participants[ev.id]?.length || 0) > 0 ? '#fef3c7' : '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, color: '#92400e' }}
+                    >
+                      👥 신청자 {participants[ev.id]?.length || 0}명
+                    </button>
                     <button 
                       onClick={() => setEditingEvent(ev)} 
                       style={{ padding: '6px 12px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500 }}
@@ -249,6 +272,29 @@ export default function EventManager() {
                     </button>
                   </div>
                 </div>
+                {/* Participant list dropdown */}
+                {viewingParticipants === ev.id && (participants[ev.id]?.length || 0) > 0 && (
+                  <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '0 0 10px 10px', padding: '12px 16px', marginTop: '-1px' }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#92400e', marginBottom: '8px' }}>신청자 목록 ({participants[ev.id].length}명)</p>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                      <thead><tr style={{ borderBottom: '1px solid #fde68a' }}>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', color: '#78716c' }}>이름</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', color: '#78716c' }}>이메일</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', color: '#78716c' }}>신청일</th>
+                      </tr></thead>
+                      <tbody>
+                        {participants[ev.id].map((p: any) => (
+                          <tr key={p.id} style={{ borderBottom: '1px solid #fef3c7' }}>
+                            <td style={{ padding: '6px 8px', fontWeight: 600 }}>{p.user_name}</td>
+                            <td style={{ padding: '6px 8px', color: '#78716c' }}>{p.user_email}</td>
+                            <td style={{ padding: '6px 8px', color: '#78716c' }}>{new Date(p.created_at).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                </>
               )}
             </div>
           ))}
