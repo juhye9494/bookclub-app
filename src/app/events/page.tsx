@@ -78,7 +78,7 @@ export default function EventsPage() {
         user_name: user.user_metadata?.name || user.email,
         event_title: selectedEvent.title,
       }]);
-      alert('신청 완료! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
+      alert('이벤트 참여가 성공적으로 접수되었습니다.\n자세한 진행 사항은 마이페이지 <활동내역>에서 확인 가능합니다.');
     } catch (err) {
       alert('신청 중 오류가 발생했습니다.');
     }
@@ -358,13 +358,25 @@ export default function EventsPage() {
                 {/* Event Schedule Info */}
                 <div style={{ background: 'var(--bg-warm)', padding: '20px', borderRadius: '12px', marginBottom: '28px', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem' }}>
-                    <span style={{ fontWeight: 600, width: '45px', color: 'var(--text-mid)' }}>일시</span>
+                    <span style={{ fontWeight: 600, width: '60px', color: 'var(--text-mid)' }}>일시</span>
                     <span style={{ color: 'var(--text)' }}>{selectedEvent.date}</span>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem' }}>
-                    <span style={{ fontWeight: 600, width: '45px', color: 'var(--text-mid)' }}>장소</span>
+                    <span style={{ fontWeight: 600, width: '60px', color: 'var(--text-mid)' }}>장소</span>
                     <span style={{ color: 'var(--text)' }}>{selectedEvent.location}</span>
                   </div>
+                  {selectedEvent.capacity && (
+                    <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem' }}>
+                      <span style={{ fontWeight: 600, width: '60px', color: 'var(--text-mid)' }}>인원</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedEvent.capacity}</span>
+                    </div>
+                  )}
+                  {selectedEvent.announcement_date && (
+                    <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem' }}>
+                      <span style={{ fontWeight: 600, width: '60px', color: 'var(--text-mid)' }}>발표</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedEvent.announcement_date}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Detailed Description */}

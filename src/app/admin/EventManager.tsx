@@ -421,6 +421,26 @@ function EventEditForm({ event, onSave, onCancel }: { event: any, onSave: (e: an
             <option value="종료">종료</option>
           </select>
         </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>모집 인원</label>
+          <input 
+            name="capacity" 
+            value={formData.capacity || ''} 
+            onChange={handleChange} 
+            placeholder="예: 50명 (선착순)" 
+            style={{ width: '100%', padding: '10px', border: '1px solid #cfc8b8', borderRadius: '6px', fontSize: '0.85rem' }} 
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px' }}>발표 일정</label>
+          <input 
+            name="announcement_date" 
+            value={formData.announcement_date || ''} 
+            onChange={handleChange} 
+            placeholder="예: 2026-07-20 (일) 당체자 개별 안내" 
+            style={{ width: '100%', padding: '10px', border: '1px solid #cfc8b8', borderRadius: '6px', fontSize: '0.85rem' }} 
+          />
+        </div>
       </div>
 
       {/* Rich Text Editor */}
