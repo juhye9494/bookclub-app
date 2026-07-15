@@ -57,6 +57,9 @@ export default function GroupsPage() {
   const [newLeader, setNewLeader] = useState('');
   const [newMax, setNewMax] = useState('8');
   const [newTags, setNewTags] = useState('');
+  const [newPlace, setNewPlace] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [newIntro, setNewIntro] = useState('');
 
   const [authorName, setAuthorName] = useState('');
   const [authorBook, setAuthorBook] = useState('');
@@ -172,7 +175,10 @@ export default function GroupsPage() {
       maxMembers: parseInt(newMax) || 8,
       status: '모집중',
       tags: newTags.split(',').map(t => t.trim()).filter(Boolean),
-      perks: ['커피값 지원 신청가능']
+      perks: ['커피값 지원 신청가능'],
+      place: newPlace,
+      time: newTime,
+      intro: newIntro,
     };
 
     const updated = [newGroup, ...groups];
@@ -202,12 +208,8 @@ export default function GroupsPage() {
     }]);
 
     // Reset forms
-    setNewTitle('');
-    setNewDesc('');
-    setNewBook('');
-    setNewLeader('');
-    setNewMax('8');
-    setNewTags('');
+    setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
+    setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro('');
     setIsCreateOpen(false);
 
     alert('나만의 독서 소모임이 성공적으로 생성되었습니다! 한경 심사 후 가이드가 메일로 안내됩니다.');
@@ -217,14 +219,15 @@ export default function GroupsPage() {
     if (!editingGroup) return;
     const updated = groups.map(g => {
       if (g.id === editingGroup.id) {
-        return { ...editingGroup, title: newTitle, desc: newDesc, book: newBook, leader: newLeader, maxMembers: parseInt(newMax) || 8, tags: newTags.split(',').map((t: string) => t.trim()).filter(Boolean) };
+        return { ...editingGroup, title: newTitle, desc: newDesc, book: newBook, leader: newLeader, maxMembers: parseInt(newMax) || 8, tags: newTags.split(',').map((t: string) => t.trim()).filter(Boolean), place: newPlace, time: newTime, intro: newIntro };
       }
       return g;
     });
     setGroups(updated);
     localStorage.setItem('bookclub_groups', JSON.stringify(updated));
     setEditingGroup(null);
-    setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader(''); setNewMax('8'); setNewTags('');
+    setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
+    setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro('');
     setIsCreateOpen(false);
     alert('소모임 정보가 수정되었습니다.');
   };
@@ -237,7 +240,22 @@ export default function GroupsPage() {
     setNewLeader(group.leader);
     setNewMax(String(group.maxMembers));
     setNewTags(group.tags.join(', '));
+    setNewPlace(group.place || '');
+    setNewTime(group.time || '');
+    setNewIntro(group.intro || '');
     setIsCreateOpen(true);
+  };
+
+  const handleDeleteGroup = (groupId: string) => {
+    if (!confirm('이 소모임을 삭제하시겠습니까?')) return;
+    const updated = groups.filter(g => g.id !== groupId);
+    setGroups(updated);
+    localStorage.setItem('bookclub_groups', JSON.stringify(updated));
+    const updatedCreated = new Set(myCreatedGroups);
+    updatedCreated.delete(groupId);
+    setMyCreatedGroups(updatedCreated);
+    localStorage.setItem('my_created_groups', JSON.stringify(Array.from(updatedCreated)));
+    alert('소모임이 삭제되었습니다.');
   };
 
   const handleRequestAuthor = () => {
@@ -314,20 +332,20 @@ export default function GroupsPage() {
 
         {/* Benefits Summary Grid */}
         <div className="benefits-summary">
-          <div>
+          <div style={{ minHeight: '80px' }}>
             <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>👑</div>
             <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '2px' }}>방장 활동비 지원</strong>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>독서모임 방장에게 활동비 5만원 지원 (매월 3팀 한정)</span>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>독서모임 방장에게<br />활동비 5만원 지원 (매월 3팀 한정)</span>
           </div>
-          <div>
+          <div style={{ minHeight: '80px' }}>
             <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🎙</div>
             <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '2px' }}>저자 섭외 지원</strong>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>모임 내 저자 섭외 요청 시 한경 내부 검토 후 조율</span>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>모임 내 저자 섭외 요청 시<br />한경 내부 검토 후 조율</span>
           </div>
-          <div>
+          <div style={{ minHeight: '80px' }}>
             <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>⚠️</div>
             <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '2px' }}>운영 안내</strong>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>영업·광고 목적 참여 시 강퇴 조치될 수 있습니다.</span>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>영업·광고 목적 참여 시<br />강퇴 조치될 수 있습니다.</span>
           </div>
         </div>
 
@@ -391,11 +409,19 @@ export default function GroupsPage() {
                   </p>
 
                   {/* Metadata fields */}
-                  <div style={{ background: 'var(--bg-warm)', padding: '14px 18px', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
-                    <div>📖 <strong>선정 도서:</strong> {group.book}</div>
-                    <div>👑 <strong>모임 리더:</strong> {group.leader}</div>
-                    <div>👥 <strong>모임 인원:</strong> <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{group.membersCount}명</span> / 정원 {group.maxMembers}명</div>
+                  <div style={{ background: 'var(--bg-warm)', padding: '14px 18px', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                    <div>📖 <strong>도서 :</strong> {group.book}</div>
+                    <div>👑 <strong>인원 :</strong> <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{group.membersCount}명</span> / {group.maxMembers}명</div>
+                    {group.place && <div>📍 <strong>장소 :</strong> {group.place}</div>}
+                    {group.time && <div>🕒 <strong>시간 :</strong> {group.time}</div>}
                   </div>
+
+                  {/* 방장 소개글 */}
+                  {group.intro && (
+                    <div style={{ padding: '16px 18px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', fontSize: '0.85rem', lineHeight: 1.75, color: '#374151', whiteSpace: 'pre-wrap', marginBottom: '16px' }}>
+                      {group.intro}
+                    </div>
+                  )}
                 </div>
 
                 {/* Buttons */}
@@ -419,22 +445,20 @@ export default function GroupsPage() {
                     {isMember ? '✓ 가입됨 (참가 취소하기)' : (isFull ? '정원 마감' : '소모임 참가 신청')}
                   </button>
                   {myCreatedGroups.has(group.id) && (
+                    <>
                     <button
                       onClick={(e) => { e.stopPropagation(); openEditGroup(group); }}
-                      style={{
-                        padding: '12px 20px',
-                        borderRadius: '10px',
-                        border: '1.5px solid var(--border)',
-                        background: '#fff',
-                        color: 'var(--text-mid)',
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
+                      style={{ padding: '12px 16px', borderRadius: '10px', border: '1.5px solid var(--border)', background: '#fff', color: 'var(--text-mid)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}
                     >
                       ✏️ 수정
                     </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.id); }}
+                      style={{ padding: '12px 16px', borderRadius: '10px', border: '1.5px solid #fecaca', background: '#fff', color: '#dc2626', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                    >
+                      🗑 삭제
+                    </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -449,11 +473,11 @@ export default function GroupsPage() {
         <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setIsCreateOpen(false); }}>
           <div className="modal" style={{ width: 'min(520px, 92vw)' }}>
             <button className="modal-close" onClick={() => setIsCreateOpen(false)}>✕</button>
-            <h3>{editingGroup ? '소모임 정보 수정' : '새 소모임 개설 신청'}</h3>
-            <p className="modal-sub">{editingGroup ? '소모임 정보를 수정합니다.' : '한경 언더라인 독서클럽 회원들과 함께 나눠 새로운 공간을 만듭니다.'}</p>
+            <h3>{editingGroup ? '독서모임 정보 수정' : '새 독서모임 개설 신청'}</h3>
+            <p className="modal-sub">{editingGroup ? '독서모임 정보를 수정합니다.' : '한경 언더라인 회원들과 함께 나눌 새로운 공간을 만듭니다.'}</p>
 
             <div className="form-field">
-              <label>소모임 명칭 *</label>
+              <label>독서모임 명칭 *</label>
               <input type="text" placeholder="예: CES 2026 테크 트렌드 분석 모임" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
             </div>
             
@@ -484,12 +508,48 @@ export default function GroupsPage() {
               </div>
             </div>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-field">
+                <label>장소</label>
+                <input type="text" placeholder="예: 송파구 가락투구" value={newPlace} onChange={(e) => setNewPlace(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>시간</label>
+                <input type="text" placeholder="예: 8.8(토) 오전 10:00" value={newTime} onChange={(e) => setNewTime(e.target.value)} />
+              </div>
+            </div>
+
             <div className="form-field">
               <label>소모임 태그 (쉼표로 구분)</label>
               <input type="text" placeholder="예: 재테크, 직장인, 강남역" value={newTags} onChange={(e) => setNewTags(e.target.value)} />
             </div>
 
-            <button className="modal-btn" onClick={editingGroup ? handleEditGroup : handleCreateGroup} style={{ marginTop: '16px' }}>{editingGroup ? '수정 완료' : '소모임 방 만들기'}</button>
+            {/* 소개글 작성 */}
+            <div className="form-field">
+              <label>방장 소개글</label>
+              <div style={{ background: '#f9fafb', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 16px', marginBottom: '8px', fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.7 }}>
+                <p style={{ fontWeight: 700, color: '#374151', marginBottom: '6px' }}>✍️ 작성 안내</p>
+                <p>1. 소모임의 주제와 운영 방식, 활동 계획 등을 자유롭게 소개해 주세요.</p>
+                <p>2. 방장님께서는 회원 간 원활한 소통을 위해 카카오톡 오픈채팅방을 개설해 주세요. 개설한 오픈채팅방 URL은 소개글 하단에 기재해 주시고, 신청한 회원들과 자유롭게 소통해 주세요.</p>
+                <p>3. 원활한 모임 운영을 위해 광고성 게시물이나 영업 목적의 글은 별도 안내 없이 삭제될 수 있습니다.</p>
+              </div>
+              <textarea 
+                placeholder="소모임을 소개하는 글을 작성해 주세요.
+
+ex.
+안녕하세요.
+8월 매주 토요일 오전 <사이클 투자 법칙>으로 독서모임을 진행하려 합니다.
+
+이런 분들이면 모두 환영합니다!
+다같이 모여 책을 읽고 이야기하는 시간을 가지면 좋을 것 같습니다." 
+                value={newIntro} 
+                onChange={(e) => setNewIntro(e.target.value)} 
+                rows={8}
+                style={{ width: '100%', padding: '14px 16px', border: '1.5px solid var(--border)', borderRadius: '12px', outline: 'none', fontSize: '0.92rem', lineHeight: 1.7, resize: 'vertical', fontFamily: 'var(--sans)', boxSizing: 'border-box' }} 
+              />
+            </div>
+
+            <button className="modal-btn" onClick={editingGroup ? handleEditGroup : handleCreateGroup} style={{ marginTop: '16px' }}>{editingGroup ? '수정 완료' : '독서모임 방 만들기'}</button>
           </div>
         </div>
       )}
