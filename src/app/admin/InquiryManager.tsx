@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
 const STATUS_OPTIONS = ['접수완료', '확인중', '답변완료'];
-const CATEGORY_FILTERS = ['전체', '가입문의', '배송문의', '교환문의', '환불문의', '저자 섭외 문의', '기타 문의'];
+const CATEGORY_FILTERS = ['전체', '가입문의', '배송문의', '교환문의', '환불문의', '저자 섭외 문의', '독서모임 활동비 신청', '기타 문의'];
 
 interface Inquiry {
   id: string;

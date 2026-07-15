@@ -48,6 +48,7 @@ export default function GroupsPage() {
   const [myMemberships, setMyMemberships] = useState<Set<string>>(new Set());
   const [myCreatedGroups, setMyCreatedGroups] = useState<Set<string>>(new Set());
   const [editingGroup, setEditingGroup] = useState<any | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   // Form states
   const [newTitle, setNewTitle] = useState('');
@@ -300,13 +301,13 @@ export default function GroupsPage() {
       {/* Hero Banner */}
       <div className="group-banner">
         <span style={{ fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.15em', color: 'var(--accent)', textTransform: 'uppercase' }}>
-          Hankyung Underline Small Groups
+          Hankyung Underline Community
         </span>
         <h1 style={{ fontFamily: 'var(--serif)', fontSize: '2.8rem', fontWeight: 700, marginTop: '12px', marginBottom: '16px' }}>
-          소모임 지원 센터
+          독서모임 지원 센터
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem', lineHeight: 1.8, maxWidth: '600px', margin: '0 auto' }}>
-          회원들이 직접 소모임을 만들고 운영해보세요.<br />
+          회원들이 직접 독서모임을 만들고 운영해보세요.<br />
           한경 언더라인은 더 풍성한 독서 경험을 위한<br />
           다양한 모임 활동을 함께 지원합니다.
         </p>
@@ -316,19 +317,24 @@ export default function GroupsPage() {
           <div>
             <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>👑</div>
             <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '2px' }}>방장 활동비 지원</strong>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>소모임 방장에게 소정의 활동비 지원 (한달에 3팀 한정)</span>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>독서모임 방장에게 활동비 5만원 지원 (매월 3팀 한정)</span>
           </div>
           <div>
             <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🎙</div>
             <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '2px' }}>저자 섭외 지원</strong>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>소모임의 작가 만남 요청 의견 한경 우선 조율</span>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>모임 내 저자 섭외 요청 시 한경 내부 검토 후 조율</span>
           </div>
           <div>
             <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>⚠️</div>
             <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '2px' }}>운영 안내</strong>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>광고성 글 작성 시 운영자가 삭제 및 영구정지할 수 있습니다.</span>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>영업·광고 목적 참여 시 강퇴 조치될 수 있습니다.</span>
           </div>
         </div>
+
+        {/* 내용 자세히 보기 버튼 */}
+        <button onClick={() => setIsDetailOpen(true)} style={{ marginTop: '20px', padding: '10px 28px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '100px', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', backdropFilter: 'blur(4px)' }}>
+          +내용 자세히 보기
+        </button>
       </div>
 
       {/* Main Content Area */}
@@ -337,7 +343,7 @@ export default function GroupsPage() {
         {/* Buttons Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
           <h2 style={{ fontFamily: 'var(--serif)', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
-            현재 가입 가능한 소모임 목록 ({groups.length}개)
+            현재 가입 가능한 독서모임 목록 ({groups.length}개)
           </h2>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button 
@@ -512,6 +518,82 @@ export default function GroupsPage() {
             </div>
 
             <button className="modal-btn" onClick={handleRequestAuthor} style={{ marginTop: '16px' }}>섭외 건의서 전송</button>
+          </div>
+        </div>
+      )}
+
+      {/* 자세히 보기 모달 */}
+      {isDetailOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setIsDetailOpen(false); }}>
+          <div style={{ background: '#fff', borderRadius: '20px', width: 'min(680px, 95vw)', maxHeight: '85vh', overflow: 'auto', position: 'relative' }}>
+            {/* 헤더 */}
+            <div style={{ padding: '28px 32px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontFamily: 'var(--serif)', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>독서모임 운영 안내</h2>
+              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+            </div>
+
+            <div style={{ padding: '24px 32px 36px', fontSize: '0.9rem', lineHeight: 1.85, color: 'var(--text)' }}>
+              {/* 1 */}
+              <div style={{ marginBottom: '28px' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ background: 'var(--accent)', color: '#fff', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 800, flexShrink: 0 }}>1</span>
+                  참여 안내
+                </h4>
+                <p style={{ color: 'var(--text-mid)', paddingLeft: '32px' }}>독서모임의 경우 <strong>선착순</strong>으로 참여 가능합니다.</p>
+              </div>
+
+              {/* 2 */}
+              <div style={{ marginBottom: '28px' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ background: 'var(--accent)', color: '#fff', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 800, flexShrink: 0 }}>2</span>
+                  소통 방식
+                </h4>
+                <p style={{ color: 'var(--text-mid)', paddingLeft: '32px' }}>회원들은 방장이 개설한 <strong>카카오톡 오픈채팅방</strong>을 통해 모임 일정과 공지사항을 공유받고, 함께 소통하며 독서 경험을 나눌 수 있습니다.</p>
+              </div>
+
+              {/* 3 */}
+              <div style={{ marginBottom: '28px' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ background: 'var(--accent)', color: '#fff', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 800, flexShrink: 0 }}>3</span>
+                  방장 활동비 지원
+                </h4>
+                <div style={{ paddingLeft: '32px', color: 'var(--text-mid)' }}>
+                  <p style={{ marginBottom: '10px' }}>방장에게는 <strong>활동비 5만원</strong>이 지원됩니다.</p>
+                  <ul style={{ paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px', listStyle: 'disc' }}>
+                    <li>활동 지원은 <strong>매월 3개 팀</strong>에 한해 제공됩니다.</li>
+                    <li>지원금 수령을 위해서는 운영 기간 내 소모임을 <strong>3회 이상</strong> 진행해야 합니다.</li>
+                    <li>모임을 3회 이상 진행한 후, <strong>[1:1 문의] &gt; [독서모임 활동비 신청]</strong> 게시판에 활동 인증 내용을 남겨주세요.<br />
+                      <span style={{ fontSize: '0.82rem', color: '#6b7280' }}>(회차별 모임 사진 3장 이상, 기프티콘을 받을 휴대폰 번호 기재 필수)</span>
+                    </li>
+                    <li>지원금은 모임 종료 후 활동 확인을 거쳐 남겨주신 휴대폰 번호로 <strong>네이버페이 포인트 기프티콘</strong>이 발송됩니다.</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* 4 */}
+              <div style={{ marginBottom: '28px' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ background: 'var(--accent)', color: '#fff', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 800, flexShrink: 0 }}>4</span>
+                  저자 섭외 안내
+                </h4>
+                <div style={{ paddingLeft: '32px', color: 'var(--text-mid)' }}>
+                  <p>저자 섭외를 희망하는 경우 <strong>방장이 대표로 신청</strong>해주세요.</p>
+                  <p>모임 내에서 저자 섭외 의견이 있는 경우 <strong>[1:1 문의] &gt; [저자 섭외 문의]</strong>를 통해 방장이 신청해주시면 내부 검토 후 회신드리겠습니다.</p>
+                </div>
+              </div>
+
+              {/* 주의사항 */}
+              <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '12px', padding: '20px 24px' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '12px', color: '#92400e', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ⚠️ 모두가 즐거운 모임이 될 수 있도록 함께 지켜주세요.
+                </h4>
+                <ul style={{ paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '10px', listStyle: 'disc', color: '#78350f', fontSize: '0.86rem', lineHeight: 1.7 }}>
+                  <li>영업, 광고 등의 목적으로 독서모임에 참여하는 경우 참여자들의 건의를 통해 모임에서 <strong>강퇴 조치</strong>될 수 있습니다.</li>
+                  <li>본 독서모임은 참가자 간 자율적인 교류를 기반으로 운영됩니다. 참가자 간 발생하는 분쟁이나 개인적인 문제에 대해서는 주최 측이 개입하거나 책임지지 않으며, 원활한 모임 운영을 위해 <strong>상호 존중과 배려</strong>를 부탁드립니다.</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       )}
