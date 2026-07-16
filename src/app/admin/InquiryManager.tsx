@@ -28,6 +28,7 @@ export default function InquiryManager() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
 
   useEffect(() => { loadInquiries(); }, []);
 
@@ -62,7 +63,9 @@ export default function InquiryManager() {
     await supabase.from('inquiries').update({ admin_reply: replyText, status: '답변완료' }).eq('id', id);
     setInquiries(prev => prev.map(i => i.id === id ? { ...i, admin_reply: replyText, status: '답변완료' } : i));
     setReplyText('');
+    setEditingReplyId(null);
     setSaving(false);
+    alert('✅ 답변이 저장되었습니다.');
   };
 
   const getStatusStyle = (status: string) => {
@@ -172,18 +175,45 @@ export default function InquiryManager() {
                   ))}
                 </div>
 
-                {/* 답변 작성 */}
+                {/* 답변 영역 */}
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', marginBottom: '6px', display: 'block' }}>📝 답변 작성</label>
-                  <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)}
-                    rows={4} placeholder="답변 내용을 작성해주세요..."
-                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.88rem', lineHeight: 1.6, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'var(--sans)' }} />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-                    <button onClick={() => submitReply(inq.id)} disabled={saving}
-                      style={{ padding: '8px 24px', background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
-                      {saving ? '저장 중...' : '답변 저장'}
-                    </button>
-                  </div>
+                  {inq.admin_reply && editingReplyId !== inq.id ? (
+                    /* 등록된 답변 — 읽기 모드 */
+                    <div>
+                      <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#059669', marginBottom: '6px', display: 'block' }}>✅ 등록된 답변</label>
+                      <div style={{ padding: '14px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0', fontSize: '0.88rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', color: '#374151' }}>
+                        {inq.admin_reply}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                        <button onClick={() => { setEditingReplyId(inq.id); setReplyText(inq.admin_reply); }}
+                          style={{ padding: '7px 18px', background: '#fff', color: '#6b7280', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                          ✏️ 답변 수정하기
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* 답변 작성/수정 모드 */
+                    <div>
+                      <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', marginBottom: '6px', display: 'block' }}>
+                        {inq.admin_reply ? '✏️ 답변 수정' : '📝 답변 작성'}
+                      </label>
+                      <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)}
+                        rows={4} placeholder="답변 내용을 작성해주세요..."
+                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.88rem', lineHeight: 1.6, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'var(--sans)' }} />
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+                        {inq.admin_reply && (
+                          <button onClick={() => { setEditingReplyId(null); setReplyText(''); }}
+                            style={{ padding: '8px 18px', background: '#fff', color: '#6b7280', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
+                            취소
+                          </button>
+                        )}
+                        <button onClick={() => submitReply(inq.id)} disabled={saving}
+                          style={{ padding: '8px 24px', background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+                          {saving ? '저장 중...' : inq.admin_reply ? '답변 수정 저장' : '답변 저장'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
