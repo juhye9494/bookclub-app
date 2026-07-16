@@ -257,36 +257,36 @@ export default function BooksPage() {
         /* ===== BOOK LIST VIEW ===== */
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 5vw 80px' }}>
 
-          {/* FLOATING CART BAR — 하단 고정 */}
+          {/* FLOATING CART BAR — 하단 플로팅 카드 */}
           {selected.size > 0 && (
-            <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, pointerEvents: 'none', animation: 'cartSlideUp 0.35s cubic-bezier(0.16,1,0.3,1)' }}>
+            <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, pointerEvents: 'none', animation: 'cartSlideUp 0.35s cubic-bezier(0.16,1,0.3,1)', width: 'min(680px, calc(100% - 32px))' }}>
               <style>{`
                 @keyframes cartSlideUp {
-                  from { opacity: 0; transform: translateY(20px); }
-                  to { opacity: 1; transform: translateY(0); }
+                  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+                  to { opacity: 1; transform: translateX(-50%) translateY(0); }
                 }
                 .cart-x-btn:hover { transform: scale(1.2); }
               `}</style>
-              <div style={{ pointerEvents: 'auto', background: 'rgba(26,24,21,0.96)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '16px max(20px, 4vw) max(16px, env(safe-area-inset-bottom, 16px))' }}>
-                <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ pointerEvents: 'auto', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '14px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   {/* 장바구니 아이콘 + 카운트 */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                    <span style={{ fontSize: '1.3rem' }}>📚</span>
-                    <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>{selected.size}<span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}> / 4</span></span>
+                    <span style={{ fontSize: '1.2rem' }}>📚</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text)', fontWeight: 700 }}>{selected.size}<span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> / 4</span></span>
                   </div>
                   {/* 구분선 */}
-                  <div style={{ width: '1px', height: '36px', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+                  <div style={{ width: '1px', height: '32px', background: 'rgba(0,0,0,0.1)', flexShrink: 0 }} />
                   {/* 선택 도서 썸네일 */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0, padding: '6px 4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, padding: '4px 2px' }}>
                     {Array.from(selected).map((idx) => books[idx] && (
                       <div key={idx} style={{ position: 'relative', flexShrink: 0 }}>
-                        <div style={{ width: '42px', height: '58px', borderRadius: '4px 7px 7px 4px', overflow: 'hidden', border: '1.5px solid rgba(255,255,255,0.2)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                        <div style={{ width: '40px', height: '55px', borderRadius: '4px 7px 7px 4px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                           <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <button
                           className="cart-x-btn"
                           onClick={(e) => { e.stopPropagation(); toggleBook(idx); }}
-                          style={{ position: 'absolute', top: '-8px', right: '-8px', width: '22px', height: '22px', borderRadius: '50%', background: '#fff', color: '#333', border: '1.5px solid rgba(0,0,0,0.08)', fontSize: '0.6rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, boxShadow: '0 2px 6px rgba(0,0,0,0.2)', transition: 'transform 0.15s' }}
+                          style={{ position: 'absolute', top: '-7px', right: '-7px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', color: '#999', border: '1px solid rgba(0,0,0,0.12)', fontSize: '0.55rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, boxShadow: '0 1px 4px rgba(0,0,0,0.12)', transition: 'transform 0.15s, color 0.15s' }}
                         >✕</button>
                       </div>
                     ))}
@@ -295,7 +295,7 @@ export default function BooksPage() {
                   <button onClick={() => {
                     if (user) { setIsPaymentOpen(true); }
                     else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
-                  }} style={{ padding: '13px 30px', background: 'linear-gradient(135deg, var(--accent), #e8553a)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 18px rgba(252,102,64,0.45)', flexShrink: 0 }}>
+                  }} style={{ padding: '12px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(252,102,64,0.35)', flexShrink: 0 }}>
                     신청하기
                   </button>
                 </div>
