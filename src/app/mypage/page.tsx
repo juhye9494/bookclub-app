@@ -433,12 +433,12 @@ export default function MyPage() {
                         )}
                         {inq.admin_reply ? (
                           <div style={{ marginTop: '16px', padding: '16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
-                            <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#059669', marginBottom: '8px' }}>📩 담변</p>
+                            <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#059669', marginBottom: '8px' }}>📩 답변</p>
                             <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: '#374151', whiteSpace: 'pre-wrap' }}>{inq.admin_reply}</p>
                           </div>
                         ) : (
                           <div style={{ marginTop: '16px', padding: '12px', background: '#f9fafb', borderRadius: '10px', textAlign: 'center' }}>
-                            <p style={{ fontSize: '0.82rem', color: '#9ca3af' }}>담변 대기 중입니다.</p>
+                            <p style={{ fontSize: '0.82rem', color: '#9ca3af' }}>답변 대기 중입니다.</p>
                           </div>
                         )}
                       </div>
