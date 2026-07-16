@@ -827,11 +827,16 @@ body {
 .dv-nav-title .brand-logo { height: 26px; transform-origin: left center; }
 .footer-logo .brand-logo { height: 18px; filter: grayscale(100%) opacity(0.6); transform-origin: left center; }
 
+/* Mobile-only line break: hidden on desktop, shown on mobile */
+.mobile-br { display: none; }
+
 /* ============================================================
    MOBILE RESPONSIVE — max-width: 768px
    Comprehensive mobile-first overrides for all pages
    ============================================================ */
 @media (max-width: 768px) {
+
+  .mobile-br { display: inline; }
 
   /* ─── GLOBAL SECTIONS ─── */
   section {
@@ -862,6 +867,7 @@ body {
     font-size: 0.88rem;
     max-width: 100%;
     margin-bottom: 28px;
+    text-align: center;
   }
 
   .hero-btns {

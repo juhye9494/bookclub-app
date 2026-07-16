@@ -90,7 +90,7 @@ export default function Home() {
           {/* HERO */}
           <section className="hero" style={{ paddingBottom: '40px', minHeight: 'auto' }}>
             <div className="hero-title-container">
-              <p className="hero-slogan">한 권의 책, 하나의 밑줄이 당신의 경험을 더 넓혀줍니다.</p>
+              <p className="hero-slogan">한 권의 책, 하나의 밑줄이<br className="mobile-br" /> 당신의 경험을 더 넓혀줍니다.</p>
               <h1 className="hero-underline-title">
                 <span className="underline-draw"></span>
                 <span className="text-reveal-container">
@@ -100,10 +100,10 @@ export default function Home() {
                 </span>
               </h1>
             </div>
-             <p className="hero-sub hero-sub-animate" style={{ maxWidth: '640px', marginTop: '40px' }}>
+             <p className="hero-sub hero-sub-animate" style={{ maxWidth: '640px', marginTop: '40px', textAlign: 'center' }}>
               하루 딱 30분, 3개월<br />
-              한경 언더라인에서만 만나볼 수 있는 다양한 혜택과 함께<br />
-              경제·경영·인문·예술을 넘나드는 즐거운 독서 경험을 시작해보세요.
+              한경 언더라인에서만 만나볼 수 있는<br className="mobile-br" /> 다양한 혜택과 함께<br />
+              경제·경영·인문·예술을 넘나드는<br className="mobile-br" /> 즐거운 독서 경험을 시작해보세요.
             </p>
 
             {/* CSS styles for Hero animation */}

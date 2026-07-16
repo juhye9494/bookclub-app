@@ -290,12 +290,12 @@ export default function BooksPage() {
           {/* Page Header */}
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <p style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.14em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '12px' }}>BOOK CURATION</p>
-            <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 700, lineHeight: 1.3, marginBottom: '16px' }}>이번 시즌 도서를 골라보세요</h1>
-            <p style={{ fontSize: '0.95rem', color: 'var(--text-mid)', lineHeight: 1.7, marginBottom: '0' }}>3개월간 총 4권의 도서를 자유롭게 선택하실 수 있습니다.</p>
-            <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-              <p style={{ margin: 0 }}>• 도서는 4권을 한 번에 신청하시거나, 1권씩 나누어 신청하실 수 있습니다.</p>
-              <p style={{ margin: 0 }}>• 도서는 신청 시점에 맞춰 순차적으로 발송되며, 주 1회 진행됩니다.</p>
-              <p style={{ margin: 0 }}>• 신간 도서는 매월 초 홈페이지를 통해 업데이트됩니다.</p>
+            <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 700, lineHeight: 1.3, marginBottom: '16px' }}>이번 시즌 도서를<br className="mobile-br" /> 골라보세요</h1>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-mid)', lineHeight: 1.7, marginBottom: '0' }}>3개월간 총 4권의 도서를<br className="mobile-br" /> 자유롭게 선택하실 수 있습니다.</p>
+            <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.7, textAlign: 'center' }}>
+              <p style={{ margin: 0 }}>• 도서는 4권을 한 번에 신청하시거나,<br className="mobile-br" /> 1권씩 나누어 신청하실 수 있습니다.</p>
+              <p style={{ margin: 0 }}>• 도서는 신청 시점에 맞춰<br className="mobile-br" /> 순차적으로 발송되며, 주 1회 진행됩니다.</p>
+              <p style={{ margin: 0 }}>• 신간 도서는 매월 초<br className="mobile-br" /> 홈페이지를 통해 업데이트됩니다.</p>
             </div>
           </div>
 
