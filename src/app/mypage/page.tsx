@@ -76,10 +76,18 @@ export default function MyPage() {
 
       // 활동내역 가져오기
       const { data: gp } = await supabase.from('group_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
-      if (gp) setGroupParticipations(gp);
+
+      // 존재하는 그룹만 필터링 (로컬 저장소 기준)
+      const savedGroups = JSON.parse(localStorage.getItem('bookclub_groups') || '[]');
+      const existingGroupIds = new Set(savedGroups.map((g: any) => g.id));
+      if (gp) setGroupParticipations(gp.filter((p: any) => existingGroupIds.has(p.group_id)));
 
       const { data: ep } = await supabase.from('event_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
-      if (ep) setEventParticipations(ep);
+
+      // 존재하는 이벤트만 필터링 (DB 기준)
+      const { data: existingEvents } = await supabase.from('events').select('id');
+      const existingEventIds = new Set((existingEvents || []).map((e: any) => e.id));
+      if (ep) setEventParticipations(ep.filter((p: any) => existingEventIds.has(p.event_id)));
 
       const { data: inq } = await supabase.from('inquiries').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
       if (inq) setInquiries(inq);
@@ -232,7 +240,7 @@ export default function MyPage() {
             {activitySubTab === 'groups' && (
               groupParticipations.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 0', background: '#fff', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                  <p style={{ color: 'var(--text-muted)' }}>소모임 활동 내역이 없습니다.</p>
+                  <p style={{ color: 'var(--text-muted)' }}>독서모임 활동 내역이 없습니다.</p>
                 </div>
               ) : (
                 <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>

@@ -18,7 +18,7 @@ const INITIAL_GROUPS = [
   },
   {
     id: 'group-2',
-    title: '미술관 기행 & 예술 도서 소모임',
+    title: '미술관 기행 & 예술 도서 독서모임',
     desc: '한가람 미술관 전시회 일정에 맞춰 오프라인 투어를 함께하고, 아르떼/인문 예술 관련 도서를 깊이 있게 읽으며 예술적 안목을 넓히는 소규모 모임입니다.',
     book: '덜 멍청하게 살기 위한 최소한의 철학 (라르스 스벤젠)',
     leader: '이지은 (인문학 강사)',
@@ -122,7 +122,7 @@ export default function GroupsPage() {
       setGroups(updatedGroups);
       localStorage.setItem('bookclub_groups', JSON.stringify(updatedGroups));
       await supabase.from('group_participants').delete().eq('group_id', groupId).eq('user_id', user.id);
-      alert('소모임 탈퇴가 완료되었습니다.');
+      alert('독서모임 탈퇴가 완료되었습니다.');
     } else {
       // Join
       if (targetGroup.membersCount >= targetGroup.maxMembers) {
@@ -152,7 +152,7 @@ export default function GroupsPage() {
         role: 'member',
         group_title: targetGroup.title,
       }]);
-      alert('소모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
+      alert('독서모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
     }
   };
 
@@ -213,7 +213,7 @@ export default function GroupsPage() {
     setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro('');
     setIsCreateOpen(false);
 
-    alert('나만의 독서 소모임이 성공적으로 생성되었습니다! 한경 심사 후 가이드가 메일로 안내됩니다.');
+    alert('나만의 독서모임이 성공적으로 생성되었습니다! 한경 심사 후 가이드가 메일로 안내됩니다.');
   };
 
   const handleEditGroup = () => {
@@ -230,7 +230,7 @@ export default function GroupsPage() {
     setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
     setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro('');
     setIsCreateOpen(false);
-    alert('소모임 정보가 수정되었습니다.');
+    alert('독서모임 정보가 수정되었습니다.');
   };
 
   const openEditGroup = (group: any) => {
@@ -248,7 +248,7 @@ export default function GroupsPage() {
   };
 
   const handleDeleteGroup = (groupId: string) => {
-    if (!confirm('이 소모임을 삭제하시겠습니까?')) return;
+    if (!confirm('이 독서모임을 삭제하시겠습니까?')) return;
     const updated = groups.filter(g => g.id !== groupId);
     setGroups(updated);
     localStorage.setItem('bookclub_groups', JSON.stringify(updated));
@@ -256,7 +256,7 @@ export default function GroupsPage() {
     updatedCreated.delete(groupId);
     setMyCreatedGroups(updatedCreated);
     localStorage.setItem('my_created_groups', JSON.stringify(Array.from(updatedCreated)));
-    alert('소모임이 삭제되었습니다.');
+    alert('독서모임이 삭제되었습니다.');
   };
 
   const handleRequestAuthor = () => {
@@ -375,7 +375,7 @@ export default function GroupsPage() {
               onClick={() => setIsCreateOpen(true)}
               style={{ padding: '12px 28px', background: 'var(--accent)', border: 'none', color: '#fff', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 14px rgba(252,102,64,0.3)' }}
             >
-              ＋ 소모임 만들기
+              ＋ 독서모임 만들기
             </button>
           </div>
         </div>
@@ -443,7 +443,7 @@ export default function GroupsPage() {
                       transition: 'all 0.2s'
                     }}
                   >
-                    {isMember ? '✓ 가입됨 (참가 취소하기)' : (isFull ? '정원 마감' : '소모임 참가 신청')}
+                    {isMember ? '✓ 가입됨 (참가 취소하기)' : (isFull ? '정원 마감' : '독서모임 참가 신청')}
                   </button>
                   {myCreatedGroups.has(group.id) && (
                     <>
@@ -521,7 +521,7 @@ export default function GroupsPage() {
             </div>
 
             <div className="form-field">
-              <label>소모임 태그 (쉼표로 구분)</label>
+              <label>독서모임 태그 (쉼표로 구분)</label>
               <input type="text" placeholder="예: 재테크, 직장인, 강남역" value={newTags} onChange={(e) => setNewTags(e.target.value)} />
             </div>
 
@@ -530,12 +530,12 @@ export default function GroupsPage() {
               <label>방장 소개글</label>
               <div style={{ background: '#f9fafb', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 16px', marginBottom: '8px', fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.7 }}>
                 <p style={{ fontWeight: 700, color: '#374151', marginBottom: '6px' }}>✍️ 작성 안내</p>
-                <p>1. 소모임의 주제와 운영 방식, 활동 계획 등을 자유롭게 소개해 주세요.</p>
+                <p>1. 독서모임의 주제와 운영 방식, 활동 계획 등을 자유롭게 소개해 주세요.</p>
                 <p>2. 방장님께서는 회원 간 원활한 소통을 위해 카카오톡 오픈채팅방을 개설해 주세요. 개설한 오픈채팅방 URL은 소개글 하단에 기재해 주시고, 신청한 회원들과 자유롭게 소통해 주세요.</p>
                 <p>3. 원활한 모임 운영을 위해 광고성 게시물이나 영업 목적의 글은 별도 안내 없이 삭제될 수 있습니다.</p>
               </div>
               <textarea 
-                placeholder="소모임을 소개하는 글을 작성해 주세요.
+                placeholder="독서모임을 소개하는 글을 작성해 주세요.
 
 ex.
 안녕하세요.
@@ -561,7 +561,7 @@ ex.
           <div className="modal" style={{ width: 'min(500px, 92vw)' }}>
             <button className="modal-close" onClick={() => setIsRequestAuthorOpen(false)}>✕</button>
             <h3>저자 섭외 요청하기</h3>
-            <p className="modal-sub">소모임에서 함께 읽고 소통하고 싶은 작가가 있으신가요? 한경에 섭외 의견을 제안하세요.</p>
+            <p className="modal-sub">독서모임에서 함께 읽고 소통하고 싶은 작가가 있으신가요? 한경에 섭외 의견을 제안하세요.</p>
 
             <div className="form-field">
               <label>저자 이름 *</label>
@@ -575,7 +575,7 @@ ex.
 
             <div className="form-field">
               <label>섭외 건의 사유 및 바라는 점 *</label>
-              <input type="text" placeholder="예: 소모임원들과 함께 저자의 투자 방향에 대한 직접 질의를 하고 싶습니다." value={authorReason} onChange={(e) => setAuthorReason(e.target.value)} />
+              <input type="text" placeholder="예: 모임원들과 함께 저자의 투자 방향에 대한 직접 질의를 하고 싶습니다." value={authorReason} onChange={(e) => setAuthorReason(e.target.value)} />
             </div>
 
             <button className="modal-btn" onClick={handleRequestAuthor} style={{ marginTop: '16px' }}>섭외 건의서 전송</button>
@@ -623,7 +623,7 @@ ex.
                   <p style={{ marginBottom: '10px' }}>방장에게는 <strong>활동비 5만원</strong>이 지원됩니다.</p>
                   <ul style={{ paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px', listStyle: 'disc' }}>
                     <li>활동 지원은 <strong>매월 3개 팀</strong>에 한해 제공됩니다.</li>
-                    <li>지원금 수령을 위해서는 운영 기간 내 소모임을 <strong>3회 이상</strong> 진행해야 합니다.</li>
+                    <li>지원금 수령을 위해서는 운영 기간 내 독서모임을 <strong>3회 이상</strong> 진행해야 합니다.</li>
                     <li>모임을 3회 이상 진행한 후, <strong>[1:1 문의] &gt; [독서모임 활동비 신청]</strong> 게시판에 활동 인증 내용을 남겨주세요.<br />
                       <span style={{ fontSize: '0.82rem', color: '#6b7280' }}>(회차별 모임 사진 3장 이상, 기프티콘을 받을 휴대폰 번호 기재 필수)</span>
                     </li>
