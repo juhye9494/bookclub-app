@@ -79,6 +79,7 @@ export default function PlusInsightPage() {
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [likes, setLikes] = useState<any>({});
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Load posts from Supabase
@@ -126,16 +127,34 @@ export default function PlusInsightPage() {
       setLikes(initialLikes);
       localStorage.setItem('insight_likes', JSON.stringify(initialLikes));
     }
+
+    const savedLiked = localStorage.getItem('insight_liked_posts');
+    if (savedLiked) {
+      setLikedPosts(new Set(JSON.parse(savedLiked)));
+    }
   }, []);
 
   const handleLike = (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = {
-      ...likes,
-      [postId]: (likes[postId] || 0) + 1
-    };
-    setLikes(updated);
-    localStorage.setItem('insight_likes', JSON.stringify(updated));
+    if (likedPosts.has(postId)) {
+      // 이미 좋아요 누른 게시물 → 취소
+      const updated = { ...likes, [postId]: Math.max((likes[postId] || 1) - 1, 0) };
+      setLikes(updated);
+      localStorage.setItem('insight_likes', JSON.stringify(updated));
+      const newLiked = new Set(likedPosts);
+      newLiked.delete(postId);
+      setLikedPosts(newLiked);
+      localStorage.setItem('insight_liked_posts', JSON.stringify(Array.from(newLiked)));
+    } else {
+      // 좋아요
+      const updated = { ...likes, [postId]: (likes[postId] || 0) + 1 };
+      setLikes(updated);
+      localStorage.setItem('insight_likes', JSON.stringify(updated));
+      const newLiked = new Set(likedPosts);
+      newLiked.add(postId);
+      setLikedPosts(newLiked);
+      localStorage.setItem('insight_liked_posts', JSON.stringify(Array.from(newLiked)));
+    }
   };
 
   const handleAddComment = (postId: string) => {
@@ -267,7 +286,7 @@ export default function PlusInsightPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '16px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   <span>{post.author}</span>
                   <div style={{ display: 'flex', gap: '12px' }}>
-                    <span style={{ cursor: 'pointer' }} onClick={(e) => handleLike(post.id, e)}>❤️ {currentLikes}</span>
+                    <span style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onClick={(e) => handleLike(post.id, e)}>{likedPosts.has(post.id) ? '❤️' : '🩶'} {currentLikes}</span>
                     <span>💬 {currentCommentsCount}</span>
                   </div>
                 </div>
@@ -361,26 +380,26 @@ export default function PlusInsightPage() {
                 </div>
 
                 {/* Comment Input */}
-                <div className="comment-input-area">
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="comment-input-area" style={{ overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <input 
                       type="text" 
                       placeholder="이름" 
                       value={authorName}
                       onChange={(e) => setAuthorName(e.target.value)}
-                      style={{ width: '100px', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.88rem', outline: 'none' }}
+                      style={{ width: '80px', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
                     />
                     <input 
                       type="text" 
                       placeholder="따뜻한 한마디를 남겨주세요." 
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.88rem', outline: 'none' }}
+                      style={{ flex: 1, minWidth: 0, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(selectedPost.id); }}
                     />
                     <button 
                       onClick={() => handleAddComment(selectedPost.id)}
-                      style={{ padding: '8px 16px', background: 'var(--text)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
+                      style={{ padding: '8px 16px', background: 'var(--text)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
                     >
                       등록
                     </button>
