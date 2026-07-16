@@ -351,9 +351,15 @@ export default function PlusInsightPage() {
               <div style={{ display: 'flex', justifyContent: 'center', margin: '32px 0 16px' }}>
                 <button 
                   onClick={(e) => handleLike(selectedPost.id, e)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 30px', background: 'var(--accent-light)', border: '1.5px solid var(--accent)', color: 'var(--accent)', borderRadius: '40px', fontWeight: 600, fontSize: '0.92rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                  style={{ 
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 30px', 
+                    background: likedPosts.has(selectedPost.id) ? 'var(--accent)' : 'var(--accent-light)', 
+                    border: '1.5px solid var(--accent)', 
+                    color: likedPosts.has(selectedPost.id) ? '#fff' : 'var(--accent)', 
+                    borderRadius: '40px', fontWeight: 600, fontSize: '0.92rem', cursor: 'pointer', transition: 'all 0.2s' 
+                  }}
                 >
-                  ❤️ 유익한 글이에요! ({likes[selectedPost.id] || selectedPost.likes})
+                  {likedPosts.has(selectedPost.id) ? '❤️ 좋아요를 눌렀어요!' : '🩶 유익한 글이에요!'} ({likes[selectedPost.id] || selectedPost.likes})
                 </button>
               </div>
 
