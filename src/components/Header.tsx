@@ -264,7 +264,7 @@ export default function Header() {
 
         {/* Desktop nav links */}
         <div className="nav-links-desktop">
-          <Link href="/books" className="nav-link">도서 선택</Link>
+          <Link href="/books" className="nav-link" onClick={() => window.dispatchEvent(new Event('close-book-detail'))}>도서 선택</Link>
           <Link href="/insight" className="nav-link">플러스 인사이트</Link>
           <Link href="/groups" className="nav-link">독서모임</Link>
           <Link href="/events" className="nav-link">이벤트</Link>
@@ -299,7 +299,7 @@ export default function Header() {
 
       {/* Mobile nav dropdown */}
       <div className={`mobile-nav-dropdown${mobileMenuOpen ? ' open' : ''}`}>
-        <Link href="/books" className="nav-link" onClick={() => setMobileMenuOpen(false)}>도서 선택</Link>
+        <Link href="/books" className="nav-link" onClick={() => { setMobileMenuOpen(false); window.dispatchEvent(new Event('close-book-detail')); }}>도서 선택</Link>
         <Link href="/insight" className="nav-link" onClick={() => setMobileMenuOpen(false)}>플러스 인사이트</Link>
         <Link href="/groups" className="nav-link" onClick={() => setMobileMenuOpen(false)}>독서모임</Link>
         <Link href="/events" className="nav-link" onClick={() => setMobileMenuOpen(false)}>이벤트</Link>

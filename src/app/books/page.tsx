@@ -135,8 +135,19 @@ export default function BooksPage() {
         setTimeout(() => { window.scrollTo({ top: scrollPosRef.current, behavior: 'instant' }); }, 0);
       }
     };
+    // 같은 페이지 내 네비게이션 클릭 시 상세뷰 닫기
+    const handleCloseDetail = () => {
+      if (isDetailOpen) {
+        setIsDetailOpen(false);
+        setTimeout(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, 0);
+      }
+    };
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('close-book-detail', handleCloseDetail);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('close-book-detail', handleCloseDetail);
+    };
   }, [isDetailOpen]);
 
   const activeBook = detailIdx !== null ? books[detailIdx] : null;
