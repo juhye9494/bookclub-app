@@ -29,9 +29,7 @@ export default function MyPage() {
   const [saving, setSaving] = useState(false);
 
   // Password change state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordResetSent, setPasswordResetSent] = useState(false);
   const [changingPw, setChangingPw] = useState(false);
 
   useEffect(() => {
@@ -117,15 +115,15 @@ export default function MyPage() {
   };
 
   const handlePasswordChange = async () => {
-    if (!newPassword || !confirmPassword) { alert('새 비밀번호를 입력해주세요.'); return; }
-    if (newPassword !== confirmPassword) { alert('비밀번호가 일치하지 않습니다.'); return; }
-    if (newPassword.length < 6) { alert('비밀번호는 6자 이상이어야 합니다.'); return; }
+    if (!user?.email) { alert('이메일 정보를 확인할 수 없습니다.'); return; }
     setChangingPw(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: window.location.origin + '/mypage?tab=profile',
+    });
     setChangingPw(false);
-    if (error) { alert('비밀번호 변경 실패: ' + error.message); return; }
-    alert('비밀번호가 변경되었습니다.');
-    setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+    if (error) { alert('비밀번호 재설정 메일 발송 실패: ' + error.message); return; }
+    setPasswordResetSent(true);
+    alert('✉️ 비밀번호 재설정 링크가 이메일로 발송되었습니다.\n이메일을 확인해주세요.');
   };
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontFamily: 'var(--sans)' }}>로딩중...</div>;
@@ -360,34 +358,25 @@ export default function MyPage() {
 
             {/* 비밀번호 변경 */}
             <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '24px', color: 'var(--text)' }}>비밀번호 변경</h3>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                <div>
-                  <label style={labelStyle}>새 비밀번호</label>
-                  <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="6자 이상" style={inputStyle} />
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text)' }}>비밀번호 변경</h3>
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '20px' }}>
+                보안을 위해 비밀번호 변경은 <strong>이메일 인증</strong>을 통해 진행됩니다.<br />
+                아래 버튼을 누르면 가입하신 이메일로 비밀번호 재설정 링크가 발송됩니다.
+              </p>
+              {passwordResetSent ? (
+                <div style={{ padding: '16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0', textAlign: 'center' }}>
+                  <p style={{ fontSize: '0.9rem', color: '#059669', fontWeight: 600 }}>✅ 이메일이 발송되었습니다</p>
+                  <p style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '4px' }}>{user?.email}로 발송된 링크를 확인해주세요.</p>
                 </div>
-                <div>
-                  <label style={labelStyle}>비밀번호 확인</label>
-                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="다시 입력" style={inputStyle} />
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ flex: 1, fontSize: '0.85rem', color: '#6b7280' }}>📧 {user?.email}</div>
+                  <button onClick={handlePasswordChange} disabled={changingPw}
+                    style={{ padding: '12px 28px', background: '#333', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.88rem', fontWeight: 600, cursor: changingPw ? 'not-allowed' : 'pointer', opacity: changingPw ? 0.7 : 1, fontFamily: 'var(--sans)', whiteSpace: 'nowrap' }}>
+                    {changingPw ? '발송 중...' : '✉️ 재설정 메일 발송'}
+                  </button>
                 </div>
-              </div>
-              {newPassword && confirmPassword && newPassword !== confirmPassword && (
-                <p style={{ fontSize: '0.78rem', color: '#ef4444', marginBottom: '12px' }}>⚠️ 비밀번호가 일치하지 않습니다.</p>
               )}
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button onClick={handlePasswordChange} disabled={changingPw}
-                  style={{ padding: '12px 32px', background: '#333', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600, cursor: changingPw ? 'not-allowed' : 'pointer', opacity: changingPw ? 0.7 : 1, fontFamily: 'var(--sans)' }}>
-                  {changingPw ? '변경 중...' : '비밀번호 변경'}
-                </button>
-              </div>
-            </div>
-
-            {/* 고객센터 안내 */}
-            <div style={{ background: '#f9fafb', borderRadius: '16px', padding: '20px 24px', fontSize: '0.84rem', color: '#6b7280', lineHeight: 1.8 }}>
-              <p style={{ fontWeight: 600, color: '#374151', marginBottom: '4px' }}>문의 안내</p>
-              <p>전화: 02-360-4555</p>
             </div>
           </div>
         )}
