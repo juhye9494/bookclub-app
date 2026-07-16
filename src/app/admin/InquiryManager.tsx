@@ -53,8 +53,18 @@ export default function InquiryManager() {
   };
 
   const updateStatus = async (id: string, newStatus: string) => {
-    await supabase.from('inquiries').update({ status: newStatus }).eq('id', id);
-    setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
+    const inquiry = inquiries.find(i => i.id === id);
+    // 답변완료 → 접수완료/확인중으로 되돌릴 때 답변도 초기화
+    if (inquiry?.admin_reply && newStatus !== '답변완료') {
+      if (!confirm('상태를 되돌리면 등록된 답변도 삭제됩니다. 계속하시겠습니까?')) return;
+      await supabase.from('inquiries').update({ status: newStatus, admin_reply: '' }).eq('id', id);
+      setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: newStatus, admin_reply: '' } : i));
+      setEditingReplyId(null);
+      setReplyText('');
+    } else {
+      await supabase.from('inquiries').update({ status: newStatus }).eq('id', id);
+      setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
+    }
   };
 
   const submitReply = async (id: string) => {
