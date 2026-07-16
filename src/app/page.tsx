@@ -125,6 +125,7 @@ export default function Home() {
                 font-weight: 500;
                 color: var(--text-mid);
                 margin-bottom: 16px;
+                text-align: center;
                 opacity: 0;
                 transform: translateY(12px);
                 animation: fadeUpSlogan 0.8s 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
