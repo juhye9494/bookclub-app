@@ -265,27 +265,37 @@ export default function BooksPage() {
                   from { opacity: 0; transform: translateY(20px); }
                   to { opacity: 1; transform: translateY(0); }
                 }
+                .cart-x-btn:hover { transform: scale(1.2); }
               `}</style>
-              <div style={{ pointerEvents: 'auto', background: 'rgba(26,24,21,0.95)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '14px max(16px, 3vw) max(14px, env(safe-area-inset-bottom, 14px))' }}>
-                <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ pointerEvents: 'auto', background: 'rgba(26,24,21,0.96)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '16px max(20px, 4vw) max(16px, env(safe-area-inset-bottom, 16px))' }}>
+                <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  {/* 장바구니 아이콘 + 카운트 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                    <span style={{ fontSize: '1.3rem' }}>📚</span>
+                    <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>{selected.size}<span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}> / 4</span></span>
+                  </div>
+                  {/* 구분선 */}
+                  <div style={{ width: '1px', height: '36px', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+                  {/* 선택 도서 썸네일 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0, padding: '6px 4px' }}>
                     {Array.from(selected).map((idx) => books[idx] && (
                       <div key={idx} style={{ position: 'relative', flexShrink: 0 }}>
-                        <div style={{ width: '38px', height: '52px', borderRadius: '4px 7px 7px 4px', overflow: 'hidden', border: '1.5px solid rgba(255,255,255,0.2)' }}>
+                        <div style={{ width: '42px', height: '58px', borderRadius: '4px 7px 7px 4px', overflow: 'hidden', border: '1.5px solid rgba(255,255,255,0.2)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
                           <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <button
+                          className="cart-x-btn"
                           onClick={(e) => { e.stopPropagation(); toggleBook(idx); }}
-                          style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--accent)', color: '#fff', border: 'none', fontSize: '0.6rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
+                          style={{ position: 'absolute', top: '-8px', right: '-8px', width: '22px', height: '22px', borderRadius: '50%', background: '#fff', color: '#333', border: '1.5px solid rgba(0,0,0,0.08)', fontSize: '0.6rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, boxShadow: '0 2px 6px rgba(0,0,0,0.2)', transition: 'transform 0.15s' }}
                         >✕</button>
                       </div>
                     ))}
-                    <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap', marginLeft: '4px' }}>{selected.size} / 4권</span>
                   </div>
+                  {/* 신청 버튼 */}
                   <button onClick={() => {
                     if (user) { setIsPaymentOpen(true); }
                     else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
-                  }} style={{ padding: '12px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(252,102,64,0.4)', flexShrink: 0 }}>
+                  }} style={{ padding: '13px 30px', background: 'linear-gradient(135deg, var(--accent), #e8553a)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 18px rgba(252,102,64,0.45)', flexShrink: 0 }}>
                     신청하기
                   </button>
                 </div>
