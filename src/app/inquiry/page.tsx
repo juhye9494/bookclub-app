@@ -78,27 +78,40 @@ function InquiryContent() {
       }
     }
 
-    const { error } = await supabase.from('inquiries').insert([{
-      user_id: user.id,
-      user_email: user.email,
-      user_name: name,
-      user_phone: phone,
-      category,
-      title,
-      content,
-      attachment_url: attachmentUrl,
-      status: '접수완료',
-      admin_reply: '',
-    }]);
+    try {
+      const { data: insertData, error } = await supabase.from('inquiries').insert([{
+        user_id: user.id,
+        user_email: user.email,
+        user_name: name,
+        user_phone: phone,
+        category,
+        title,
+        content,
+        attachment_url: attachmentUrl,
+        status: '접수완료',
+        admin_reply: '',
+      }]).select();
 
-    setSubmitting(false);
+      setSubmitting(false);
 
-    if (error) {
-      alert('문의 접수 실패: ' + error.message);
-      return;
+      if (error) {
+        console.error('문의 insert 에러:', error);
+        alert('문의 접수 실패: ' + error.message);
+        return;
+      }
+
+      if (!insertData || insertData.length === 0) {
+        console.error('문의 insert 실패: 데이터가 반환되지 않음 (RLS 정책 확인 필요)');
+        alert('문의 접수에 실패했습니다. 관리자에게 문의해주세요.');
+        return;
+      }
+
+      setSubmitted(true);
+    } catch (err: any) {
+      setSubmitting(false);
+      console.error('문의 접수 예외:', err);
+      alert('문의 접수 중 오류가 발생했습니다.');
     }
-
-    setSubmitted(true);
   };
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontFamily: 'var(--sans)' }}>로딩중...</div>;
