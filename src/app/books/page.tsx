@@ -257,33 +257,38 @@ export default function BooksPage() {
         /* ===== BOOK LIST VIEW ===== */
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 5vw 80px' }}>
 
-          {/* FLOATING CART BAR */}
+          {/* FLOATING CART BAR — 하단 고정 */}
           {selected.size > 0 && (
-            <div style={{ position: 'fixed', top: '64px', left: 0, right: 0, zIndex: 100, display: 'flex', justifyContent: 'center', padding: '0 16px', pointerEvents: 'none', animation: 'cartSlideIn 0.3s ease' }}>
+            <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, pointerEvents: 'none', animation: 'cartSlideUp 0.35s cubic-bezier(0.16,1,0.3,1)' }}>
               <style>{`
-                @keyframes cartSlideIn {
-                  from { opacity: 0; transform: translateY(-12px); }
+                @keyframes cartSlideUp {
+                  from { opacity: 0; transform: translateY(20px); }
                   to { opacity: 1; transform: translateY(0); }
                 }
               `}</style>
-              <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '14px', background: 'rgba(26,24,21,0.92)', backdropFilter: 'blur(12px)', padding: '10px 12px 10px 16px', borderRadius: '100px', boxShadow: '0 4px 24px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', maxWidth: '520px', width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: '1.1rem' }}>🛒</span>
-                  <div style={{ display: 'flex', gap: '6px', overflow: 'hidden' }}>
+              <div style={{ pointerEvents: 'auto', background: 'rgba(26,24,21,0.95)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '14px max(16px, 3vw) max(14px, env(safe-area-inset-bottom, 14px))' }}>
+                <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0, overflow: 'hidden' }}>
                     {Array.from(selected).map((idx) => books[idx] && (
-                      <div key={idx} style={{ width: '32px', height: '44px', borderRadius: '3px 6px 6px 3px', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(255,255,255,0.15)' }}>
-                        <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div key={idx} style={{ position: 'relative', flexShrink: 0 }}>
+                        <div style={{ width: '38px', height: '52px', borderRadius: '4px 7px 7px 4px', overflow: 'hidden', border: '1.5px solid rgba(255,255,255,0.2)' }}>
+                          <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleBook(idx); }}
+                          style={{ position: 'absolute', top: '-6px', right: '-6px', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--accent)', color: '#fff', border: 'none', fontSize: '0.6rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
+                        >✕</button>
                       </div>
                     ))}
+                    <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap', marginLeft: '4px' }}>{selected.size} / 4권</span>
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap' }}>{selected.size}권 선택 (최대 4권)</span>
+                  <button onClick={() => {
+                    if (user) { setIsPaymentOpen(true); }
+                    else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
+                  }} style={{ padding: '12px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(252,102,64,0.4)', flexShrink: 0 }}>
+                    신청하기
+                  </button>
                 </div>
-                <button onClick={() => {
-                  if (user) { setIsPaymentOpen(true); }
-                  else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
-                }} style={{ padding: '8px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 2px 12px rgba(252,102,64,0.4)' }}>
-                  신청하기
-                </button>
               </div>
             </div>
           )}
