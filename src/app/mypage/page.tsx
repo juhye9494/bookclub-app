@@ -176,7 +176,7 @@ export default function MyPage() {
                         <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>한경 언더라인 독서클럽 3개월권</h3>
                       </div>
                       <span style={{
-                        padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700,
+                        padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap',
                         background: order.order_status === '배송완료' ? '#ecfdf5' : order.order_status === '배송중' ? '#eef5ff' : 'var(--bg-warm)',
                         color: order.order_status === '배송완료' ? '#059669' : order.order_status === '배송중' ? '#3b82f6' : 'var(--accent)',
                       }}>
@@ -262,7 +262,7 @@ export default function MyPage() {
                             ) : gp.group_title}
                           </td>
                           <td style={{ padding: '14px 16px' }}>
-                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: gp.role === 'leader' ? '#dbeafe' : '#d1fae5', color: gp.role === 'leader' ? '#2563eb' : '#059669' }}>
+                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, whiteSpace: 'nowrap', background: gp.role === 'leader' ? '#dbeafe' : '#d1fae5', color: gp.role === 'leader' ? '#2563eb' : '#059669' }}>
                               {gp.role === 'leader' ? '모집중' : '신청완료'}
                             </span>
                           </td>
@@ -296,7 +296,7 @@ export default function MyPage() {
                           <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-mid)', whiteSpace: 'nowrap' }}>{new Date(ep.created_at).toLocaleDateString('ko-KR')}</td>
                           <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 600 }}>{ep.event_title}</td>
                           <td style={{ padding: '14px 16px' }}>
-                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: '#d1fae5', color: '#059669' }}>신청완료</span>
+                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, whiteSpace: 'nowrap', background: '#d1fae5', color: '#059669' }}>신청완료</span>
                           </td>
                         </tr>
                       ))}
@@ -408,7 +408,7 @@ export default function MyPage() {
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
                           <span style={{ padding: '2px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700, background: '#fef3c7', color: '#92400e' }}>{inq.category}</span>
                           <span style={{
-                            padding: '2px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700,
+                            padding: '2px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap',
                             background: inq.status === '답변완료' ? '#d1fae5' : '#f3f4f6',
                             color: inq.status === '답변완료' ? '#059669' : '#6b7280'
                           }}>{inq.status}</span>
