@@ -154,7 +154,6 @@ export default function Header() {
         </Link>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
           <Link href="/books" className="nav-link">도서 선택</Link>
-          <a href="#" onClick={(e) => { e.preventDefault(); alert('E북 선택 페이지가 준비 중입니다.'); }} className="nav-link" style={{ cursor: 'pointer' }}>E북 선택</a>
           <Link href="/insight" className="nav-link">플러스 인사이트</Link>
           <Link href="/groups" className="nav-link">독서모임</Link>
           <Link href="/events" className="nav-link">이벤트</Link>

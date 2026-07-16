@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 
-const MAX_SELECT = 3;
+const MAX_SELECT = 4;
 
 export default function BooksPage() {
   const [books, setBooks] = useState<any[]>([]);
@@ -107,7 +107,7 @@ export default function BooksPage() {
       const next = new Set(prev);
       if (next.has(idx)) { next.delete(idx); }
       else {
-        if (next.size >= MAX_SELECT) { alert('이미 3권을 선택하셨어요. 다른 책을 빼고 담아주세요.'); return prev; }
+        if (next.size >= MAX_SELECT) { alert('이미 4권을 선택하셨어요. 다른 책을 빼고 담아주세요.'); return prev; }
         next.add(idx);
       }
       sessionStorage.setItem('bookSelection', JSON.stringify([...next]));
@@ -229,7 +229,7 @@ export default function BooksPage() {
                 <div className="dv-sidebar-divider"></div>
                 <p style={{ fontFamily: 'var(--serif)', fontSize: '0.95rem', fontWeight: 700, marginBottom: '12px' }}>구독 플랜에 포함</p>
                 <div className="plan-row"><span className="l">구독권</span><span className="r">3개월권</span></div>
-                <div className="plan-row"><span className="l">도서 선택</span><span className="r">3개월간 3권</span></div>
+                <div className="plan-row"><span className="l">도서 선택</span><span className="r">3개월간 4권</span></div>
                 <div className="plan-row"><span className="l">구독 금액</span><span className="r" style={{ color: 'var(--accent)' }}>45,000원</span></div>
                 <button className={`dv-add-btn ${detailIdx !== null && selected.has(detailIdx) ? 'added' : ''}`} onClick={() => detailIdx !== null && toggleBook(detailIdx)}>
                   {detailIdx !== null && selected.has(detailIdx) ? '✓ 담겼어요' : '+ 내 목록에 담기'}
@@ -241,7 +241,7 @@ export default function BooksPage() {
           <div className="dv-other">
             <div className="dv-other-inner">
               <p className="dv-other-label">다른 도서</p>
-              <h3 className="dv-other-title">3개월간 3권을 골라보세요</h3>
+              <h3 className="dv-other-title">3개월간 4권을 골라보세요</h3>
               <div className="dv-other-grid">
                 {books.map((b, i) => (
                   <div key={i} className={`dv-other-card ${i === detailIdx ? 'active' : ''}`} onClick={() => openDetail(i)}>
@@ -276,7 +276,7 @@ export default function BooksPage() {
                       </div>
                     ))}
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap' }}>{selected.size}권 선택 (최대 3권)</span>
+                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap' }}>{selected.size}권 선택 (최대 4권)</span>
                 </div>
                 <button onClick={() => {
                   if (user) { setIsPaymentOpen(true); }
@@ -291,9 +291,9 @@ export default function BooksPage() {
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <p style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.14em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '12px' }}>BOOK CURATION</p>
             <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 700, lineHeight: 1.3, marginBottom: '16px' }}>이번 시즌 도서를 골라보세요</h1>
-            <p style={{ fontSize: '0.95rem', color: 'var(--text-mid)', lineHeight: 1.7, marginBottom: '0' }}>3개월간 총 3권의 도서를 자유롭게 선택하실 수 있습니다.</p>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-mid)', lineHeight: 1.7, marginBottom: '0' }}>3개월간 총 4권의 도서를 자유롭게 선택하실 수 있습니다.</p>
             <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
-              <p style={{ margin: 0 }}>• 도서는 3권을 한 번에 신청하시거나, 1권씩 나누어 신청하실 수 있습니다.</p>
+              <p style={{ margin: 0 }}>• 도서는 4권을 한 번에 신청하시거나, 1권씩 나누어 신청하실 수 있습니다.</p>
               <p style={{ margin: 0 }}>• 도서는 신청 시점에 맞춰 순차적으로 발송되며, 주 1회 진행됩니다.</p>
               <p style={{ margin: 0 }}>• 신간 도서는 매월 초 홈페이지를 통해 업데이트됩니다.</p>
             </div>
@@ -366,12 +366,12 @@ export default function BooksPage() {
 
               {/* Footer / Selection bar */}
               <div className="shelf-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '32px', marginTop: '24px' }}>
-                <p className="shelf-hint">{selected.size === 0 ? '원하는 책을 골라보세요 (최대 3권)' : `${selected.size}권이 담겼어요!`}</p>
+                <p className="shelf-hint">{selected.size === 0 ? '원하는 책을 골라보세요 (최대 4권)' : `${selected.size}권이 담겼어요!`}</p>
                 <div className="shelf-counter">
                   <div className="counter-dots">
-                    {[0, 1, 2].map((dot) => (<div key={dot} className={`counter-dot ${dot < selected.size ? 'filled' : ''}`}></div>))}
+                    {[0, 1, 2, 3].map((dot) => (<div key={dot} className={`counter-dot ${dot < selected.size ? 'filled' : ''}`}></div>))}
                   </div>
-                  <span>{selected.size} / 3권</span>
+                  <span>{selected.size} / 4권</span>
                 </div>
                 <button className={`btn-delivery ${selected.size > 0 ? 'visible' : ''}`} onClick={() => {
                   if (user) { setIsPaymentOpen(true); }
@@ -389,7 +389,7 @@ export default function BooksPage() {
           <button className="modal-close" onClick={() => setIsPaymentOpen(false)}>✕</button>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '22px' }} /></div>
           <h3>구독 신청</h3>
-          <p className="modal-sub">선택하신 {selected.size}권이 담겼습니다.{selected.size < 3 && ` (나머지 ${3 - selected.size}권은 나중에 추가 선택 가능)`}</p>
+          <p className="modal-sub">선택하신 {selected.size}권이 담겼습니다.{selected.size < 4 && ` (나머지 ${4 - selected.size}권은 나중에 추가 선택 가능)`}</p>
           <div className="selected-books-preview">
             {Array.from(selected).map((idx) => books[idx] && (
               <div key={idx} className="preview-book" style={{ background: books[idx].bg }}>
@@ -399,7 +399,7 @@ export default function BooksPage() {
           </div>
           <div className="plan-detail">
             <div className="plan-row"><span className="label">구독 플랜</span><span className="value">3개월권</span></div>
-            <div className="plan-row"><span className="label">선택 도서</span><span className="value">{selected.size}권 (최대 3권)</span></div>
+            <div className="plan-row"><span className="label">선택 도서</span><span className="value">{selected.size}권 (최대 4권)</span></div>
             <div className="plan-row"><span className="label">웰컴 굿즈</span><span className="value">무료 증정</span></div>
             <div className="plan-row"><span className="label">저자 강연권</span><span className="value">포함</span></div>
             <div className="plan-row total"><span className="label">합계</span><span className="value">45,000원</span></div>

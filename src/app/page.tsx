@@ -280,10 +280,10 @@ export default function Home() {
               <p className="card-desc">월 1회 진행되는 오프라인 저자 북토크에 회원 우선 혜택으로 무료 초청해 드립니다.</p>
             </div>
             <div className="service-card reveal" style={{ transitionDelay: '0.3s' }}>
-              <div className="card-icon"><img src="/uploads/benefit_ebook.png" alt="전자책" /></div>
-              <p className="card-tag">언제 어디서나</p>
-              <h3 className="card-title">전자책 3종</h3>
-              <p className="card-desc">제공되는 한경 전자책 중 원하는 3종을 선택하여 무료로 이용하실 수 있습니다.</p>
+              <div className="card-icon"><img src="/uploads/benefit_ebook.png" alt="도서" /></div>
+              <p className="card-tag">엄선된 큐레이션</p>
+              <h3 className="card-title">도서 4권 제공</h3>
+              <p className="card-desc">3개월간 엄선된 큐레이션 도서 중 원하는 4권을 선택하여 배송받으실 수 있습니다.</p>
             </div>
             <div className="service-card reveal" style={{ transitionDelay: '0.4s' }}>
               <div className="card-icon"><img src="/uploads/benefit_arte.jpg" alt="아르떼/필" /></div>
@@ -332,7 +332,7 @@ export default function Home() {
               <div className="step-circle">03</div>
               <p className="step-num">STEP 3</p>
               <h4 className="step-title">도서 선택</h4>
-              <p className="step-desc">3개월간 총 3권<br />자유 선택</p>
+              <p className="step-desc">3개월간 총 4권<br />자유 선택</p>
             </div>
             <div className="flow-step reveal" style={{ transitionDelay: '0.35s' }}>
               <div className="step-circle">04</div>
