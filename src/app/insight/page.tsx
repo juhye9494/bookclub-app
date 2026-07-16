@@ -78,6 +78,7 @@ export default function PlusInsightPage() {
   const [comments, setComments] = useState<any>({});
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
+  const [user, setUser] = useState<any>(null);
   const [likes, setLikes] = useState<any>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
@@ -94,6 +95,14 @@ export default function PlusInsightPage() {
       // If empty or error, keep using INSIGHT_POSTS fallback
     }
     loadPosts();
+
+    // 로그인 사용자 이름 자동 반영
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        setAuthorName(session.user.user_metadata?.name || '');
+      }
+    });
 
     // Initial seeds for comments
     const initialComments: any = {
@@ -158,8 +167,13 @@ export default function PlusInsightPage() {
   };
 
   const handleAddComment = (postId: string) => {
-    if (!newComment.trim() || !authorName.trim()) {
-      alert('이름과 댓글 내용을 모두 입력해주세요.');
+    if (!newComment.trim()) {
+      alert('댓글 내용을 입력해주세요.');
+      return;
+    }
+    if (!authorName.trim()) {
+      alert('로그인이 필요합니다.');
+      window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
       return;
     }
 
@@ -387,25 +401,18 @@ export default function PlusInsightPage() {
 
                 {/* Comment Input */}
                 <div className="comment-input-area" style={{ overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <input 
-                      type="text" 
-                      placeholder="이름" 
-                      value={authorName}
-                      onChange={(e) => setAuthorName(e.target.value)}
-                      style={{ width: '80px', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
-                    />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input 
                       type="text" 
                       placeholder="따뜻한 한마디를 남겨주세요." 
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      style={{ flex: 1, minWidth: 0, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                      style={{ flex: 1, minWidth: 0, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '10px', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' }}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(selectedPost.id); }}
                     />
                     <button 
                       onClick={() => handleAddComment(selectedPost.id)}
-                      style={{ padding: '8px 16px', background: 'var(--text)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      style={{ padding: '10px 20px', background: 'var(--text)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                     >
                       등록
                     </button>
