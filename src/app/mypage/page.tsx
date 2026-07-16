@@ -87,7 +87,14 @@ export default function MyPage() {
       // 존재하는 이벤트만 필터링 (DB 기준)
       const { data: existingEvents } = await supabase.from('events').select('id');
       const existingEventIds = new Set((existingEvents || []).map((e: any) => e.id));
-      if (ep) setEventParticipations(ep.filter((p: any) => existingEventIds.has(p.event_id)));
+      if (ep) {
+        // 같은 이벤트 중복 제거 (최신 1건만 유지)
+        const uniqueMap = new Map();
+        ep.filter((p: any) => existingEventIds.has(p.event_id)).forEach((p: any) => {
+          if (!uniqueMap.has(p.event_id)) uniqueMap.set(p.event_id, p);
+        });
+        setEventParticipations(Array.from(uniqueMap.values()));
+      }
 
       const { data: inq } = await supabase.from('inquiries').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
       if (inq) setInquiries(inq);

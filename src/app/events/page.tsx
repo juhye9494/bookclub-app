@@ -78,14 +78,18 @@ export default function EventsPage() {
     setApplying(true);
     try {
       if (appliedEventIds.has(selectedEvent.id)) {
-        // 신청 취소
+        // 신청 취소 — 해당 이벤트의 모든 레코드 삭제
         await supabase.from('event_participants').delete().eq('event_id', selectedEvent.id).eq('user_id', user.id);
         const newSet = new Set(appliedEventIds);
         newSet.delete(selectedEvent.id);
         setAppliedEventIds(newSet);
         alert('이벤트 신청이 취소되었습니다.');
       } else {
-        // 신청
+        // 신청 전 DB 중복 체크 — 이미 있으면 삭제 후 재삽입
+        const { data: existing } = await supabase.from('event_participants').select('id').eq('event_id', selectedEvent.id).eq('user_id', user.id);
+        if (existing && existing.length > 0) {
+          await supabase.from('event_participants').delete().eq('event_id', selectedEvent.id).eq('user_id', user.id);
+        }
         await supabase.from('event_participants').insert([{
           event_id: selectedEvent.id,
           user_id: user.id,
