@@ -33,7 +33,8 @@ function InquiryContent() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         alert('로그인이 필요합니다.');
-        router.push('/');
+        window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
+        setLoading(false);
         return;
       }
       setUser(session.user);
@@ -41,6 +42,16 @@ function InquiryContent() {
       setPhone(session.user.user_metadata?.phone || '');
       setLoading(false);
     });
+
+    // 로그인 후 세션 변경 감지
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        setUser(session.user);
+        setName(session.user.user_metadata?.name || '');
+        setPhone(session.user.user_metadata?.phone || '');
+      }
+    });
+    return () => { subscription.unsubscribe(); };
   }, [router]);
 
   const handleSubmit = async () => {
@@ -91,6 +102,22 @@ function InquiryContent() {
   };
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontFamily: 'var(--sans)' }}>로딩중...</div>;
+
+  if (!user) {
+    return (
+      <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)', paddingTop: '64px' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '120px 5vw', textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🔒</div>
+          <h2 style={{ fontFamily: 'var(--serif)', fontSize: '1.5rem', marginBottom: '12px' }}>로그인이 필요합니다</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '0.9rem' }}>1:1 문의를 작성하려면 먼저 로그인해주세요.</p>
+          <button onClick={() => window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }))}
+            style={{ padding: '12px 32px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer' }}>
+            로그인하기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--sans)', transition: 'border 0.2s' };
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text)' };
