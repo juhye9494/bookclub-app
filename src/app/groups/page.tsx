@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 
 const INITIAL_GROUPS = [
   {
@@ -364,12 +365,12 @@ export default function GroupsPage() {
             현재 가입 가능한 독서모임 목록 ({groups.length}개)
           </h2>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
-              onClick={() => setIsRequestAuthorOpen(true)}
-              style={{ padding: '12px 24px', background: '#fff', border: '1.5px solid var(--border)', color: 'var(--text-mid)', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
+            <Link 
+              href="/inquiry?category=저자 섭외 문의"
+              style={{ padding: '12px 24px', background: '#fff', border: '1.5px solid var(--border)', color: 'var(--text-mid)', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', textDecoration: 'none' }}
             >
               🎙 저자 섭외 건의하기
-            </button>
+            </Link>
             <button 
               onClick={() => setIsCreateOpen(true)}
               style={{ padding: '12px 28px', background: 'var(--accent)', border: 'none', color: '#fff', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 14px rgba(252,102,64,0.3)' }}
