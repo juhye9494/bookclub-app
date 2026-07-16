@@ -381,7 +381,7 @@ export default function GroupsPage() {
         </div>
 
         {/* Groups Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '32px' }}>
+        <div className="groups-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
           {groups.map(group => {
             const isMember = myMemberships.has(group.id);
             const isFull = group.membersCount >= group.maxMembers;

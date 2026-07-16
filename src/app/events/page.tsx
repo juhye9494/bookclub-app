@@ -229,7 +229,7 @@ export default function EventsPage() {
             등록된 이벤트 정보가 없습니다.
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '32px' }}>
+          <div className="events-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '32px' }}>
             {filteredEvents.map(ev => {
               const colors = getStatusColor(ev.status || '모집중');
               const hasCover = !!ev.cover;

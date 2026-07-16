@@ -826,3 +826,568 @@ body {
 .modal-logo .brand-logo { height: 24px; margin-bottom: 24px; transform-origin: center center; margin: 0 auto 32px; }
 .dv-nav-title .brand-logo { height: 26px; transform-origin: left center; }
 .footer-logo .brand-logo { height: 18px; filter: grayscale(100%) opacity(0.6); transform-origin: left center; }
+
+/* ============================================================
+   MOBILE RESPONSIVE — max-width: 768px
+   Comprehensive mobile-first overrides for all pages
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* ─── GLOBAL SECTIONS ─── */
+  section {
+    padding: 56px 4vw;
+  }
+
+  .section-title {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    word-break: keep-all;
+  }
+
+  .section-desc {
+    font-size: 0.88rem;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 80px 4vw 40px;
+    min-height: auto;
+  }
+
+  .hero-headline {
+    font-size: clamp(1.8rem, 7vw, 2.4rem);
+    max-width: 100%;
+  }
+
+  .hero-sub {
+    font-size: 0.88rem;
+    max-width: 100%;
+    margin-bottom: 28px;
+  }
+
+  .hero-btns {
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    margin-bottom: 48px;
+  }
+
+  .hero-btns .btn-primary,
+  .hero-btns .btn-secondary {
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+  }
+
+  /* ─── BOOK GRID (books page & hero) ─── */
+  .book-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  .book-grid-wrap {
+    max-width: 100%;
+  }
+
+  .book-title {
+    font-size: 0.72rem;
+    min-height: auto;
+  }
+
+  .book-select-btn {
+    font-size: 0.7rem;
+    padding: 6px 0;
+  }
+
+  /* ─── SERVICE CARDS ─── */
+  .service-section {
+    padding: 56px 4vw;
+  }
+
+  .service-inner {
+    max-width: 100%;
+  }
+
+  .service-header {
+    margin-bottom: 36px;
+  }
+
+  .service-cards {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  .service-card {
+    padding: 24px 20px;
+  }
+
+  .card-icon {
+    height: 180px;
+  }
+
+  .card-desc {
+    font-size: 0.85rem;
+  }
+
+  /* ─── FLOW STEPS ─── */
+  .flow-inner {
+    max-width: 100%;
+  }
+
+  .flow-header {
+    margin-bottom: 40px;
+  }
+
+  .flow-steps {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 28px !important;
+  }
+
+  .flow-steps::before {
+    display: none !important;
+  }
+
+  .step-circle {
+    width: 52px;
+    height: 52px;
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+  }
+
+  .step-title {
+    font-size: 0.9rem;
+  }
+
+  .step-desc {
+    font-size: 0.75rem;
+  }
+
+  /* ─── REVIEW SECTION ─── */
+  .review-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .review-card {
+    padding: 24px;
+  }
+
+  .review-card.mini {
+    flex: 0 0 260px;
+    padding: 20px 18px;
+  }
+
+  .review-card.mini .review-quote {
+    font-size: 0.9rem;
+  }
+
+  /* ─── PLAN SECTION ─── */
+  .plan-inner {
+    max-width: 100%;
+  }
+
+  .plan-card {
+    padding: 32px 20px;
+    border-radius: 18px;
+  }
+
+  .plan-price {
+    font-size: 2.6rem;
+  }
+
+  .plan-items {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .plan-detail {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .plan-row {
+    font-size: 0.82rem;
+  }
+
+  /* ─── MODALS ─── */
+  .modal {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 20px 20px 0 0;
+    padding: 32px 20px;
+    max-height: 92vh;
+    margin: 0;
+    position: fixed;
+    bottom: 0;
+  }
+
+  .modal-overlay {
+    align-items: flex-end;
+  }
+
+  .modal h3 {
+    font-size: 1.25rem;
+  }
+
+  .modal-sub {
+    font-size: 0.82rem;
+  }
+
+  .detail-modal {
+    grid-template-columns: 1fr !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 20px 20px 0 0;
+    max-height: 92vh;
+  }
+
+  .detail-book-cover {
+    border-radius: 20px 20px 0 0;
+    min-height: 180px;
+    padding: 24px 0;
+  }
+
+  .detail-body {
+    padding: 24px 20px;
+  }
+
+  .detail-title {
+    font-size: 1.35rem;
+  }
+
+  /* ─── PRIVACY / TERMS MODALS ─── */
+  .privacy-card {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .privacy-head {
+    padding: 20px 20px 14px;
+  }
+
+  .privacy-head h3 {
+    font-size: 1.15rem;
+  }
+
+  .privacy-body {
+    padding: 18px 20px 24px;
+    font-size: 0.82rem;
+  }
+
+  /* ─── BOOK DETAIL VIEW ─── */
+  .dv-hero {
+    min-height: auto;
+  }
+
+  .dv-hero-inner {
+    flex-direction: column;
+    gap: 20px;
+    padding: 48px 4vw 32px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .dv-cover {
+    width: 120px;
+    height: 172px;
+  }
+
+  .dv-title {
+    font-size: clamp(1.4rem, 5vw, 1.8rem);
+  }
+
+  .dv-tags {
+    justify-content: center;
+  }
+
+  .dv-body {
+    grid-template-columns: 1fr !important;
+    gap: 28px;
+    padding: 36px 4vw 60px;
+  }
+
+  .dv-sidebar {
+    position: static !important;
+  }
+
+  .dv-sidebar-card {
+    padding: 22px;
+  }
+
+  .dv-other-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px;
+  }
+
+  .dv-other-name {
+    font-size: 0.65rem;
+  }
+
+  /* ─── GROUP CARDS (groups page) ─── */
+  .group-card {
+    padding: 24px 18px;
+  }
+
+  .group-banner {
+    padding: 56px 4vw !important;
+  }
+
+  .group-banner h1 {
+    font-size: 1.8rem !important;
+  }
+
+  .group-banner p {
+    font-size: 0.88rem !important;
+  }
+
+  .benefits-summary {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+    padding: 18px;
+  }
+
+  /* ─── EVENT CARDS (events page) ─── */
+  .event-card {
+    border-radius: 14px;
+  }
+
+  .category-tab {
+    padding: 8px 16px;
+    font-size: 0.82rem;
+  }
+
+  /* ─── MYPAGE — TABS ─── */
+  /* Ensure mypage tabs scroll horizontally */
+
+  /* ─── TABLES — Scrollable on mobile ─── */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  thead, tbody, tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tbody {
+    display: table-row-group;
+  }
+
+  th, td {
+    padding: 10px 12px !important;
+    font-size: 0.78rem !important;
+    white-space: nowrap;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 36px 4vw 24px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px;
+  }
+
+  .footer-company {
+    font-size: 0.72rem;
+    line-height: 1.7;
+  }
+
+  .footer-contact {
+    font-size: 0.72rem;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 18px;
+  }
+
+  .footer-legal {
+    font-size: 0.68rem;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.78rem;
+  }
+
+  .footer-policy-btn {
+    font-size: 0.78rem;
+  }
+
+  /* ─── CTA SECTION ─── */
+  .cta-desc {
+    font-size: 0.88rem;
+  }
+
+  .cta-btns {
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+  }
+
+  .cta-btns .btn-primary,
+  .cta-btns .btn-secondary {
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+  }
+
+  /* ─── BUTTONS GENERAL ─── */
+  .btn-primary {
+    padding: 12px 24px;
+    font-size: 0.9rem;
+  }
+
+  .btn-secondary {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
+
+  .btn-delivery {
+    padding: 13px 32px;
+    font-size: 0.92rem;
+  }
+
+  /* ─── NAV CTA ─── */
+  .nav-cta {
+    padding: 7px 14px;
+    font-size: 0.78rem;
+  }
+
+  /* ─── MARQUEE ─── */
+  .marquee-track {
+    gap: 14px;
+  }
+
+  /* ─── SHELF FOOTER ─── */
+  .shelf-footer {
+    margin-top: 16px;
+  }
+
+  .shelf-counter {
+    font-size: 0.78rem;
+  }
+
+  /* ─── SELECTED BOOKS PREVIEW (payment modal) ─── */
+  .selected-books-preview {
+    gap: 6px;
+  }
+
+  .preview-book {
+    width: 36px;
+    height: 50px;
+  }
+
+  /* ─── LECTURE BOX ─── */
+  .lecture-box {
+    flex-direction: column;
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  /* ─── DV LECTURE CARD ─── */
+  .dv-lecture-card {
+    padding: 18px;
+  }
+
+  .dv-lecture-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+/* ============================================================
+   EXTRA SMALL SCREENS — max-width: 480px
+   Fine-tuning for very small mobile devices
+   ============================================================ */
+@media (max-width: 480px) {
+
+  section {
+    padding: 40px 4vw;
+  }
+
+  .hero {
+    padding: 72px 4vw 32px;
+  }
+
+  .flow-steps {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  .book-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .dv-other-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .dv-hero-inner {
+    padding: 36px 4vw 24px;
+  }
+
+  .modal {
+    padding: 28px 16px;
+  }
+
+  .plan-card {
+    padding: 24px 16px;
+  }
+
+  .plan-price {
+    font-size: 2.2rem;
+  }
+
+  .service-card {
+    padding: 20px 16px;
+  }
+
+  .card-icon {
+    height: 150px;
+    border-radius: 10px;
+  }
+
+  .review-card.mini {
+    flex: 0 0 240px;
+  }
+
+  .group-banner h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .step-circle {
+    width: 44px;
+    height: 44px;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+  }
+
+  .footer-grid {
+    gap: 18px;
+  }
+
+  .privacy-card {
+    max-height: 85vh;
+  }
+
+  th, td {
+    padding: 8px 8px !important;
+    font-size: 0.72rem !important;
+  }
+}

@@ -6,6 +6,7 @@ import DaumPostcodeEmbed from 'react-daum-postcode';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   
   // Auth Modal State
@@ -147,12 +148,122 @@ export default function Header() {
         .nav-btn-login:hover {
           background: var(--accent-dark); transform: translateY(-1px);
         }
+
+        /* Hamburger button */
+        .hamburger-btn {
+          display: none;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 4px;
+          z-index: 1001;
+        }
+        .hamburger-btn span {
+          display: block;
+          width: 22px;
+          height: 2px;
+          background: var(--text-dark, #222);
+          border-radius: 2px;
+          transition: transform 0.3s ease, opacity 0.3s ease;
+          margin: 5px 0;
+        }
+        .hamburger-btn.active span:nth-child(1) {
+          transform: translateY(7px) rotate(45deg);
+        }
+        .hamburger-btn.active span:nth-child(2) {
+          opacity: 0;
+        }
+        .hamburger-btn.active span:nth-child(3) {
+          transform: translateY(-7px) rotate(-45deg);
+        }
+
+        /* Mobile nav dropdown */
+        .nav-links-desktop {
+          display: flex;
+          gap: 24px;
+          align-items: center;
+        }
+        .mobile-menu-overlay {
+          display: none;
+        }
+
+        @media (max-width: 768px) {
+          .hamburger-btn {
+            display: block;
+          }
+          .nav-links-desktop {
+            display: none;
+          }
+          .mobile-menu-overlay {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+          }
+          .mobile-menu-overlay.open {
+            opacity: 1;
+            visibility: visible;
+          }
+          .mobile-nav-dropdown {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: min(280px, 80vw);
+            height: 100vh;
+            background: #fff;
+            z-index: 1000;
+            padding: 80px 24px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+            overflow-y: auto;
+          }
+          .mobile-nav-dropdown.open {
+            transform: translateX(0);
+          }
+          .mobile-nav-dropdown .nav-link {
+            font-size: 1rem;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: block;
+          }
+          .mobile-nav-dropdown .nav-link::after {
+            display: none;
+          }
+          .mobile-nav-dropdown .mobile-auth-area {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+          .mobile-nav-dropdown .nav-btn-login,
+          .mobile-nav-dropdown .nav-btn-logout {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            text-align: center;
+          }
+        }
       `}</style>
       <nav id="main-nav" className={scrolled ? 'scrolled' : ''}>
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
           <img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '22px', display: 'block' }} />
         </Link>
-        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+
+        {/* Desktop nav links */}
+        <div className="nav-links-desktop">
           <Link href="/books" className="nav-link">도서 선택</Link>
           <Link href="/insight" className="nav-link">플러스 인사이트</Link>
           <Link href="/groups" className="nav-link">독서모임</Link>
@@ -169,7 +280,44 @@ export default function Header() {
             <button className="nav-btn-login" onClick={() => { setIsLoginMode(true); setIsLoginOpen(true); }}>로그인/가입</button>
           )}
         </div>
+
+        {/* Hamburger button - mobile only */}
+        <button
+          className={`hamburger-btn${mobileMenuOpen ? ' active' : ''}`}
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="메뉴 열기"
+        >
+          <span /><span /><span />
+        </button>
       </nav>
+
+      {/* Mobile menu overlay */}
+      <div
+        className={`mobile-menu-overlay${mobileMenuOpen ? ' open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+      />
+
+      {/* Mobile nav dropdown */}
+      <div className={`mobile-nav-dropdown${mobileMenuOpen ? ' open' : ''}`}>
+        <Link href="/books" className="nav-link" onClick={() => setMobileMenuOpen(false)}>도서 선택</Link>
+        <Link href="/insight" className="nav-link" onClick={() => setMobileMenuOpen(false)}>플러스 인사이트</Link>
+        <Link href="/groups" className="nav-link" onClick={() => setMobileMenuOpen(false)}>독서모임</Link>
+        <Link href="/events" className="nav-link" onClick={() => setMobileMenuOpen(false)}>이벤트</Link>
+        <div className="mobile-auth-area">
+          {user ? (
+            <>
+              <Link href="/mypage" className="nav-link" onClick={() => setMobileMenuOpen(false)}>마이페이지</Link>
+              <button className="nav-btn-logout" onClick={() => {
+                supabase.auth.signOut();
+                alert('로그아웃 되었습니다.');
+                setMobileMenuOpen(false);
+              }}>로그아웃</button>
+            </>
+          ) : (
+            <button className="nav-btn-login" onClick={() => { setIsLoginMode(true); setIsLoginOpen(true); setMobileMenuOpen(false); }}>로그인/가입</button>
+          )}
+        </div>
+      </div>
 
       {/* LOGIN MODAL */}
       <div className={`modal-overlay ${isLoginOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsLoginOpen(false); }}>
