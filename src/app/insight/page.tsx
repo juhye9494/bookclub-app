@@ -196,6 +196,15 @@ export default function PlusInsightPage() {
     setAuthorName('');
   };
 
+  // Delete comment handler (author can delete own, admin can delete any)
+  const handleDeleteComment = (postId: string, commentId: number) => {
+    const postComments = comments[postId] || [];
+    const filtered = postComments.filter((c) => c.id !== commentId);
+    const updated = { ...comments, [postId]: filtered };
+    setComments(updated);
+    localStorage.setItem('insight_comments', JSON.stringify(updated));
+  };
+
   return (
     <div style={{ background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--sans)', color: 'var(--text)', paddingTop: '64px' }}>
       
@@ -386,10 +395,16 @@ export default function PlusInsightPage() {
                 {/* Comment list */}
                 <div>
                   {(comments[selectedPost.id] || []).map((c: any) => (
-                    <div key={c.id} className="comment-row">
+                    <div key={c.id} className="comment-row" style={{ display: 'flex', flexDirection: 'column' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.82rem' }}>
                         <span style={{ fontWeight: 700, color: 'var(--text)' }}>{c.author}</span>
                         <span style={{ color: 'var(--text-muted)' }}>{c.date}</span>
+                        {(c.author === authorName || (user?.user_metadata?.role === 'admin')) && (
+                          <button
+                            onClick={() => handleDeleteComment(selectedPost.id, c.id)}
+                            style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '0.78rem' }}
+                          >삭제</button>
+                        )}
                       </div>
                       <p style={{ fontSize: '0.88rem', color: 'var(--text-mid)', margin: 0 }}>{c.content}</p>
                     </div>
