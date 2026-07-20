@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import { useRouter } from 'next/navigation';
 import DaumPostcodeEmbed from 'react-daum-postcode';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const router = useRouter();
   
   // Auth Modal State
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -58,6 +60,9 @@ export default function Header() {
       alert('로그인 성공!');
       setIsLoginOpen(false);
       window.dispatchEvent(new CustomEvent('auth-success'));
+      // Redirect to home and refresh UI
+      router.replace('/');
+      router.refresh();
     } else {
       if (!name || !phone || !address || !detailAddress) {
         alert('모든 정보를 입력해주세요.');
@@ -273,7 +278,11 @@ export default function Header() {
               <Link href="/mypage" className="nav-link">마이페이지</Link>
               <button className="nav-btn-logout" onClick={() => {
                 supabase.auth.signOut();
+                localStorage.clear();
                 alert('로그아웃 되었습니다.');
+                const router = useRouter();
+                router.replace('/');
+                router.refresh();
               }}>로그아웃</button>
             </div>
           ) : (
@@ -309,7 +318,11 @@ export default function Header() {
               <Link href="/mypage" className="nav-link" onClick={() => setMobileMenuOpen(false)}>마이페이지</Link>
               <button className="nav-btn-logout" onClick={() => {
                 supabase.auth.signOut();
+                localStorage.clear();
                 alert('로그아웃 되었습니다.');
+                const router = useRouter();
+                router.replace('/');
+                router.refresh();
                 setMobileMenuOpen(false);
               }}>로그아웃</button>
             </>
