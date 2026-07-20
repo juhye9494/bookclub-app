@@ -364,11 +364,6 @@ export default function GroupsPage() {
             <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>영업·광고 목적 참여 시<br />강퇴 조치될 수 있습니다.</span>
           </div>
         </div>
-
-        {/* 내용 자세히 보기 버튼 */}
-        <button onClick={() => setIsDetailOpen(true)} style={{ marginTop: '20px', padding: '10px 28px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '100px', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', backdropFilter: 'blur(4px)' }}>
-          +내용 자세히 보기
-        </button>
       </div>
 
       {/* Main Content Area */}
@@ -382,13 +377,13 @@ export default function GroupsPage() {
           <div style={{ display: 'flex', gap: '12px' }}>
             <Link 
               href="/inquiry?category=저자 섭외 문의"
-              style={{ padding: '12px 24px', background: '#fff', border: '1.5px solid var(--border)', color: 'var(--text-mid)', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', textDecoration: 'none' }}
+              className="groups-btn-outline"
             >
               🎙 저자 섭외 건의하기
             </Link>
             <button 
+              className="groups-create-submit-btn"
               onClick={() => setIsCreateOpen(true)}
-              style={{ padding: '12px 28px', background: 'var(--accent)', border: 'none', color: '#fff', borderRadius: '100px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 14px rgba(252,102,64,0.3)' }}
             >
               ＋ 독서모임 만들기
             </button>
@@ -471,7 +466,34 @@ export default function GroupsPage() {
           })}
         </div>
 
-      </main>
+       </main>
+{selectedGroup && (
+  <div className="groups-detail-overlay open" onClick={(e) => { if (e.target === e.currentTarget) closeDetail(); }}>
+    <div className="groups-detail-modal">
+      <button className="groups-detail-close" onClick={closeDetail}>✕</button>
+      <h3 style={{ marginTop: 0 }}>{selectedGroup.title}</h3>
+      <p style={{ color: 'var(--text-mid)' }}>{selectedGroup.desc}</p>
+      <div style={{ margin: '12px 0' }}>
+        <strong>도서:</strong> {selectedGroup.book}<br/>
+        <strong>인원:</strong> {selectedGroup.membersCount}/{selectedGroup.maxMembers}<br/>
+        {selectedGroup.place && (<><strong>장소:</strong> {selectedGroup.place}<br/></>)}
+        {selectedGroup.time && (<><strong>시간:</strong> {selectedGroup.time}<br/></>)}
+        {selectedGroup.tags && (
+          <div style={{ marginTop: '8px' }}>
+            {selectedGroup.tags.map((t: string) => (
+              <span key={t} className="groups-detail-tag">#{t}</span>
+            ))}
+          </div>
+        )}
+        {selectedGroup.intro && (
+          <div style={{ marginTop: '12px', lineHeight: 1.6 }}>
+            {selectedGroup.intro}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
       {/* CREATE GROUP MODAL */}
       {isCreateOpen && (

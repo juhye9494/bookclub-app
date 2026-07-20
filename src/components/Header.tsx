@@ -202,14 +202,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
         .nav-btn-logout:hover {\
           background: var(--accent); transform: translateY(-1px);\
         }\
-        .nav-btn-login {\
-          background: var(--accent); color: #fff; border: none; padding: 8px 16px;\
-          border-radius: 40px; font-size: 0.8rem; font-weight: 600; cursor: pointer;\
-          transition: background 0.2s, transform 0.15s;\
-        }\
-        .nav-btn-login:hover {\
-          background: var(--accent-dark); transform: translateY(-1px);\
-        }\
+          .login-modal-btn {\n            background: var(--accent); color: #fff; border: none; padding: 8px 16px;\n            border-radius: 40px; font-size: 0.8rem; font-weight: 600; cursor: pointer;\n            transition: background 0.2s, transform 0.15s;\n          }\n          .login-modal-btn:hover {\n            background: var(--accent-dark); transform: translateY(-1px);\n          }\
         .hamburger-btn { display: none; background: none; border: none; cursor: pointer; padding: 4px; z-index: 1001; }\
         .hamburger-btn span { display: block; width: 22px; height: 2px; background: var(--text-dark, #222); border-radius: 2px; transition: transform 0.3s ease, opacity 0.3s ease; margin: 5px 0; }\
         .hamburger-btn.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }\
@@ -245,7 +238,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
               <button className="nav-btn-logout" onClick={handleLogout}>로그아웃</button>
             </div>
           ) : (
-            <button className="nav-btn-login" onClick={() => { setIsLoginMode(true); setIsLoginOpen(true); }}>로그인/가입</button>
+            <button className="login-modal-btn" onClick={() => { setIsLoginMode(true); setIsLoginOpen(true); }}>로그인/가입</button>
           )}
         </div>
         <button className={`hamburger-btn${mobileMenuOpen ? ' active' : ''}`} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="메뉴 열기">
