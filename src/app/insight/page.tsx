@@ -419,32 +419,6 @@ const handleDeleteComment = (postId: string, commentId: number) => {
                     </p>
                   )}
                 </div>
-                <div>
-                  {(comments[selectedPost.id] || []).map((c: any) => (
-                          >삭제</button>
-                        )}
-=======
-                    <div key={c.id} className="comment-row" style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
-                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>{c.author}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>{c.date}</span>
-                          {(c.author === user?.user_metadata?.name || adminEmails.includes(user?.email)) && (
-                            <button onClick={() => handleDeleteComment(selectedPost.id, c.id)}
-                              style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>
-                              삭제
-                            </button>
-                          )}
-                        </div>
->>>>>>> b1c2347 (플러스 인사이트 댓글 삭제 관리자 권한 적용 및 레이아웃 수정)
-                      </div>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--text-mid)', margin: '4px 0 0 0' }}>{c.content}</p>
-                    </div>
-                  ))}
-                  {(comments[selectedPost.id] || []).length === 0 && (
-                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px 0', fontSize: '0.88rem' }}>첫 번째 댓글을 작성해 보세요!</p>
-                  )}
-                </div>
 
                 {/* Comment Input */}
                 <div className="comment-input-area" style={{ overflow: 'hidden' }}>
