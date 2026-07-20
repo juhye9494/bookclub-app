@@ -1,4 +1,4 @@
-"use client";
+"use client"; // Conflict markers removed
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
