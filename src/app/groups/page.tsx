@@ -440,7 +440,7 @@ export default function GroupsPage() {
 <button
   onClick={(e) => { e.stopPropagation(); handleJoin(group.id); }}
   disabled={!isMember && isFull}
-  className="group-button join-btn"
+  className="group-main-action-btn"
 >
                     {isMember ? '✓ 가입됨 (참가 취소하기)' : (isFull ? '정원 마감' : '독서모임 참가 신청')}
                   </button>
@@ -448,13 +448,13 @@ export default function GroupsPage() {
                     <div className="groups-admin-actions">
                     <button
                       onClick={(e) => { e.stopPropagation(); openEditGroup(group); }}
-                      className="edit"
+                      className="group-edit-btn"
                     >
                       ✏️ 수정
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.id); }}
-                      className="delete"
+                      className="group-delete-btn"
                     >
                       🗑 삭제
                     </button>
