@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "한경 언더라인",
+  title: "북클럽 - 한경 언더라인",
   description: "성장을 위한 제안, 당신의 선택을 더하세요.",
 };
 

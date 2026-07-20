@@ -48,6 +48,8 @@ export default function GroupsPage() {
   const [isRequestAuthorOpen, setIsRequestAuthorOpen] = useState(false);
   const [myMemberships, setMyMemberships] = useState<Set<string>>(new Set());
   const [myCreatedGroups, setMyCreatedGroups] = useState<Set<string>>(new Set());
+  // Admin email whitelist for group deletion
+  const adminEmails = ['shchoi@hankyung.com', 'mwd101@hankyung.com', 'mama0707@hankyung.com', 'pdh0109@hankyung.com', 'parkjh@hankyung.com', 'lygin729@hankyung.com', 'ess0317@hankyung.com', 'xn940@naver.com'];
   const [editingGroup, setEditingGroup] = useState<any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -247,8 +249,17 @@ export default function GroupsPage() {
     setIsCreateOpen(true);
   };
 
-  const handleDeleteGroup = (groupId: string) => {
+  const handleDeleteGroup = async (groupId: string) => {
     if (!confirm('이 독서모임을 삭제하시겠습니까?')) return;
+    // Delete related data from Supabase
+    const { error: partError } = await supabase.from('group_participants').delete().eq('group_id', groupId);
+    const { error: commentError } = await supabase.from('group_comments').delete().eq('group_id', groupId);
+    const { error: groupError } = await supabase.from('groups').delete().eq('id', groupId);
+    if (partError || commentError || groupError) {
+      console.error(partError || commentError || groupError);
+      alert('삭제 중 오류가 발생했습니다.');
+      return;
+    }
     const updated = groups.filter(g => g.id !== groupId);
     setGroups(updated);
     localStorage.setItem('bookclub_groups', JSON.stringify(updated));
@@ -445,7 +456,7 @@ export default function GroupsPage() {
                   >
                     {isMember ? '✓ 가입됨 (참가 취소하기)' : (isFull ? '정원 마감' : '독서모임 참가 신청')}
                   </button>
-                  {myCreatedGroups.has(group.id) && (
+                  {adminEmails.includes(user?.email) && (
                     <>
                     <button
                       onClick={(e) => { e.stopPropagation(); openEditGroup(group); }}

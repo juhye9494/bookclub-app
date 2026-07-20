@@ -76,6 +76,8 @@ export default function PlusInsightPage() {
   const [posts, setPosts] = useState<any[]>(INSIGHT_POSTS);
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
   const [comments, setComments] = useState<any>({});
+  // Admin email whitelist for comment deletion
+  const adminEmails = ['shchoi@hankyung.com', 'mwd101@hankyung.com', 'mama0707@hankyung.com', 'pdh0109@hankyung.com', 'parkjh@hankyung.com', 'lygin729@hankyung.com', 'ess0317@hankyung.com', 'xn940@naver.com'];
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [user, setUser] = useState<any>(null);
@@ -195,16 +197,16 @@ export default function PlusInsightPage() {
     setNewComment('');
     setAuthorName('');
   };
-
-  // Delete comment handler (author can delete own, admin can delete any)
-  const handleDeleteComment = (postId: string, commentId: number) => {
-    const postComments = comments[postId] || [];
-    const filtered = postComments.filter((c) => c.id !== commentId);
-    const updated = { ...comments, [postId]: filtered };
-    setComments(updated);
-    localStorage.setItem('insight_comments', JSON.stringify(updated));
+// Delete comment handler (author or admin can delete)
+const handleDeleteComment = (postId: string, commentId: number) => {
+  const postComments = comments[postId] || [];
+  const updated = {
+    ...comments,
+    [postId]: postComments.filter((c: any) => c.id !== commentId),
   };
-
+  setComments(updated);
+  localStorage.setItem('insight_comments', JSON.stringify(updated));
+};
   return (
     <div style={{ background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--sans)', color: 'var(--text)', paddingTop: '64px' }}>
       
@@ -395,18 +397,48 @@ export default function PlusInsightPage() {
                 {/* Comment list */}
                 <div>
                   {(comments[selectedPost.id] || []).map((c: any) => (
-                    <div key={c.id} className="comment-row" style={{ display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.82rem' }}>
+                    <div key={c.id} className="comment-row" style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
                         <span style={{ fontWeight: 700, color: 'var(--text)' }}>{c.author}</span>
-                        <span style={{ color: 'var(--text-muted)' }}>{c.date}</span>
-                        {(c.author === authorName || (user?.user_metadata?.role === 'admin')) && (
-                          <button
-                            onClick={() => handleDeleteComment(selectedPost.id, c.id)}
-                            style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '0.78rem' }}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>{c.date}</span>
+                          {(c.author === user?.user_metadata?.name || adminEmails.includes(user?.email)) && (
+                            <button onClick={() => handleDeleteComment(selectedPost.id, c.id)}
+                              style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>
+                              삭제
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-mid)', margin: '4px 0 0 0' }}>{c.content}</p>
+                    </div>
+                  ))}
+                  {(comments[selectedPost.id] || []).length === 0 && (
+                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px 0', fontSize: '0.88rem' }}>
+                      첫 번째 댓글을 작성해 보세요!
+                    </p>
+                  )}
+                </div>
+                <div>
+                  {(comments[selectedPost.id] || []).map((c: any) => (
                           >삭제</button>
                         )}
+=======
+                    <div key={c.id} className="comment-row" style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>{c.author}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>{c.date}</span>
+                          {(c.author === user?.user_metadata?.name || adminEmails.includes(user?.email)) && (
+                            <button onClick={() => handleDeleteComment(selectedPost.id, c.id)}
+                              style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>
+                              삭제
+                            </button>
+                          )}
+                        </div>
+>>>>>>> b1c2347 (플러스 인사이트 댓글 삭제 관리자 권한 적용 및 레이아웃 수정)
                       </div>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--text-mid)', margin: 0 }}>{c.content}</p>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-mid)', margin: '4px 0 0 0' }}>{c.content}</p>
                     </div>
                   ))}
                   {(comments[selectedPost.id] || []).length === 0 && (
