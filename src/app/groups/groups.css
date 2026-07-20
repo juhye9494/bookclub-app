@@ -1,0 +1,87 @@
+/* Groups page responsive styles */
+
+/* Layout: desktop two columns, mobile single column */
+.group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .group-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Button styling – unified size and height */
+.modal-btn,
+.group-card button {
+  padding: 12px 20px;
+  min-height: 44px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  color: var(--text-mid);
+  font-weight: 600;
+  font-size: 0.90rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap; /* ensure single line */
+}
+
+/* Admin button colors – harmonized with theme */
+.group-card button.edit {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.group-card button.delete {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Modal responsive */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 92vw;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .modal {
+    width: 96vw;
+    padding: 16px;
+  }
+}
+
+/* Form field layout adjustments */
+.form-field {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+.form-field label {
+  margin-bottom: 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+.form-field input,
+.form-field textarea,
+.form-field select {
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
