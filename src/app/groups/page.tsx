@@ -219,7 +219,7 @@ export default function GroupsPage() {
     setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro('');
     setIsCreateOpen(false);
 
-    alert('나만의 독서모임이 성공적으로 생성되었습니다! 한경 심사 후 가이드가 메일로 안내됩니다.');
+    alert('독서모임이 성공적으로 생성되었습니다!');
   };
 
   const handleEditGroup = () => {
@@ -554,7 +554,7 @@ ex.
               />
             </div>
 
-            <button className="groups-modal-btn" onClick={editingGroup ? handleEditGroup : handleCreateGroup} style={{ marginTop: '16px' }}>{editingGroup ? '수정 완료' : '독서모임 방 만들기'}</button>
+            <button type="submit" className="groups-create-submit-btn" onClick={editingGroup ? handleEditGroup : handleCreateGroup} style={{ marginTop: '16px' }}>{editingGroup ? '수정 완료' : '독서모임 방 만들기'}</button>
           </div>
         </div>)}
 
