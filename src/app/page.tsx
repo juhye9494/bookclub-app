@@ -22,6 +22,7 @@ export default function Home() {
   const [books, setBooks] = useState<any[]>([]);
   const [cycleLabel, setCycleLabel] = useState<string>('로딩중...');
   const [loadingBooks, setLoadingBooks] = useState(true);
+  const [faqOpen, setFaqOpen] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadBooks() {
@@ -362,6 +363,100 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="faq-section" id="faq">
+        <div className="faq-inner">
+          <p className="section-label reveal">FAQ</p>
+          <h2 className="section-title reveal">자주 묻는 질문</h2>
+          <div className="faq-list reveal">
+            {[
+              {
+                question: '웰컴 굿즈는 언제 배송되나요?',
+                answer: (
+                  <>
+                    웰컴 굿즈는 가입 완료 후 영업일 기준 2주 이내 순차 발송됩니다.
+                    <br />
+                    배송 일정이 지연될 경우 개별 안내를 통해 알려드립니다.
+                  </>
+                ),
+              },
+              {
+                question: '도서는 신청 후 언제 배송되나요?',
+                answer: (
+                  <>
+                    도서는 매주 금요일 주 1회 발송됩니다.
+                    <br />
+                    택배 배송 특성상 지역에 따라 수령까지 3~5일 정도 소요될 수 있습니다.
+                  </>
+                ),
+              },
+              {
+                question: '3개월 동안 도서 4권을 한 번에 신청해야 하나요?',
+                answer: (
+                  <>
+                    아닙니다.
+                    <br />
+                    도서는 한 번에 신청하시거나, 원하시는 시점에 맞춰 1권씩 나누어 신청하실 수 있습니다.
+                  </>
+                ),
+              },
+              {
+                question: '신간 도서는 언제 업데이트 되나요?',
+                answer: (
+                  <>
+                    신간 도서는 매월 초 홈페이지를 통해 업데이트됩니다.
+                    <br />
+                    또한 <strong style={{ color: 'var(--accent)' }}>한국경제신문 출판사</strong> 카카오톡 채널을 친구 추가하시면 업데이트 소식을 더욱 빠르게 받아보실 수 있습니다.
+                  </>
+                ),
+              },
+              {
+                question: '가입 이후 중도 환불이 가능한가요?',
+                answer: (
+                  <>
+                    결제일로부터 7일 이내에는 청약철회를 요청하실 수 있습니다.
+                    <br />
+                    다만 아래의 경우 청약철회가 제한될 수 있습니다.
+                    <ul className="faq-sub-list">
+                      <li>도서 및 웰컴 키트가 이미 발송된 경우</li>
+                      <li>디지털 콘텐츠의 다운로드 또는 열람이 시작된 경우</li>
+                      <li>회원 맞춤형으로 제작된 상품이 제공된 경우</li>
+                    </ul>
+                    자세한 내용은 홈페이지 하단의 환불정책을 참고해 주세요.
+                  </>
+                ),
+              },
+              {
+                question: '독서 모임은 아무나 개설할 수 있나요?',
+                answer: (
+                  <>
+                    네, 누구나 독서 모임을 개설하실 수 있습니다.
+                    <br />
+                    원데이 모임부터 정기적으로 운영하는 지속형 모임까지 원하는 컨셉과 방식에 맞춰 자유롭게 개설하고 운영하실 수 있습니다.
+                    <br /><br />
+                    다만 영업, 광고 등의 목적으로 독서모임이 개설되는 경우 별도 공지 없이 삭제 처리될 수 있습니다.
+                  </>
+                ),
+              },
+            ].map((item, idx) => (
+              <div key={idx} className={`faq-item${faqOpen === idx ? ' faq-item--open' : ''}`}>
+                <button
+                  className="faq-question"
+                  onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
+                  aria-expanded={faqOpen === idx}
+                >
+                  <span className="faq-q-text">Q. {item.question}</span>
+                  <span className="faq-icon">{faqOpen === idx ? '−' : '+'}</span>
+                </button>
+                <div className="faq-answer-wrap" style={{ maxHeight: faqOpen === idx ? '600px' : '0' }}>
+                  <div className="faq-answer">{item.answer}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
