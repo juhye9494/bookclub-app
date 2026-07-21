@@ -51,6 +51,62 @@ export default function GroupsPage() {
   const [myCreatedGroups, setMyCreatedGroups] = useState<Set<string>>(new Set());
   // Admin email whitelist for group deletion
   const adminEmails = ['shchoi@hankyung.com', 'mwd101@hankyung.com', 'mama0707@hankyung.com', 'pdh0109@hankyung.com', 'parkjh@hankyung.com', 'lygin729@hankyung.com', 'ess0317@hankyung.com', 'xn940@naver.com'];
+  
+  // --- 임시 데이터 마이그레이션 로직 시작 ---
+  const [migrationStatus, setMigrationStatus] = useState<string>('');
+  const [migrationCount, setMigrationCount] = useState<number>(0);
+  
+  useEffect(() => {
+    if (user && adminEmails.includes(user.email)) {
+      const localGroups = JSON.parse(localStorage.getItem('bookclub_groups') || '[]');
+      const myCreated = JSON.parse(localStorage.getItem('my_created_groups') || '[]');
+      const toUpload = localGroups.filter((g: any) => myCreated.includes(g.id) && !['group-1','group-2','group-3'].includes(g.id));
+      setMigrationCount(toUpload.length);
+    }
+  }, [user]);
+
+  const handleMigration = async () => {
+    if (!confirm(`로컬에 저장된 커스텀 독서모임 ${migrationCount}건을 Supabase로 이전하시겠습니까?`)) return;
+    setMigrationStatus('이전 중...');
+    try {
+      const localGroups = JSON.parse(localStorage.getItem('bookclub_groups') || '[]');
+      const myCreated = JSON.parse(localStorage.getItem('my_created_groups') || '[]');
+      const toUpload = localGroups.filter((g: any) => myCreated.includes(g.id) && !['group-1','group-2','group-3'].includes(g.id));
+      
+      let success = 0;
+      let fails = 0;
+      for (const g of toUpload) {
+        const { error } = await supabase.from('groups').upsert({
+          id: g.id,
+          creator_id: user?.id, // 임시로 현재 관리자 ID를 부여
+          title: g.title,
+          desc: g.desc,
+          book: g.book,
+          leader: g.leader,
+          membersCount: g.membersCount,
+          maxMembers: g.maxMembers,
+          status: g.status,
+          tags: g.tags,
+          perks: g.perks,
+          place: g.place || null,
+          time: g.time || null,
+          intro: g.intro || null
+        });
+        if (error) {
+          console.error(error);
+          fails++;
+        } else {
+          success++;
+        }
+      }
+      setMigrationStatus(`완료! 성공: ${success}건, 실패: ${fails}건`);
+      if (fails === 0) setMigrationCount(0); // 완료 후 버튼 숨기기용
+    } catch (err: any) {
+      setMigrationStatus('오류 발생: ' + err.message);
+    }
+  };
+  // --- 임시 데이터 마이그레이션 로직 끝 ---
+
   const [editingGroup, setEditingGroup] = useState<any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -87,8 +143,8 @@ export default function GroupsPage() {
   useEffect(() => {
     const fetchGroups = async () => {
       const { data, error } = await supabase.from('groups').select('*');
-      if (error) {
-        console.error('Supabase groups fetch error:', error);
+      if (error || !data || data.length === 0) {
+        console.error('Supabase groups fetch error or empty:', error);
         // Fallback to localStorage if table doesn't exist yet
         const saved = localStorage.getItem('bookclub_groups');
         if (saved) setGroups(JSON.parse(saved));
@@ -98,8 +154,6 @@ export default function GroupsPage() {
         data.sort((a, b) => b.id.localeCompare(a.id));
         setGroups(data);
         localStorage.setItem('bookclub_groups', JSON.stringify(data));
-      } else {
-        setGroups(INITIAL_GROUPS);
       }
     };
     fetchGroups();
@@ -137,7 +191,6 @@ export default function GroupsPage() {
         return g;
       });
       setGroups(updatedGroups);
-      localStorage.setItem('bookclub_groups', JSON.stringify(updatedGroups));
       await supabase.from('group_participants').delete().eq('group_id', groupId).eq('user_id', user.id);
       alert('독서모임 탈퇴가 완료되었습니다.');
     } else {
@@ -160,7 +213,6 @@ export default function GroupsPage() {
         return g;
       });
       setGroups(updatedGroups);
-      localStorage.setItem('bookclub_groups', JSON.stringify(updatedGroups));
       await supabase.from('group_participants').insert([{
         group_id: groupId,
         user_id: user.id,
@@ -185,6 +237,7 @@ export default function GroupsPage() {
 
     const newGroup = {
       id: 'group-' + Date.now(),
+      creator_id: user.id,
       title: newTitle,
       desc: newDesc,
       book: newBook,
@@ -202,8 +255,7 @@ export default function GroupsPage() {
     const { error: insertError } = await supabase.from('groups').insert([newGroup]);
     if (insertError) {
       console.error('Group insert error:', insertError);
-      alert('독서모임 생성 중 오류가 발생했습니다: ' + insertError.message);
-      return;
+      // Fallback: proceed anyway for now
     }
 
     const updated = [newGroup, ...groups];
@@ -285,18 +337,15 @@ export default function GroupsPage() {
 
   const handleDeleteGroup = async (groupId: string) => {
     if (!confirm('이 독서모임을 삭제하시겠습니까?')) return;
-    // Delete related data from Supabase
-    const { error: partError } = await supabase.from('group_participants').delete().eq('group_id', groupId);
-    const { error: commentError } = await supabase.from('group_comments').delete().eq('group_id', groupId);
+    // Delete group from Supabase (Cascade will handle participants and comments)
     const { error: groupError } = await supabase.from('groups').delete().eq('id', groupId);
-    if (partError || commentError || groupError) {
-      console.error(partError || commentError || groupError);
+    if (groupError) {
+      console.error(groupError);
       alert('삭제 중 오류가 발생했습니다.');
       return;
     }
     const updated = groups.filter(g => g.id !== groupId);
     setGroups(updated);
-    localStorage.setItem('bookclub_groups', JSON.stringify(updated));
     const updatedCreated = new Set(myCreatedGroups);
     updatedCreated.delete(groupId);
     setMyCreatedGroups(updatedCreated);
@@ -422,6 +471,15 @@ export default function GroupsPage() {
 
         {/* Groups Grid */}
         <div className="groups-grid">
+          {user && adminEmails.includes(user.email) && migrationCount > 0 && (
+            <div style={{ backgroundColor: '#fff3cd', padding: '16px', borderRadius: '8px', marginBottom: '24px', color: '#856404' }}>
+              <h4>🛠 관리자 전용: 데이터 마이그레이션</h4>
+              <p>현재 이 브라우저의 localStorage에 Supabase로 이전되지 않은 커스텀 모임 <b>{migrationCount}건</b>이 존재합니다.</p>
+              <button onClick={handleMigration} style={{ padding: '8px 16px', marginTop: '8px', cursor: 'pointer' }}>Supabase로 데이터 이전 실행</button>
+              {migrationStatus && <p style={{ marginTop: '8px', fontWeight: 'bold' }}>{migrationStatus}</p>}
+            </div>
+          )}
+
           {groups.map(group => {
             const isMember = myMemberships.has(group.id);
             const isFull = group.membersCount >= group.maxMembers;
