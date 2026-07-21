@@ -51,27 +51,7 @@ export default function GroupsPage() {
   const [myCreatedGroups, setMyCreatedGroups] = useState<Set<string>>(new Set());
   // Admin email whitelist for group deletion
   const adminEmails = ['shchoi@hankyung.com', 'mwd101@hankyung.com', 'mama0707@hankyung.com', 'pdh0109@hankyung.com', 'parkjh@hankyung.com', 'lygin729@hankyung.com', 'ess0317@hankyung.com', 'xn940@naver.com'];
-
-  const [editingGroup, setEditingGroup] = useState<any | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-
-  // Form states
-  const [newTitle, setNewTitle] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [newBook, setNewBook] = useState('');
-  const [newLeader, setNewLeader] = useState('');
-  const [newMax, setNewMax] = useState('8');
-  const [newTags, setNewTags] = useState('');
-  const [newPlace, setNewPlace] = useState('');
-  const [newTime, setNewTime] = useState('');
-  const [newIntro, setNewIntro] = useState('');
-
-  const [authorName, setAuthorName] = useState('');
-  const [authorBook, setAuthorBook] = useState('');
-  const [authorReason, setAuthorReason] = useState('');
-
-  const [user, setUser] = useState<any>(null);
-
+  
   // --- 임시 데이터 마이그레이션 로직 시작 ---
   const [migrationStatus, setMigrationStatus] = useState<string>('');
   const [migrationCount, setMigrationCount] = useState<number>(0);
@@ -126,6 +106,26 @@ export default function GroupsPage() {
     }
   };
   // --- 임시 데이터 마이그레이션 로직 끝 ---
+
+  const [editingGroup, setEditingGroup] = useState<any | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  // Form states
+  const [newTitle, setNewTitle] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [newBook, setNewBook] = useState('');
+  const [newLeader, setNewLeader] = useState('');
+  const [newMax, setNewMax] = useState('8');
+  const [newTags, setNewTags] = useState('');
+  const [newPlace, setNewPlace] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [newIntro, setNewIntro] = useState('');
+
+  const [authorName, setAuthorName] = useState('');
+  const [authorBook, setAuthorBook] = useState('');
+  const [authorReason, setAuthorReason] = useState('');
+
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
