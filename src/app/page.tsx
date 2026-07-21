@@ -273,7 +273,7 @@ export default function Home() {
               <div className="card-icon"><img src="/uploads/benefit_welcome.png" alt="웰컴 굿즈" /></div>
               <p className="card-tag">독서 습관을 만드는</p>
               <h3 className="card-title">웰컴 굿즈</h3>
-              <p className="card-desc">30분을 기록할 수 있는 모래시계와 독서노트, 편집자 레터를 드립니다.<br />(가입 시, 최초 1회 무료 배송)</p>
+              <p className="card-desc">30분을 기록할 수 있는 모래시계와 독서노트, 엽서 세트를 드립니다.<br />(가입 시, 최초 1회 무료 배송)</p>
             </div>
             <div className="service-card reveal" style={{ transitionDelay: '0.2s' }}>
               <div className="card-icon"><img src="/uploads/benefit_booktalk.png" alt="북토크" /></div>
@@ -282,7 +282,7 @@ export default function Home() {
               <p className="card-desc">월 1회 진행되는 오프라인 저자 북토크에 회원 우선 혜택으로 무료 초청해 드립니다.</p>
             </div>
             <div className="service-card reveal" style={{ transitionDelay: '0.3s' }}>
-              <div className="card-icon"><img src="/uploads/benefit_ebook.png" alt="도서" /></div>
+              <div className="card-icon"><img src="/uploads/books-4-update.jpg" alt="도서" /></div>
               <p className="card-tag">엄선된 큐레이션</p>
               <h3 className="card-title">도서 4권 제공</h3>
               <p className="card-desc">3개월간 엄선된 큐레이션 도서 중 원하는 4권을 선택하여 배송받으실 수 있습니다.</p>
