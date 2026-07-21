@@ -209,11 +209,28 @@ function InquiryContent() {
 
           {/* 첨부파일 */}
           <div>
-            <label style={labelStyle}>첨부파일</label>
+            <label style={labelStyle}>첨부파일 <span style={{ fontSize: '0.75rem', fontWeight: 400, color: '#9ca3af' }}>(JPG, PNG, WEBP, GIF / 최대 5MB)</span></label>
             <input
               id="inquiry-file"
               type="file"
-              onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                if (file) {
+                  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+                  if (!allowedTypes.includes(file.type)) {
+                    alert('JPG, PNG, WEBP, GIF 이미지 파일만 첨부할 수 있습니다.');
+                    e.target.value = '';
+                    return;
+                  }
+                  if (file.size > 5 * 1024 * 1024) {
+                    alert('첨부 이미지는 한 파일당 5MB 이하만 등록할 수 있습니다.');
+                    e.target.value = '';
+                    return;
+                  }
+                }
+                setAttachment(file);
+              }}
               style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
             />
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -230,12 +247,21 @@ function InquiryContent() {
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,102,64,0.1)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-mid)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                📎 파일 첨부하기
+                📎 이미지 첨부하기
               </label>
               <span style={{ fontSize: '0.84rem', color: attachment ? 'var(--accent)' : '#9ca3af' }}>
                 {attachment ? attachment.name : '선택된 파일 없음'}
               </span>
             </div>
+            {attachment && (
+              <div style={{ marginTop: '12px' }}>
+                <img
+                  src={URL.createObjectURL(attachment)}
+                  alt="미리보기"
+                  style={{ maxWidth: '200px', maxHeight: '160px', borderRadius: '8px', border: '1px solid var(--border)', objectFit: 'cover' }}
+                />
+              </div>
+            )}
           </div>
 
           {/* 제출 */}

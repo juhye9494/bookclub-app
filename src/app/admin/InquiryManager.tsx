@@ -29,6 +29,7 @@ export default function InquiryManager() {
   const [replyText, setReplyText] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   useEffect(() => { loadInquiries(); }, []);
 
@@ -167,7 +168,16 @@ export default function InquiryManager() {
                   {inq.content}
                 </div>
                 {inq.attachment_url && (
-                  <a href={inq.attachment_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.82rem', color: 'var(--accent)', display: 'block', marginBottom: '12px' }}>📎 첨부파일 보기</a>
+                  <div style={{ marginBottom: '12px' }}>
+                    <p style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '6px' }}>📎 첨부 이미지</p>
+                    <img
+                      src={inq.attachment_url}
+                      alt="첨부 이미지"
+                      onClick={() => setZoomedImage(inq.attachment_url)}
+                      style={{ maxWidth: '240px', maxHeight: '180px', borderRadius: '8px', border: '1px solid #e5e7eb', objectFit: 'cover', cursor: 'pointer', transition: 'opacity 0.2s' }}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
                 )}
 
                 {/* 상태 변경 */}
@@ -230,6 +240,16 @@ export default function InquiryManager() {
           </div>
         ))}
       </div>
+
+      {/* Image Lightbox */}
+      {zoomedImage && (
+        <div
+          onClick={() => setZoomedImage(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '24px' }}
+        >
+          <img src={zoomedImage} alt="확대 보기" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: '12px', objectFit: 'contain' }} />
+        </div>
+      )}
     </div>
   );
 }

@@ -18,6 +18,7 @@ export default function MyPage() {
   const [eventParticipations, setEventParticipations] = useState<any[]>([]);
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [expandedInquiry, setExpandedInquiry] = useState<string | null>(null);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   // Profile edit state
   const [name, setName] = useState('');
@@ -418,7 +419,16 @@ export default function MyPage() {
                       <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--border)' }}>
                         <div style={{ padding: '16px 0', fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-mid)', whiteSpace: 'pre-wrap' }}>{inq.content}</div>
                         {inq.attachment_url && (
-                          <a href={inq.attachment_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.82rem', color: 'var(--accent)' }}>📎 첨부파일 보기</a>
+                          <div style={{ marginTop: '8px', marginBottom: '8px' }}>
+                            <p style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '6px' }}>📎 첨부 이미지</p>
+                            <img
+                              src={inq.attachment_url}
+                              alt="첨부 이미지"
+                              onClick={() => setZoomedImage(inq.attachment_url)}
+                              style={{ maxWidth: '200px', maxHeight: '160px', borderRadius: '8px', border: '1px solid var(--border)', objectFit: 'cover', cursor: 'pointer' }}
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          </div>
                         )}
                         {inq.admin_reply ? (
                           <div style={{ marginTop: '16px', padding: '16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
@@ -455,6 +465,15 @@ export default function MyPage() {
               setIsPostcodeOpen(false);
             }} />
           </div>
+        </div>
+      )}
+      {/* Image Lightbox */}
+      {zoomedImage && (
+        <div
+          onClick={() => setZoomedImage(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '24px' }}
+        >
+          <img src={zoomedImage} alt="확대 보기" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: '12px', objectFit: 'contain' }} />
         </div>
       )}
     </div>
