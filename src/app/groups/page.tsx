@@ -85,35 +85,48 @@ export default function GroupsPage() {
   const closeDetail = () => setSelectedGroup(null);
 
   useEffect(() => {
-    const fetchGroups = async () => {
-      const { data, error } = await supabase.from('groups').select('*');
-      if (error) {
-        console.error('Supabase groups fetch error:', error);
-        // Fallback to localStorage if table doesn't exist yet
-        const saved = localStorage.getItem('bookclub_groups');
-        if (saved) setGroups(JSON.parse(saved));
-        else { setGroups(INITIAL_GROUPS); localStorage.setItem('bookclub_groups', JSON.stringify(INITIAL_GROUPS)); }
-      } else if (data && data.length > 0) {
-        // Sort by id descending (assuming newer IDs are larger due to Date.now()) or created_at if available
-        data.sort((a, b) => b.id.localeCompare(a.id));
-        setGroups(data);
-        localStorage.setItem('bookclub_groups', JSON.stringify(data));
-      } else {
-        setGroups(INITIAL_GROUPS);
+    // Supabase 정식 전환에 따라 불필요한 기존 폴백 캐시 영구 제거
+    localStorage.removeItem('bookclub_groups');
+    localStorage.removeItem('my_created_groups');
+    localStorage.removeItem('group_memberships');
+
+    const fetchInitialData = async () => {
+      // 1. 모임 전체 목록 최신화
+      const { data: allGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
+      
+      if (allGroups) {
+        setGroups(allGroups);
+
+        // 2. 로그인 여부에 따른 내 상태 갱신
+        if (user) {
+          // 내 참가 목록 최신화
+          const { data: myParts } = await supabase
+            .from('group_participants')
+            .select('group_id')
+            .eq('user_id', user.id);
+          
+          if (myParts) {
+            setMyMemberships(new Set(myParts.map(p => p.group_id)));
+          }
+
+          // 내가 만든 모임 최신화 (전체 목록에서 필터링)
+          const createdIds = new Set(
+            allGroups
+              .filter((group) => group.creator_id === user.id)
+              .map((group) => group.id)
+          );
+          setMyCreatedGroups(createdIds);
+
+        } else {
+          // 로그아웃 상태일 땐 빈 Set으로 초기화
+          setMyMemberships(new Set());
+          setMyCreatedGroups(new Set());
+        }
       }
     };
-    fetchGroups();
 
-    const savedMemberships = localStorage.getItem('group_memberships');
-    if (savedMemberships) {
-      setMyMemberships(new Set(JSON.parse(savedMemberships)));
-    }
-
-    const savedCreated = localStorage.getItem('my_created_groups');
-    if (savedCreated) {
-      setMyCreatedGroups(new Set(JSON.parse(savedCreated)));
-    }
-  }, []);
+    fetchInitialData();
+  }, [user]); // user가 바뀔 때(로그인/로그아웃) 다시 불러옵니다.
 
   const handleJoin = async (groupId: string) => {
     if (!user) {
@@ -124,44 +137,37 @@ export default function GroupsPage() {
     if (!targetGroup) return;
 
     if (myMemberships.has(groupId)) {
-      // Leave
-      const updatedMemberships = new Set(myMemberships);
-      updatedMemberships.delete(groupId);
-      setMyMemberships(updatedMemberships);
-      localStorage.setItem('group_memberships', JSON.stringify(Array.from(updatedMemberships)));
+      // --- 1. Leave (참가 취소) ---
+      const { data: deletedRows, error: deleteError } = await supabase
+        .from('group_participants')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', user.id)
+        .eq('role', 'member')
+        .select('id');
 
-      const updatedGroups = groups.map(g => {
-        if (g.id === groupId) {
-          return { ...g, membersCount: Math.max(g.membersCount - 1, 0), status: '모집중' };
-        }
-        return g;
-      });
-      setGroups(updatedGroups);
-      localStorage.setItem('bookclub_groups', JSON.stringify(updatedGroups));
-      await supabase.from('group_participants').delete().eq('group_id', groupId).eq('user_id', user.id);
-      alert('독서모임 탈퇴가 완료되었습니다.');
-    } else {
-      // Join
-      if (targetGroup.membersCount >= targetGroup.maxMembers) {
-        alert('이미 정원이 초과되어 참가 신청할 수 없습니다.');
+      if (deleteError || !deletedRows || deletedRows.length !== 1) {
+        alert('참가 취소할 내역을 찾지 못했거나 오류가 발생했습니다.');
         return;
       }
 
-      const updatedMemberships = new Set(myMemberships);
-      updatedMemberships.add(groupId);
-      setMyMemberships(updatedMemberships);
-      localStorage.setItem('group_memberships', JSON.stringify(Array.from(updatedMemberships)));
+      // 성공 시: DB에서 groups 및 내 참가 내역 재조회
+      const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
+      if (refreshedGroups) setGroups(refreshedGroups);
 
-      const updatedGroups = groups.map(g => {
-        if (g.id === groupId) {
-          const newCount = g.membersCount + 1;
-          return { ...g, membersCount: newCount, status: newCount >= g.maxMembers ? '모집마감' : '모집중' };
-        }
-        return g;
-      });
-      setGroups(updatedGroups);
-      localStorage.setItem('bookclub_groups', JSON.stringify(updatedGroups));
-      await supabase.from('group_participants').insert([{
+      const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id);
+      if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
+      
+      alert('독서모임 탈퇴가 완료되었습니다.');
+
+    } else {
+      // --- 2. Join (참가 신청) ---
+      if (targetGroup.membersCount >= targetGroup.maxMembers || targetGroup.status === '모집마감') {
+        alert('이미 정원이 초과되었거나 모집이 마감되어 참가 신청할 수 없습니다.');
+        return;
+      }
+
+      const { error: insertError } = await supabase.from('group_participants').insert([{
         group_id: groupId,
         user_id: user.id,
         user_email: user.email,
@@ -169,6 +175,21 @@ export default function GroupsPage() {
         role: 'member',
         group_title: targetGroup.title,
       }]);
+
+      if (insertError) {
+        alert('참가 신청 실패: 정원이 이미 마감되었거나 일시적 오류입니다.\n(' + insertError.message + ')');
+        const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
+        if (refreshedGroups) setGroups(refreshedGroups);
+        return;
+      }
+
+      // 성공 시: DB 재조회
+      const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
+      if (refreshedGroups) setGroups(refreshedGroups);
+
+      const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id);
+      if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
+      
       alert('독서모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
     }
   };
@@ -183,56 +204,47 @@ export default function GroupsPage() {
       return;
     }
 
-    const newGroup = {
-      id: 'group-' + Date.now(),
-      title: newTitle,
-      desc: newDesc,
-      book: newBook,
-      leader: newLeader,
-      membersCount: 1,
-      maxMembers: parseInt(newMax) || 8,
-      status: '모집중',
-      tags: newTags.split(',').map(t => t.trim()).filter(Boolean),
-      perks: ['커피값 지원 신청가능'],
-      place: newPlace,
-      time: newTime,
-      intro: newIntro,
-    };
+    const groupId = 'group-' + Date.now();
+    const maxMembersNum = parseInt(newMax) || 8;
+    const parsedTags = newTags.split(',').map((t: string) => t.trim()).filter(Boolean);
 
-    const { error: insertError } = await supabase.from('groups').insert([newGroup]);
-    if (insertError) {
-      console.error('Group insert error:', insertError);
-      alert('독서모임 생성 중 오류가 발생했습니다: ' + insertError.message);
+    // RPC 호출 (이메일, 이름은 파라미터에서 제외)
+    const { error: rpcError } = await supabase.rpc('create_group_with_leader', {
+      p_id: groupId,
+      p_title: newTitle,
+      p_desc: newDesc,
+      p_book: newBook,
+      p_leader: newLeader,
+      p_max_members: maxMembersNum,
+      p_tags: parsedTags,
+      p_perks: ['커피값 지원 신청가능'],
+      p_place: newPlace || null,
+      p_time: newTime || null,
+      p_intro: newIntro || null
+    });
+
+    if (rpcError) {
+      console.error('Group create error:', rpcError);
+      alert('독서모임 생성 중 오류가 발생했습니다: ' + rpcError.message);
       return;
     }
 
-    const updated = [newGroup, ...groups];
-    setGroups(updated);
-    localStorage.setItem('bookclub_groups', JSON.stringify(updated));
+    // 성공 시 DB에서 다시 긁어와 전체 동기화 (useEffect 내 로직과 동일)
+    const { data: allGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
+    if (allGroups) {
+      setGroups(allGroups);
+      
+      const createdIds = new Set(
+        allGroups
+          .filter((group) => group.creator_id === user.id)
+          .map((group) => group.id)
+      );
+      setMyCreatedGroups(createdIds);
+    }
 
-    // Automatically join as leader
-    const updatedMemberships = new Set(myMemberships);
-    updatedMemberships.add(newGroup.id);
-    setMyMemberships(updatedMemberships);
-    localStorage.setItem('group_memberships', JSON.stringify(Array.from(updatedMemberships)));
+    const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id);
+    if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
 
-    // Track created groups
-    const updatedCreated = new Set(myCreatedGroups);
-    updatedCreated.add(newGroup.id);
-    setMyCreatedGroups(updatedCreated);
-    localStorage.setItem('my_created_groups', JSON.stringify(Array.from(updatedCreated)));
-
-    // DB에 방장으로 저장
-    await supabase.from('group_participants').insert([{
-      group_id: newGroup.id,
-      user_id: user.id,
-      user_email: user.email,
-      user_name: user.user_metadata?.name || user.email,
-      role: 'leader',
-      group_title: newGroup.title,
-    }]);
-
-    // Reset forms
     setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
     setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro('');
     setIsCreateOpen(false);
@@ -254,14 +266,10 @@ export default function GroupsPage() {
       return;
     }
 
-    const updated = groups.map(g => {
-      if (g.id === editingGroup.id) {
-        return { ...editingGroup, ...updatedFields };
-      }
-      return g;
-    });
-    setGroups(updated);
-    localStorage.setItem('bookclub_groups', JSON.stringify(updated));
+    // 성공 시 DB에서 갱신
+    const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
+    if (refreshedGroups) setGroups(refreshedGroups);
+
     setEditingGroup(null);
     setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
     setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro('');
@@ -285,23 +293,28 @@ export default function GroupsPage() {
 
   const handleDeleteGroup = async (groupId: string) => {
     if (!confirm('이 독서모임을 삭제하시겠습니까?')) return;
-    // Delete related data from Supabase
-    const { error: partError } = await supabase.from('group_participants').delete().eq('group_id', groupId);
-    const { error: commentError } = await supabase.from('group_comments').delete().eq('group_id', groupId);
-    const { error: groupError } = await supabase.from('groups').delete().eq('id', groupId);
-    if (partError || commentError || groupError) {
-      console.error(partError || commentError || groupError);
-      alert('삭제 중 오류가 발생했습니다.');
+    
+    // 외래키 CASCADE 덕분에 groups만 지워도 participants 연쇄 삭제됨. select('id')로 실 삭제건수 검증
+    const { data: deletedRows, error: groupError } = await supabase
+      .from('groups')
+      .delete()
+      .eq('id', groupId)
+      .select('id');
+    
+    if (groupError || !deletedRows || deletedRows.length !== 1) {
+      console.error(groupError);
+      alert('모임 삭제할 내역을 찾지 못했거나 권한 오류가 발생했습니다.');
       return;
     }
-    const updated = groups.filter(g => g.id !== groupId);
-    setGroups(updated);
-    localStorage.setItem('bookclub_groups', JSON.stringify(updated));
+    
+    // 성공 시 DB에서 다시 갱신
+    const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
+    if (refreshedGroups) setGroups(refreshedGroups);
+
     const updatedCreated = new Set(myCreatedGroups);
     updatedCreated.delete(groupId);
     setMyCreatedGroups(updatedCreated);
-    localStorage.setItem('my_created_groups', JSON.stringify(Array.from(updatedCreated)));
-    alert('독서모임이 삭제되었습니다.');
+    alert('모임이 정상적으로 삭제되었습니다.');
   };
 
   const handleRequestAuthor = () => {
