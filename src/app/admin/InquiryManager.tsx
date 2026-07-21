@@ -30,13 +30,59 @@ export default function InquiryManager() {
   const [saving, setSaving] = useState(false);
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   useEffect(() => { loadInquiries(); }, []);
+
+  // attachment_url에서 Storage 파일 경로를 추출하는 헬퍼
+  function extractFilePath(attachmentUrl: string): string {
+    if (!attachmentUrl) return '';
+    // 이미 전체 URL인 경우 (기존 데이터 호환): 경로 부분만 추출
+    if (attachmentUrl.startsWith('http')) {
+      const marker = '/object/public/inquiry-attachments/';
+      const idx = attachmentUrl.indexOf(marker);
+      if (idx !== -1) return attachmentUrl.substring(idx + marker.length);
+      // signed URL 마커
+      const signedMarker = '/object/sign/inquiry-attachments/';
+      const sIdx = attachmentUrl.indexOf(signedMarker);
+      if (sIdx !== -1) return attachmentUrl.substring(sIdx + signedMarker.length).split('?')[0];
+      return '';
+    }
+    // 파일 경로만 저장된 경우 (새 데이터)
+    return attachmentUrl;
+  }
+
+  async function resolveAttachmentUrls(inqs: Inquiry[]) {
+    const urls: Record<string, string> = {};
+    for (const inq of inqs) {
+      if (!inq.attachment_url) continue;
+      const filePath = extractFilePath(inq.attachment_url);
+      if (!filePath) {
+        console.warn(`[문의 ${inq.id}] 첨부 경로 추출 실패:`, inq.attachment_url);
+        continue;
+      }
+      const { data, error } = await supabase.storage
+        .from('inquiry-attachments')
+        .createSignedUrl(filePath, 3600);
+      if (error) {
+        console.warn(`[문의 ${inq.id}] signed URL 생성 실패:`, error.message, '경로:', filePath);
+        // fallback: public URL 시도
+        const { data: pubData } = supabase.storage.from('inquiry-attachments').getPublicUrl(filePath);
+        if (pubData?.publicUrl) urls[inq.id] = pubData.publicUrl;
+      } else if (data?.signedUrl) {
+        urls[inq.id] = data.signedUrl;
+      }
+    }
+    setSignedUrls(urls);
+  }
 
   async function loadInquiries() {
     setLoading(true);
     const { data } = await supabase.from('inquiries').select('*').order('created_at', { ascending: false });
-    if (data) setInquiries(data);
+    if (data) {
+      setInquiries(data);
+      resolveAttachmentUrls(data);
+    }
     setLoading(false);
   }
 
@@ -167,15 +213,15 @@ export default function InquiryManager() {
                 <div style={{ padding: '14px', background: '#f9fafb', borderRadius: '8px', fontSize: '0.88rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: '12px' }}>
                   {inq.content}
                 </div>
-                {inq.attachment_url && (
+                {inq.attachment_url && signedUrls[inq.id] && (
                   <div style={{ marginBottom: '12px' }}>
                     <p style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '6px' }}>📎 첨부 이미지</p>
                     <img
-                      src={inq.attachment_url}
+                      src={signedUrls[inq.id]}
                       alt="첨부 이미지"
-                      onClick={() => setZoomedImage(inq.attachment_url)}
+                      onClick={() => setZoomedImage(signedUrls[inq.id])}
                       style={{ maxWidth: '240px', maxHeight: '180px', borderRadius: '8px', border: '1px solid #e5e7eb', objectFit: 'cover', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      onError={(e) => { console.warn(`[문의 ${inq.id}] 이미지 로드 실패:`, signedUrls[inq.id]); (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
                   </div>
                 )}

@@ -66,16 +66,19 @@ function InquiryContent() {
     let attachmentUrl = '';
     if (attachment) {
       const fileExt = attachment.name.split('.').pop();
-      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}_${Date.now()}.${fileExt}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('inquiry-attachments')
-        .upload(fileName, attachment);
+        .upload(filePath, attachment, { upsert: true });
       if (uploadError) {
-        console.warn('파일 업로드 실패 (스토리지 미설정 가능):', uploadError.message);
-      } else {
-        const { data: urlData } = supabase.storage.from('inquiry-attachments').getPublicUrl(fileName);
-        attachmentUrl = urlData?.publicUrl || '';
+        console.error('[문의 첨부] 업로드 실패:', uploadError.message);
+        alert('이미지 업로드에 실패했습니다: ' + uploadError.message);
+        setSubmitting(false);
+        return;
       }
+      // DB에는 파일 경로를 저장 (signed URL은 조회 시 생성)
+      attachmentUrl = filePath;
+      console.log('[문의 첨부] 업로드 성공, 저장 경로:', filePath);
     }
 
     try {

@@ -19,6 +19,7 @@ export default function MyPage() {
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [expandedInquiry, setExpandedInquiry] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   // Profile edit state
   const [name, setName] = useState('');
@@ -96,7 +97,37 @@ export default function MyPage() {
       }
 
       const { data: inq } = await supabase.from('inquiries').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
-      if (inq) setInquiries(inq);
+      if (inq) {
+        setInquiries(inq);
+        // Resolve signed URLs for attachments
+        const urls: Record<string, string> = {};
+        for (const item of inq) {
+          if (!item.attachment_url) continue;
+          let filePath = item.attachment_url;
+          if (filePath.startsWith('http')) {
+            const marker = '/object/public/inquiry-attachments/';
+            const idx = filePath.indexOf(marker);
+            if (idx !== -1) { filePath = filePath.substring(idx + marker.length); }
+            else {
+              const sMarker = '/object/sign/inquiry-attachments/';
+              const sIdx = filePath.indexOf(sMarker);
+              if (sIdx !== -1) { filePath = filePath.substring(sIdx + sMarker.length).split('?')[0]; }
+              else continue;
+            }
+          }
+          const { data: signedData, error: signedErr } = await supabase.storage
+            .from('inquiry-attachments')
+            .createSignedUrl(filePath, 3600);
+          if (signedErr) {
+            console.warn(`[문의 ${item.id}] signed URL 실패:`, signedErr.message);
+            const { data: pubData } = supabase.storage.from('inquiry-attachments').getPublicUrl(filePath);
+            if (pubData?.publicUrl) urls[item.id] = pubData.publicUrl;
+          } else if (signedData?.signedUrl) {
+            urls[item.id] = signedData.signedUrl;
+          }
+        }
+        setSignedUrls(urls);
+      }
 
       setLoading(false);
     }
@@ -418,18 +449,19 @@ export default function MyPage() {
                     {expandedInquiry === inq.id && (
                       <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--border)' }}>
                         <div style={{ padding: '16px 0', fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-mid)', whiteSpace: 'pre-wrap' }}>{inq.content}</div>
-                        {inq.attachment_url && (
+                        {inq.attachment_url && signedUrls[inq.id] && (
                           <div style={{ marginTop: '8px', marginBottom: '8px' }}>
                             <p style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '6px' }}>📎 첨부 이미지</p>
                             <img
-                              src={inq.attachment_url}
+                              src={signedUrls[inq.id]}
                               alt="첨부 이미지"
-                              onClick={() => setZoomedImage(inq.attachment_url)}
+                              onClick={() => setZoomedImage(signedUrls[inq.id])}
                               style={{ maxWidth: '200px', maxHeight: '160px', borderRadius: '8px', border: '1px solid var(--border)', objectFit: 'cover', cursor: 'pointer' }}
-                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                              onError={(e) => { console.warn(`[문의 ${inq.id}] 이미지 로드 실패:`, signedUrls[inq.id]); (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                             />
                           </div>
                         )}
+
                         {inq.admin_reply ? (
                           <div style={{ marginTop: '16px', padding: '16px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
                             <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#059669', marginBottom: '8px' }}>📩 답변</p>
