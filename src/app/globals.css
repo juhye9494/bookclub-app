@@ -784,10 +784,13 @@ body {
     .dv-plan-row .l { color: var(--text-muted); }
     .dv-plan-row .r { font-weight: 600; }
     .dv-add-btn {
-      width: 100%; margin-top: 18px; padding: 13px; border-radius: 100px; border: none; cursor: pointer;
+      width: 100%; padding: 13px; border-radius: 100px; border: none; cursor: pointer;
       background: var(--accent); color: #fff; font-size: 0.93rem; font-weight: 600;
       font-family: var(--sans); transition: background 0.2s, transform 0.15s;
       box-shadow: 0 4px 18px rgba(252,102,64,0.3);
+    }
+    .book-detail-mobile-action {
+      margin-top: 18px;
     }
     .dv-add-btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
     .dv-add-btn.added { background: var(--text); box-shadow: none; }
@@ -1374,6 +1377,28 @@ body {
 
   section {
     padding: 40px 4vw;
+  }
+
+  @media (max-width: 768px) {
+    .section-title {
+      font-size: 1.8rem;
+    }
+    .service-cards { grid-template-columns: 1fr !important; }
+    .review-grid { grid-template-columns: 1fr; }
+    .book-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 20px 14px !important; }
+    .dv-other-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+    
+    .dv-sidebar-duplicate-info {
+      display: none;
+    }
+    .book-detail-mobile-action {
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      margin-top: 0;
+      z-index: 1200;
+      transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
   }
 
   .hero {

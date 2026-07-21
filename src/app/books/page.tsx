@@ -234,18 +234,22 @@ export default function BooksPage() {
             </div>
             <div className="dv-sidebar">
               <div className="dv-sidebar-card">
-                <div className="dv-sidebar-cover"><img src={activeBook.img} alt="" /></div>
-                <p className="dv-sidebar-genre">{activeBook.genre}</p>
-                <p className="dv-sidebar-title">{activeBook.title}</p>
-                <p className="dv-sidebar-author">{activeBook.author}</p>
-                <div className="dv-sidebar-divider"></div>
+                <div className="dv-sidebar-duplicate-info">
+                  <div className="dv-sidebar-cover"><img src={activeBook.img} alt="" /></div>
+                  <p className="dv-sidebar-genre">{activeBook.genre}</p>
+                  <p className="dv-sidebar-title">{activeBook.title}</p>
+                  <p className="dv-sidebar-author">{activeBook.author}</p>
+                  <div className="dv-sidebar-divider"></div>
+                </div>
                 <p style={{ fontFamily: 'var(--serif)', fontSize: '0.95rem', fontWeight: 700, marginBottom: '12px' }}>구독 플랜에 포함</p>
                 <div className="plan-row"><span className="l">구독권</span><span className="r">3개월권</span></div>
                 <div className="plan-row"><span className="l">도서 선택</span><span className="r">3개월간 4권</span></div>
                 <div className="plan-row"><span className="l">구독 금액</span><span className="r" style={{ color: 'var(--accent)' }}>45,000원</span></div>
-                <button className={`dv-add-btn ${detailIdx !== null && selected.has(detailIdx) ? 'added' : ''}`} onClick={() => detailIdx !== null && toggleBook(detailIdx)}>
-                  {detailIdx !== null && selected.has(detailIdx) ? '✓ 담겼어요' : '+ 내 목록에 담기'}
-                </button>
+                <div className="book-detail-mobile-action" style={{ bottom: selected.size > 0 ? '100px' : '20px' }}>
+                  <button className={`dv-add-btn ${detailIdx !== null && selected.has(detailIdx) ? 'added' : ''}`} onClick={() => detailIdx !== null && toggleBook(detailIdx)}>
+                    {detailIdx !== null && selected.has(detailIdx) ? '✓ 담겼어요' : '+ 내 목록에 담기'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
