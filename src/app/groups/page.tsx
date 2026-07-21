@@ -748,13 +748,15 @@ ex.
                 </div>
                 <div style={{ paddingLeft: '32px' }}>
                   <p style={{ margin: 0, marginBottom: '8px', fontWeight: 600 }}>방장에게는 활동비 5만원이 지원됩니다.</p>
-                  <ul style={{ margin: 0, paddingLeft: '20px', color: '#4b5563', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <li>활동 지원은 매월 3개 팀에 한해 제공됩니다.</li>
-                    <li>지원금 수령을 위해서는 운영 기간 내 독서모임을 3회 이상 진행해야 합니다.</li>
-                    <li>모임을 3회 이상 진행한 후, [1:1 문의] &gt; [독서모임 활동비 신청] 게시판에 활동 인증 내용을 남겨주세요.<br />
-                    <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>* 회차별 모임 사진 3장 이상, 기프티콘을 받을 휴대폰 번호 기재 필수</span></li>
-                    <li>지원금은 모임 종료 후 활동 확인을 거쳐 남겨주신 휴대폰 번호로 네이버페이 포인트 기프티콘이 발송됩니다.</li>
-                  </ul>
+                  <div style={{ margin: 0, paddingLeft: '16px', color: '#4b5563', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div>활동 지원은 매월 3개 팀에 한해 제공됩니다.</div>
+                    <div>지원금 수령을 위해서는 운영 기간 내 독서모임을 3회 이상 진행해야 합니다.</div>
+                    <div>
+                      모임을 3회 이상 진행한 후, [1:1 문의] &gt; [독서모임 활동비 신청] 게시판에 활동 인증 내용을 남겨주세요.<br />
+                      <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>* 회차별 모임 사진 3장 이상, 기프티콘을 받을 휴대폰 번호 기재 필수</span>
+                    </div>
+                    <div>지원금은 모임 종료 후 활동 확인을 거쳐 남겨주신 휴대폰 번호로 네이버페이 포인트 기프티콘이 발송됩니다.</div>
+                  </div>
                 </div>
               </div>
 
@@ -764,8 +766,8 @@ ex.
                   저자 섭외 안내
                 </div>
                 <div style={{ paddingLeft: '32px' }}>
-                  <p style={{ margin: 0, marginBottom: '8px', fontWeight: 600 }}>저자 섭외를 희망하는 경우 방장이 대표로 신청해주세요.</p>
-                  <p style={{ margin: 0 }}>모임 내에서 저자 섭외 의견이 있는 경우 [1:1 문의] &gt; [저자 섭외 문의]를 통해 방장이 신청해주시면 내부 검토 후 회신드리겠습니다.</p>
+                  <p style={{ margin: 0, marginBottom: '12px', fontWeight: 600 }}>저자 섭외를 희망하는 경우 방장이 대표로 신청해주세요.</p>
+                  <p style={{ margin: 0, color: '#4b5563' }}>모임 내에서 저자 섭외 의견이 있는 경우 [1:1 문의] &gt; [저자 섭외 문의]를 통해 방장이 신청해주시면 내부 검토 후 회신드리겠습니다.</p>
                 </div>
               </div>
 
