@@ -137,10 +137,7 @@ export default function PaymentPage() {
             <span style={{ fontSize: '0.88rem', color: 'var(--text-mid)' }}>웰컴 굿즈</span>
             <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>무료 증정</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.88rem', color: 'var(--text-mid)' }}>저자 강연권</span>
-            <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>포함</span>
-          </div>
+
           <div style={{ 
             borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '4px',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
