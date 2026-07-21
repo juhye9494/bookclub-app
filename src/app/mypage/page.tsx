@@ -89,10 +89,13 @@ export default function MyPage() {
         : { data: [], error: null };
       if (groupsError) console.error('groups fetch error:', groupsError);
 
-      const joinedList = memberParts?.map(p => {
+      const joinedList: any[] = (memberParts || []).reduce((acc: any[], p) => {
         const group = joinedGroups?.find(g => g.id === p.group_id);
-        return group ? { id: p.group_id + '-member', group_title: group.title, role: 'member', created_at: p.created_at } : null;
-      }).filter(Boolean) || [];
+        if (group) {
+          acc.push({ id: p.group_id + '-member', group_title: group.title, role: 'member', created_at: p.created_at });
+        }
+        return acc;
+      }, []);
 
       const { data: createdGroups, error: createdErr } = await supabase
         .from('groups')
