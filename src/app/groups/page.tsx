@@ -116,7 +116,8 @@ export default function GroupsPage() {
         const { data: myParts } = await supabase
           .from('group_participants')
           .select('group_id')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('role', 'member');
         
         if (myParts) {
           setMyMemberships(new Set(myParts.map(p => p.group_id)));
@@ -149,6 +150,11 @@ export default function GroupsPage() {
     const targetGroup = groups.find(g => g.id === groupId);
     if (!targetGroup) return;
 
+    if (targetGroup.creator_id === user.id) {
+      alert('직접 만든 독서모임은 참가 취소할 수 없습니다. 모임을 종료하려면 삭제 기능을 이용해주세요.');
+      return;
+    }
+
     if (myMemberships.has(groupId)) {
       // --- 1. Leave (참가 취소) ---
       const { data: deletedRows, error: deleteError } = await supabase
@@ -167,7 +173,7 @@ export default function GroupsPage() {
       // 성공 시: DB에서 groups 및 내 참가 내역 재조회
       await fetchGroups();
 
-      const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id);
+      const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
       if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
       
       alert('독서모임 탈퇴가 완료되었습니다.');
@@ -197,7 +203,7 @@ export default function GroupsPage() {
       // 성공 시: DB 재조회
       await fetchGroups();
 
-      const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id);
+      const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
       if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
       
       alert('독서모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
@@ -245,7 +251,7 @@ export default function GroupsPage() {
     const { data: createdGroups } = await supabase.from('groups').select('id').eq('creator_id', user.id);
     if (createdGroups) setMyCreatedGroups(new Set(createdGroups.map(g => g.id)));
 
-    const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id);
+    const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
     if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
 
     setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
@@ -439,6 +445,7 @@ export default function GroupsPage() {
           {groups.map(group => {
             const isMember = myMemberships.has(group.id);
             const isFull = group.membersCount >= group.maxMembers;
+            const isCreator = user?.id === group.creator_id;
             
             return (
               <div key={group.id} className="group-card" onClick={() => setSelectedGroup(group)}>
@@ -477,13 +484,26 @@ export default function GroupsPage() {
                   >
                     🔍 모임 자세히 보기
                   </button>
-<button
-  onClick={(e) => { e.stopPropagation(); handleJoin(group.id); }}
-  disabled={!isMember && isFull}
-  className="group-main-action-btn"
->
-                    {isMember ? '✓ 가입됨 (참가 취소하기)' : (isFull ? '정원 마감' : '독서모임 참가 신청')}
-                  </button>
+                  {isCreator ? (
+                    <div className="creator-badge" style={{ padding: '10px', background: '#eef2ff', color: '#4f46e5', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 600, width: '100%', marginBottom: '8px', textAlign: 'center' }}>
+                      👑 내가 만든 독서모임
+                    </div>
+                  ) : isMember ? (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleJoin(group.id); }}
+                      className="group-main-action-btn"
+                    >
+                      ✓ 가입됨 (참가 취소하기)
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleJoin(group.id); }}
+                      disabled={isFull}
+                      className="group-main-action-btn"
+                    >
+                      {isFull ? '정원 마감' : '독서모임 참가 신청'}
+                    </button>
+                  )}
                   {adminEmails.includes(user?.email) && (
                     <div className="groups-admin-actions">
                     <button
