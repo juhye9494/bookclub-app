@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import SelectedBooksBar from '@/components/SelectedBooksBar';
 
 const MAX_SELECT = 4;
 
@@ -181,8 +182,8 @@ export default function BooksPage() {
       `}</style>
 
       {isDetailOpen && activeBook ? (
-        /* ===== DETAIL VIEW ===== */
-        <div id="detail-view">
+        /* ===== BOOK DETAIL VIEW ===== */
+        <div className="book-detail-view" style={{ paddingBottom: '120px' }}>
           <div className="dv-hero" style={{ display: 'flex', flexDirection: 'column', minHeight: 'auto', padding: '0' }}>
             <div className="dv-hero-bg" style={{ background: `linear-gradient(160deg, ${activeBook.bgDark} 0%, ${activeBook.bg} 100%)` }}></div>
             <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1100px', margin: '0 auto', padding: '32px 5vw 16px' }}>
@@ -268,51 +269,7 @@ export default function BooksPage() {
         /* ===== BOOK LIST VIEW ===== */
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 5vw 80px' }}>
 
-          {/* FLOATING CART BAR — 하단 플로팅 카드 */}
-          {selected.size > 0 && (
-            <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, pointerEvents: 'none', animation: 'cartSlideUp 0.35s cubic-bezier(0.16,1,0.3,1)', width: 'min(680px, calc(100% - 32px))' }}>
-              <style>{`
-                @keyframes cartSlideUp {
-                  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-                  to { opacity: 1; transform: translateX(-50%) translateY(0); }
-                }
-                .cart-x-btn:hover { transform: scale(1.2); }
-              `}</style>
-              <div style={{ pointerEvents: 'auto', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '14px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  {/* 장바구니 아이콘 + 카운트 */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                    <span style={{ fontSize: '1.2rem' }}>📚</span>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text)', fontWeight: 700 }}>{selected.size}<span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> / 4</span></span>
-                  </div>
-                  {/* 구분선 */}
-                  <div style={{ width: '1px', height: '32px', background: 'rgba(0,0,0,0.1)', flexShrink: 0 }} />
-                  {/* 선택 도서 썸네일 */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, padding: '4px 2px' }}>
-                    {Array.from(selected).map((idx) => books[idx] && (
-                      <div key={idx} style={{ position: 'relative', flexShrink: 0 }}>
-                        <div style={{ width: '40px', height: '55px', borderRadius: '4px 7px 7px 4px', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                          <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                        <button
-                          className="cart-x-btn"
-                          onClick={(e) => { e.stopPropagation(); toggleBook(idx); }}
-                          style={{ position: 'absolute', top: '-7px', right: '-7px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', color: '#999', border: '1px solid rgba(0,0,0,0.12)', fontSize: '0.55rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, boxShadow: '0 1px 4px rgba(0,0,0,0.12)', transition: 'transform 0.15s, color 0.15s' }}
-                        >✕</button>
-                      </div>
-                    ))}
-                  </div>
-                  {/* 신청 버튼 */}
-                  <button onClick={() => {
-                    if (user) { setIsPaymentOpen(true); }
-                    else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
-                  }} style={{ padding: '12px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(252,102,64,0.35)', flexShrink: 0 }}>
-                    신청하기
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* SelectedBooksBar will be rendered at the bottom for both views */}
           {/* Page Header */}
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <p style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.14em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '12px' }}>BOOK CURATION</p>
@@ -408,6 +365,17 @@ export default function BooksPage() {
           )}
         </div>
       )}
+
+      {/* FLOATING CART BAR (Shared) */}
+      <SelectedBooksBar 
+        selected={selected} 
+        books={books} 
+        toggleBook={toggleBook} 
+        onApply={() => {
+          if (user) { setIsPaymentOpen(true); }
+          else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
+        }} 
+      />
 
       {/* PAYMENT MODAL */}
       <div className={`modal-overlay ${isPaymentOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsPaymentOpen(false); }}>
