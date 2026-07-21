@@ -15,8 +15,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "북클럽 - 한경 언더라인",
-  description: "성장을 위한 제안, 당신의 선택을 더하세요.",
+  title: "한경 언더라인",
+  description: "여기를 눌러 링크를 확인하세요.",
+  metadataBase: new URL("https://underline.hankyung.com"),
+  openGraph: {
+    title: "한경 언더라인",
+    description: "여기를 눌러 링크를 확인하세요.",
+    url: "https://underline.hankyung.com",
+    siteName: "한경 언더라인",
+    type: "website",
+    locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "한경 언더라인",
+    description: "여기를 눌러 링크를 확인하세요.",
+  },
 };
 
 export default function RootLayout({
