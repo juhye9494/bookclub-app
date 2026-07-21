@@ -84,6 +84,22 @@ export default function GroupsPage() {
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const closeDetail = () => setSelectedGroup(null);
 
+  const fetchGroups = async () => {
+    const { data, error } = await supabase
+      .from('groups')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
+
+    if (error) {
+      console.error('Groups fetch error:', error);
+      return false;
+    }
+
+    setGroups(data ?? []);
+    return true;
+  };
+
   useEffect(() => {
     // Supabase 정식 전환에 따라 불필요한 기존 폴백 캐시 영구 제거
     localStorage.removeItem('bookclub_groups');
@@ -92,36 +108,33 @@ export default function GroupsPage() {
 
     const fetchInitialData = async () => {
       // 1. 모임 전체 목록 최신화
-      const { data: allGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
-      
-      if (allGroups) {
-        setGroups(allGroups);
+      await fetchGroups();
 
-        // 2. 로그인 여부에 따른 내 상태 갱신
-        if (user) {
-          // 내 참가 목록 최신화
-          const { data: myParts } = await supabase
-            .from('group_participants')
-            .select('group_id')
-            .eq('user_id', user.id);
-          
-          if (myParts) {
-            setMyMemberships(new Set(myParts.map(p => p.group_id)));
-          }
-
-          // 내가 만든 모임 최신화 (전체 목록에서 필터링)
-          const createdIds = new Set(
-            allGroups
-              .filter((group) => group.creator_id === user.id)
-              .map((group) => group.id)
-          );
-          setMyCreatedGroups(createdIds);
-
-        } else {
-          // 로그아웃 상태일 땐 빈 Set으로 초기화
-          setMyMemberships(new Set());
-          setMyCreatedGroups(new Set());
+      // 2. 로그인 여부에 따른 내 상태 갱신
+      if (user) {
+        // 내 참가 목록 최신화
+        const { data: myParts } = await supabase
+          .from('group_participants')
+          .select('group_id')
+          .eq('user_id', user.id);
+        
+        if (myParts) {
+          setMyMemberships(new Set(myParts.map(p => p.group_id)));
         }
+
+        // 내가 만든 모임 최신화 (전체 목록에서 필터링하기 위해 DB에서 직접 조회)
+        const { data: createdGroups } = await supabase
+          .from('groups')
+          .select('id')
+          .eq('creator_id', user.id);
+        
+        if (createdGroups) {
+          setMyCreatedGroups(new Set(createdGroups.map(g => g.id)));
+        }
+      } else {
+        // 로그아웃 상태일 땐 빈 Set으로 초기화
+        setMyMemberships(new Set());
+        setMyCreatedGroups(new Set());
       }
     };
 
@@ -152,8 +165,7 @@ export default function GroupsPage() {
       }
 
       // 성공 시: DB에서 groups 및 내 참가 내역 재조회
-      const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
-      if (refreshedGroups) setGroups(refreshedGroups);
+      await fetchGroups();
 
       const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id);
       if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
@@ -178,14 +190,12 @@ export default function GroupsPage() {
 
       if (insertError) {
         alert('참가 신청 실패: 정원이 이미 마감되었거나 일시적 오류입니다.\n(' + insertError.message + ')');
-        const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
-        if (refreshedGroups) setGroups(refreshedGroups);
+        await fetchGroups();
         return;
       }
 
       // 성공 시: DB 재조회
-      const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
-      if (refreshedGroups) setGroups(refreshedGroups);
+      await fetchGroups();
 
       const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id);
       if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
@@ -229,18 +239,11 @@ export default function GroupsPage() {
       return;
     }
 
-    // 성공 시 DB에서 다시 긁어와 전체 동기화 (useEffect 내 로직과 동일)
-    const { data: allGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
-    if (allGroups) {
-      setGroups(allGroups);
-      
-      const createdIds = new Set(
-        allGroups
-          .filter((group) => group.creator_id === user.id)
-          .map((group) => group.id)
-      );
-      setMyCreatedGroups(createdIds);
-    }
+    // 성공 시 DB에서 다시 긁어와 전체 동기화
+    await fetchGroups();
+
+    const { data: createdGroups } = await supabase.from('groups').select('id').eq('creator_id', user.id);
+    if (createdGroups) setMyCreatedGroups(new Set(createdGroups.map(g => g.id)));
 
     const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id);
     if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
@@ -267,8 +270,7 @@ export default function GroupsPage() {
     }
 
     // 성공 시 DB에서 갱신
-    const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
-    if (refreshedGroups) setGroups(refreshedGroups);
+    await fetchGroups();
 
     setEditingGroup(null);
     setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
@@ -308,8 +310,7 @@ export default function GroupsPage() {
     }
     
     // 성공 시 DB에서 다시 갱신
-    const { data: refreshedGroups } = await supabase.from('groups').select('*').order('created_at', { ascending: false });
-    if (refreshedGroups) setGroups(refreshedGroups);
+    await fetchGroups();
 
     const updatedCreated = new Set(myCreatedGroups);
     updatedCreated.delete(groupId);
