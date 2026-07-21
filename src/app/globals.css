@@ -484,40 +484,40 @@ body {
     }
 
     /* FAQ */
-    .faq-section { background: var(--accent); }
+    .faq-section { background: #383838; }
     .faq-inner { max-width: 780px; margin: 0 auto; }
-    .faq-inner .section-label { color: rgba(255,255,255,0.7); }
+    .faq-inner .section-label { color: var(--accent); font-weight: 700; }
     .faq-inner .section-title { color: #fff; margin-bottom: 40px; }
     .faq-list { display: flex; flex-direction: column; }
     .faq-item {
-      border-bottom: 1px solid rgba(255,255,255,0.25);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
     }
-    .faq-item:first-child { border-top: 1px solid rgba(255,255,255,0.25); }
+    .faq-item:first-child { border-top: 1px solid rgba(255,255,255,0.12); }
     .faq-question {
       width: 100%; display: flex; justify-content: space-between; align-items: center;
       padding: 22px 4px; background: none; border: none;
-      font-size: 0.95rem; font-weight: 600; color: rgba(255,255,255,0.9);
+      font-size: 0.95rem; font-weight: 600; color: #ffffff;
       cursor: pointer; text-align: left; gap: 16px;
       transition: color 0.2s;
       font-family: inherit; line-height: 1.5;
     }
-    .faq-question:hover { color: #fff; }
-    .faq-item--open .faq-question { color: #fff; }
+    .faq-question:hover { color: var(--accent); }
+    .faq-item--open .faq-question { color: var(--accent); }
     .faq-q-text { flex: 1; }
     .faq-icon {
       flex-shrink: 0; width: 28px; height: 28px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem; font-weight: 300; color: rgba(255,255,255,0.6);
+      font-size: 1.3rem; font-weight: 300; color: #ffffff;
       transition: color 0.2s, transform 0.3s;
     }
-    .faq-item--open .faq-icon { color: #fff; transform: rotate(180deg); }
+    .faq-item--open .faq-icon { color: var(--accent); transform: rotate(180deg); }
     .faq-answer-wrap {
       max-height: 0; overflow: hidden;
       transition: max-height 0.35s ease;
     }
     .faq-answer {
       padding: 0 4px 24px;
-      font-size: 0.88rem; color: rgba(255,255,255,0.8);
+      font-size: 0.88rem; color: #cccccc;
       line-height: 1.85;
     }
     .faq-sub-list {
@@ -525,7 +525,7 @@ body {
       list-style: disc; display: flex; flex-direction: column; gap: 4px;
     }
     .faq-sub-list li {
-      font-size: 0.85rem; color: rgba(255,255,255,0.75); line-height: 1.7;
+      font-size: 0.85rem; color: #bbbbbb; line-height: 1.7;
     }
 
     @media (max-width: 768px) {
