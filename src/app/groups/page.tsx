@@ -769,12 +769,13 @@ ex.
                 </div>
               </div>
 
-              <div style={{ marginTop: '8px', background: '#fef9c3', padding: '20px', borderRadius: '12px', color: '#854d0e', border: '1px solid #fef08a' }}>
-                <h4 style={{ margin: 0, marginBottom: '12px', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '6px' }}>⚠️ 주의 안내</h4>
-                <p style={{ margin: 0, marginBottom: '8px', fontWeight: 600 }}>모두가 즐거운 모임이 될 수 있도록 함께 지켜주세요.</p>
-                <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <li>영업, 광고 등의 목적으로 독서모임에 참여하는 경우 참여자들의 건의를 통해 모임에서 강퇴 조치될 수 있습니다.</li>
-                  <li>본 독서모임은 참가자 간 자율적인 교류를 기반으로 운영됩니다. 참가자 간 발생하는 분쟁이나 개인적인 문제에 대해서는 주최 측이 개입하거나 책임지지 않으며, 원활한 모임 운영을 위해 상호 존중과 배려를 부탁드립니다.</li>
+              <div style={{ marginTop: '8px', background: '#fff4c7', padding: '22px 24px', borderRadius: '12px', color: '#874600', border: '1px solid #f3cc54' }}>
+                <div style={{ fontSize: '16px', fontWeight: 700, margin: 0, marginBottom: '12px' }}>
+                  ⚠️ 모두가 즐거운 모임이 될 수 있도록 함께 지켜주세요.
+                </div>
+                <ul style={{ margin: 0, paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px', fontWeight: 400, lineHeight: 1.7, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                  <li>영업, 광고 등의 목적으로 독서모임에 참여하는 경우 참여자들의 건의를 통해 모임에서 <strong>강퇴 조치</strong>될 수 있습니다.</li>
+                  <li>본 독서모임은 참가자 간 자율적인 교류를 기반으로 운영됩니다. 참가자 간 발생하는 분쟁이나 개인적인 문제에 대해서는 주최 측이 개입하거나 책임지지 않으며, 원활한 모임 운영을 위해 <strong>상호 존중과 배려</strong>를 부탁드립니다.</li>
                 </ul>
               </div>
 
