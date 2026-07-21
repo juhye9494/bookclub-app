@@ -454,13 +454,10 @@ export default function GroupsPage() {
                     </span>
                   </div>
 
-                  {/* Title & Desc */}
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '10px', color: 'var(--text)', lineHeight: 1.35 }}>
+                  {/* Title */}
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '20px', color: 'var(--text)', lineHeight: 1.35 }}>
                     {group.title}
                   </h3>
-                  <p style={{ fontSize: '0.88rem', color: 'var(--text-mid)', lineHeight: 1.6, marginBottom: '20px' }}>
-                    {group.desc}
-                  </p>
 
                   {/* Metadata fields */}
                   <div style={{ background: 'var(--bg-warm)', padding: '14px 18px', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
@@ -469,17 +466,16 @@ export default function GroupsPage() {
                     {group.place && <div>📍 <strong>장소 :</strong> {group.place}</div>}
                     {group.time && <div>🕒 <strong>시간 :</strong> {group.time}</div>}
                   </div>
-
-                  {/* 방장 소개글 */}
-                  {group.intro && (
-                    <div style={{ padding: '16px 18px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', fontSize: '0.85rem', lineHeight: 1.75, color: '#374151', whiteSpace: 'pre-wrap', marginBottom: '16px' }}>
-                      {group.intro}
-                    </div>
-                  )}
                 </div>
 
-                {/* Buttons */}
                 <div className="groups-actions">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setSelectedGroup(group); }}
+                    className="group-detail-action-btn"
+                    style={{ padding: '10px', background: '#f3f4f6', color: '#374151', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 600, width: '100%', marginBottom: '8px', border: 'none', cursor: 'pointer' }}
+                  >
+                    🔍 모임 자세히 보기
+                  </button>
 <button
   onClick={(e) => { e.stopPropagation(); handleJoin(group.id); }}
   disabled={!isMember && isFull}
@@ -512,27 +508,51 @@ export default function GroupsPage() {
        </main>
 {selectedGroup && (
   <div className="groups-detail-overlay open" onClick={(e) => { if (e.target === e.currentTarget) closeDetail(); }}>
-    <div className="groups-detail-modal">
+    <div className="groups-detail-modal" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
       <button className="groups-detail-close" onClick={closeDetail}>✕</button>
-      <h3 style={{ marginTop: 0 }}>{selectedGroup.title}</h3>
-      <p style={{ color: 'var(--text-mid)' }}>{selectedGroup.desc}</p>
-      <div style={{ margin: '12px 0' }}>
-        <strong>도서:</strong> {selectedGroup.book}<br/>
-        <strong>인원:</strong> {selectedGroup.membersCount}/{selectedGroup.maxMembers}<br/>
-        {selectedGroup.place && (<><strong>장소:</strong> {selectedGroup.place}<br/></>)}
-        {selectedGroup.time && (<><strong>시간:</strong> {selectedGroup.time}<br/></>)}
-        {selectedGroup.tags && (
-          <div style={{ marginTop: '8px' }}>
-            {selectedGroup.tags.map((t: string) => (
-              <span key={t} className="groups-detail-tag">#{t}</span>
-            ))}
-          </div>
-        )}
-        {selectedGroup.intro && (
-          <div style={{ marginTop: '12px', lineHeight: 1.6 }}>
-            {selectedGroup.intro}
-          </div>
-        )}
+      
+      {/* 상단: 상태, 태그, 제목 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {selectedGroup.tags?.map((t: string) => (
+            <span key={t} style={{ fontSize: '0.7rem', background: 'var(--accent-light)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>#{t}</span>
+          ))}
+        </div>
+        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: selectedGroup.status === '모집중' ? 'var(--accent)' : '#8c8c8c' }}>
+          ● {selectedGroup.status}
+        </span>
+      </div>
+      <h3 style={{ marginTop: 0, fontSize: '1.4rem', fontWeight: 700, marginBottom: '24px' }}>{selectedGroup.title}</h3>
+      
+      {/* 기본 정보 2열 구조 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: 'var(--bg-warm)', padding: '16px', borderRadius: '12px', marginBottom: '24px', fontSize: '0.9rem' }}>
+        <div>📖 <strong style={{color: '#475569'}}>도서:</strong> {selectedGroup.book}</div>
+        <div>👑 <strong style={{color: '#475569'}}>인원:</strong> {selectedGroup.membersCount}/{selectedGroup.maxMembers}명</div>
+        <div>👤 <strong style={{color: '#475569'}}>방장:</strong> {selectedGroup.leader}</div>
+        {selectedGroup.place && <div>📍 <strong style={{color: '#475569'}}>장소:</strong> {selectedGroup.place}</div>}
+        {selectedGroup.time && <div style={{ gridColumn: '1 / -1' }}>🕒 <strong style={{color: '#475569'}}>시간:</strong> {selectedGroup.time}</div>}
+      </div>
+      
+      {/* 모임 소개 */}
+      <div style={{ marginBottom: '24px' }}>
+        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text)' }}>📖 모임 소개</h4>
+        <div style={{ 
+          background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px',
+          whiteSpace: 'pre-wrap', wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: 1.7, color: '#475569', fontSize: '0.95rem'
+        }}>
+          {selectedGroup.desc ? selectedGroup.desc : <span style={{ color: '#94a3b8' }}>등록된 소개글이 없습니다.</span>}
+        </div>
+      </div>
+
+      {/* 방장 소개 */}
+      <div style={{ marginBottom: '24px' }}>
+        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text)' }}>👤 방장 소개</h4>
+        <div style={{ 
+          background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '16px',
+          whiteSpace: 'pre-wrap', wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: 1.7, color: '#475569', fontSize: '0.95rem'
+        }}>
+          {selectedGroup.intro ? selectedGroup.intro : <span style={{ color: '#94a3b8' }}>등록된 소개글이 없습니다.</span>}
+        </div>
       </div>
     </div>
   </div>
