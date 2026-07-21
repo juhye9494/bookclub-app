@@ -210,12 +210,31 @@ function InquiryContent() {
           {/* 첨부파일 */}
           <div>
             <label style={labelStyle}>첨부파일</label>
-            <div style={{ position: 'relative' }}>
-              <input type="file" onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                style={{ ...inputStyle, padding: '10px 16px', fontSize: '0.85rem' }} />
-              {attachment && (
-                <p style={{ fontSize: '0.78rem', color: 'var(--accent)', marginTop: '4px' }}>📎 {attachment.name}</p>
-              )}
+            <input
+              id="inquiry-file"
+              type="file"
+              onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+              style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <label
+                htmlFor="inquiry-file"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '10px 20px', borderRadius: '10px',
+                  border: '1.5px solid var(--border)', background: '#fff',
+                  fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-mid)',
+                  cursor: 'pointer', transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,102,64,0.1)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-mid)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                📎 파일 첨부하기
+              </label>
+              <span style={{ fontSize: '0.84rem', color: attachment ? 'var(--accent)' : '#9ca3af' }}>
+                {attachment ? attachment.name : '선택된 파일 없음'}
+              </span>
             </div>
           </div>
 
