@@ -427,7 +427,6 @@ export default function BooksPage() {
             <div className="plan-row"><span className="label">구독 플랜</span><span className="value">3개월권</span></div>
             <div className="plan-row"><span className="label">선택 도서</span><span className="value">{selected.size}권 (최대 4권)</span></div>
             <div className="plan-row"><span className="label">웰컴 굿즈</span><span className="value">무료 증정</span></div>
-            <div className="plan-row"><span className="label">저자 강연권</span><span className="value">포함</span></div>
             <div className="plan-row total"><span className="label">합계</span><span className="value">45,000원</span></div>
           </div>
 
