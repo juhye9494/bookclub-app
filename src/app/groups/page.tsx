@@ -85,13 +85,24 @@ export default function GroupsPage() {
   const closeDetail = () => setSelectedGroup(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('bookclub_groups');
-    if (saved) {
-      setGroups(JSON.parse(saved));
-    } else {
-      setGroups(INITIAL_GROUPS);
-      localStorage.setItem('bookclub_groups', JSON.stringify(INITIAL_GROUPS));
-    }
+    const fetchGroups = async () => {
+      const { data, error } = await supabase.from('groups').select('*');
+      if (error) {
+        console.error('Supabase groups fetch error:', error);
+        // Fallback to localStorage if table doesn't exist yet
+        const saved = localStorage.getItem('bookclub_groups');
+        if (saved) setGroups(JSON.parse(saved));
+        else { setGroups(INITIAL_GROUPS); localStorage.setItem('bookclub_groups', JSON.stringify(INITIAL_GROUPS)); }
+      } else if (data && data.length > 0) {
+        // Sort by id descending (assuming newer IDs are larger due to Date.now()) or created_at if available
+        data.sort((a, b) => b.id.localeCompare(a.id));
+        setGroups(data);
+        localStorage.setItem('bookclub_groups', JSON.stringify(data));
+      } else {
+        setGroups(INITIAL_GROUPS);
+      }
+    };
+    fetchGroups();
 
     const savedMemberships = localStorage.getItem('group_memberships');
     if (savedMemberships) {
@@ -188,6 +199,13 @@ export default function GroupsPage() {
       intro: newIntro,
     };
 
+    const { error: insertError } = await supabase.from('groups').insert([newGroup]);
+    if (insertError) {
+      console.error('Group insert error:', insertError);
+      alert('독서모임 생성 중 오류가 발생했습니다: ' + insertError.message);
+      return;
+    }
+
     const updated = [newGroup, ...groups];
     setGroups(updated);
     localStorage.setItem('bookclub_groups', JSON.stringify(updated));
@@ -222,11 +240,23 @@ export default function GroupsPage() {
     alert('독서모임이 성공적으로 생성되었습니다!');
   };
 
-  const handleEditGroup = () => {
+  const handleEditGroup = async () => {
     if (!editingGroup) return;
+
+    const updatedFields = {
+      title: newTitle, desc: newDesc, book: newBook, leader: newLeader, maxMembers: parseInt(newMax) || 8, tags: newTags.split(',').map((t: string) => t.trim()).filter(Boolean), place: newPlace, time: newTime, intro: newIntro
+    };
+
+    const { error: updateError } = await supabase.from('groups').update(updatedFields).eq('id', editingGroup.id);
+    if (updateError) {
+      console.error('Group update error:', updateError);
+      alert('독서모임 수정 중 오류가 발생했습니다: ' + updateError.message);
+      return;
+    }
+
     const updated = groups.map(g => {
       if (g.id === editingGroup.id) {
-        return { ...editingGroup, title: newTitle, desc: newDesc, book: newBook, leader: newLeader, maxMembers: parseInt(newMax) || 8, tags: newTags.split(',').map((t: string) => t.trim()).filter(Boolean), place: newPlace, time: newTime, intro: newIntro };
+        return { ...editingGroup, ...updatedFields };
       }
       return g;
     });

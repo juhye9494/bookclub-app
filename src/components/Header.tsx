@@ -134,11 +134,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
   }
   // Clear user state immediately
   setUser(null);
-  try {
-    localStorage.clear();
-  } catch (e) {
-    console.warn('LocalStorage clear error', e);
-  }
+  // Removed localStorage.clear() to preserve non-auth data like bookclub_groups, selections, etc.
   alert('로그아웃 되었습니다.');
   router.replace('/');
   router.refresh();
