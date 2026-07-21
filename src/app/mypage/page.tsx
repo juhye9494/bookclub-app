@@ -75,12 +75,39 @@ export default function MyPage() {
       if (data) setOrders(data);
 
       // 활동내역 가져오기
-      const { data: gp } = await supabase.from('group_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+      const { data: memberParts, error: partsErr } = await supabase
+        .from('group_participants')
+        .select('group_id, role, created_at')
+        .eq('user_id', session.user.id)
+        .eq('role', 'member')
+        .order('created_at', { ascending: false });
+      if (partsErr) console.error('parts fetch error:', partsErr);
 
-      // 존재하는 그룹만 필터링 (로컬 저장소 기준)
-      const savedGroups = JSON.parse(localStorage.getItem('bookclub_groups') || '[]');
-      const existingGroupIds = new Set(savedGroups.map((g: any) => g.id));
-      if (gp) setGroupParticipations(gp.filter((p: any) => existingGroupIds.has(p.group_id)));
+      const groupIds = memberParts?.map((row) => row.group_id) ?? [];
+      const { data: joinedGroups, error: groupsError } = groupIds.length > 0
+        ? await supabase.from('groups').select('*').in('id', groupIds)
+        : { data: [], error: null };
+      if (groupsError) console.error('groups fetch error:', groupsError);
+
+      const joinedList = memberParts?.map(p => {
+        const group = joinedGroups?.find(g => g.id === p.group_id);
+        return group ? { id: p.group_id + '-member', group_title: group.title, role: 'member', created_at: p.created_at } : null;
+      }).filter(Boolean) || [];
+
+      const { data: createdGroups, error: createdErr } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('creator_id', session.user.id)
+        .order('created_at', { ascending: false });
+      if (createdErr) console.error('created fetch error:', createdErr);
+
+      const createdList = (createdGroups || []).map(g => ({
+        id: g.id + '-leader', group_title: g.title, role: 'leader', created_at: g.created_at
+      }));
+
+      const allGroupActivities = [...createdList, ...joinedList].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setGroupParticipations(allGroupActivities);
 
       const { data: ep } = await supabase.from('event_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
 
