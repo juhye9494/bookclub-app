@@ -462,7 +462,7 @@ body {
     .step-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.65; }
 
     /* REVIEWS */
-    .review-section { background: var(--bg-warm); }
+    .review-section { background: var(--bg); }
     .review-inner { max-width: 1100px; margin: 0 auto; }
     .review-header { margin-bottom: 48px; }
     .review-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
