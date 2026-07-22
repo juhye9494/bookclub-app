@@ -62,7 +62,7 @@ export default function BooksPage() {
 
       const initData = await initRes.json();
       if (!initRes.ok || !initData.orderId) {
-        alert('주문 생성에 실패했습니다. 다시 시도해주세요.');
+        alert(initData.error || '주문 생성에 실패했습니다. 다시 시도해주세요.');
         return;
       }
       

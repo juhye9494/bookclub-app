@@ -66,6 +66,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '결제 요청 금액이 변조되었습니다.' }, { status: 400 });
     }
 
+    // 중복 결제 차단 로직: 현재 주문 외에 이미 DONE 상태인 주문이 있는지 확인
+    const { data: existingDoneOrders } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('payment_status', 'DONE')
+      .neq('id', order.id);
+
+    if (existingDoneOrders && existingDoneOrders.length > 0) {
+      console.warn(`[PAYMENT_CONFIRM] 중복 결제 승인 차단. User ID: ${user.id}`);
+      return NextResponse.json({ error: '이미 유효한 구독이 존재합니다.' }, { status: 409 });
+    }
+
     const isProduction = process.env.VERCEL_ENV === 'production';
     const secretKey = isProduction 
       ? (process.env.TOSS_SECRET_KEY || 'test_sk_Z1aOwX7K8m2Y0yKqK6G03yQxRvDP') 

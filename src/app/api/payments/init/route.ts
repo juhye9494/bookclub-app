@@ -42,6 +42,29 @@ export async function POST(req: Request) {
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
+    // 1. JWT 메타데이터 기반 중복 차단
+    if (user.user_metadata?.has_paid) {
+      console.warn(`[PAYMENT_INIT] 중복 결제 차단(has_paid). User ID: ${user.id}`);
+      return NextResponse.json({ error: '이미 구독 중인 회원입니다.' }, { status: 409 });
+    }
+
+    // 2. DB 기반 중복 결제 차단 로직 (유효한 DONE 주문 확인)
+    const { data: existingOrders, error: checkError } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('payment_status', 'DONE');
+
+    if (checkError) {
+      console.error('[SUPABASE_ERROR] Init - Failed to check existing orders:', checkError);
+      return NextResponse.json({ error: '서버 에러가 발생했습니다.' }, { status: 500 });
+    }
+
+    if (existingOrders && existingOrders.length > 0) {
+      console.warn(`[PAYMENT_INIT] 중복 결제 차단(DB). User ID: ${user.id}`);
+      return NextResponse.json({ error: '이미 구독 중인 회원입니다.' }, { status: 409 });
+    }
+
     // PENDING 상태의 주문 사전 생성
     const { error: insertError } = await supabaseAdmin.from('orders').insert([{
       user_id: user.id,

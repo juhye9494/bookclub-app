@@ -46,13 +46,6 @@ function SuccessContent() {
 
       console.log('[SUCCESS_PAGE] 로그인 유저 확인 완료.');
 
-      // 이미 기록했는지 확인
-      if (user.user_metadata?.has_paid) {
-        console.log('[SUCCESS_PAGE] 이미 유효한 구독자입니다. 마이페이지로 이동합니다.');
-        window.location.href = '/mypage';
-        return;
-      }
-
       // 선택한 책 정보 가져오기
       const savedSelection = sessionStorage.getItem('bookSelection');
       let books: any[] = [];
