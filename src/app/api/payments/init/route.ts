@@ -47,14 +47,38 @@ export async function POST(req: Request) {
     // 2. 현재 활성화된 기수(Cycle) 식별
     const { data: cycles } = await supabaseAdmin
       .from('cycles')
-      .select('id')
+      .select('*')
       .eq('status', 'active')
       .order('start_date', { ascending: false })
       .limit(1);
 
-    const activeCycleId = cycles && cycles.length > 0 ? cycles[0].id : null;
-    if (!activeCycleId) {
+    const activeCycle = cycles && cycles.length > 0 ? cycles[0] : null;
+    if (!activeCycle) {
       return NextResponse.json({ error: '현재 결제 가능한 활성 기수가 없습니다.' }, { status: 400 });
+    }
+
+    const activeCycleId = activeCycle.id;
+
+    // 2.5 신청 기간 및 테스트 계정 확인
+    const now = new Date();
+    const selStartStr = activeCycle.selection_start_date || activeCycle.start_date;
+    const selEndStr = activeCycle.selection_end_date || activeCycle.end_date;
+    
+    let isSelectionPeriod = false;
+    if (selStartStr && selEndStr) {
+      const selStart = new Date(selStartStr);
+      const selEnd = new Date(selEndStr);
+      selEnd.setHours(23, 59, 59, 999);
+      isSelectionPeriod = now >= selStart && now <= selEnd;
+    } else {
+      isSelectionPeriod = true;
+    }
+
+    const testUserIds = (process.env.INTERNAL_PAYMENT_TEST_USER_IDS || '').split(',').map(id => id.trim());
+    const isTestUser = testUserIds.includes(user.id);
+
+    if (!isSelectionPeriod && !isTestUser) {
+      return NextResponse.json({ error: '신청 기간은 8월 1일부터입니다.' }, { status: 403 });
     }
 
     // 3. DB 기반 중복 결제 차단 로직 (해당 기수에 대한 유효한 DONE 주문 확인)

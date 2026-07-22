@@ -55,20 +55,28 @@ export async function POST(req: Request) {
     }
     const activeCycle = cycles[0];
 
-    // 선택 가능 기간(selection_start_date, selection_end_date) 검증 로직
+    // 선택 가능 기간(selection_start_date, selection_end_date) 검사 로직
     // 만약 DB에 해당 컬럼이 없거나 NULL이면 cycle의 start_date, end_date를 대체로 사용
     const now = new Date();
     const selStartStr = activeCycle.selection_start_date || activeCycle.start_date;
     const selEndStr = activeCycle.selection_end_date || activeCycle.end_date;
     
+    let isSelectionPeriod = false;
     if (selStartStr && selEndStr) {
       const selStart = new Date(selStartStr);
       const selEnd = new Date(selEndStr);
       // 종료일은 해당 일의 23:59:59까지로 간주
       selEnd.setHours(23, 59, 59, 999);
-      if (now < selStart || now > selEnd) {
-        return NextResponse.json({ error: '현재 도서 선택 기간이 아닙니다.' }, { status: 400 });
-      }
+      isSelectionPeriod = now >= selStart && now <= selEnd;
+    } else {
+      isSelectionPeriod = true;
+    }
+
+    const testUserIds = (process.env.INTERNAL_PAYMENT_TEST_USER_IDS || '').split(',').map(id => id.trim());
+    const isTestUser = testUserIds.includes(user.id);
+
+    if (!isSelectionPeriod && !isTestUser) {
+      return NextResponse.json({ error: '신청 기간은 8월 1일부터입니다.' }, { status: 403 });
     }
 
     // 실제 등록된 도서인지 검증

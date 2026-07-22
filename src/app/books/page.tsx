@@ -170,14 +170,35 @@ export default function BooksPage() {
         const now = new Date();
         const selStartStr = cycle.selection_start_date || cycle.start_date;
         const selEndStr = cycle.selection_end_date || cycle.end_date;
+        
+        let isPeriod = false;
         if (selStartStr && selEndStr) {
           const selStart = new Date(selStartStr);
           const selEnd = new Date(selEndStr);
           selEnd.setHours(23, 59, 59, 999);
-          setIsSelectionPeriod(now >= selStart && now <= selEnd);
+          isPeriod = now >= selStart && now <= selEnd;
         } else {
-          setIsSelectionPeriod(true);
+          isPeriod = true;
         }
+
+        // 테스트 유저 여부 확인 API 호출
+        try {
+          const token = (await supabase.auth.getSession()).data.session?.access_token;
+          if (token) {
+            const testRes = await fetch('/api/auth/test-status', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const testData = await testRes.json();
+            if (testData.isTestUser) {
+              isPeriod = true; // 테스트 유저는 무조건 기간 내로 취급
+            }
+          }
+        } catch (e) {
+          console.error('Failed to check test user status', e);
+        }
+
+        setIsSelectionPeriod(isPeriod);
 
         const { data: bData } = await supabase.from('books').select('*').eq('cycle_id', cycle.id);
         if (bData) {
@@ -496,7 +517,7 @@ export default function BooksPage() {
         </div>
       ) : !isSelectionPeriod ? (
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ef4444' }}>도서 선택 기간이 아닙니다.</span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ef4444' }}>신청 기간은 8월 1일부터입니다.</span>
         </div>
       ) : (
         <SelectedBooksBar 
