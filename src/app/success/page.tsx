@@ -65,6 +65,8 @@ function SuccessContent() {
 
       // 사용자 메타데이터 업데이트
       await supabase.auth.updateUser({ data: { has_paid: true } });
+      alert('구독 결제가 완료되었습니다.\n구독 도서를 선택해주세요.');
+      window.location.href = '/books';
     }
 
     recordPayment();

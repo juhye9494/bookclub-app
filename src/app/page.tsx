@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
 
@@ -23,6 +24,63 @@ export default function Home() {
   const [cycleLabel, setCycleLabel] = useState<string>('로딩중...');
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleSubscribeClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) {
+      window.dispatchEvent(new CustomEvent('open-login'));
+      return;
+    }
+    if (user.user_metadata?.has_paid) {
+      router.push('/books');
+      return;
+    }
+
+    try {
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
+      if (typeof (window as any).TossPayments === 'undefined') {
+        alert('결제 라이브러리가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+      
+      const tossPayments = await (window as any).TossPayments(clientKey);
+      const payment = tossPayments.payment({ customerKey: user.id });
+      
+      await payment.requestPayment({
+        method: 'CARD',
+        amount: { currency: 'KRW', value: 45000 },
+        orderId: `order_${new Date().getTime()}`,
+        orderName: '한경 언더라인 독서클럽 3개월권',
+        successUrl: `${window.location.origin}/success`,
+        failUrl: `${window.location.origin}/fail`,
+        customerEmail: user.email || '',
+        customerName: user.user_metadata?.name || '구독자',
+        customerMobilePhone: (user.user_metadata?.phone || '').replace(/-/g, ''),
+      });
+    } catch (err: any) {
+      if (err?.code === 'PAY_PROCESS_CANCELED' || err?.code === 'USER_CANCEL') {
+        alert('결제가 완료되지 않았습니다.\n다시 시도해주세요.');
+      } else {
+        console.error(err);
+        alert('결제창을 띄우는 데 실패했습니다. 잠시 후 다시 시도해주세요.');
+      }
+    }
+  };
 
   useEffect(() => {
     async function loadBooks() {
@@ -378,7 +436,7 @@ export default function Home() {
             <p className="plan-name">한경 언더라인 독서클럽 3개월권</p>
             <p className="plan-price">45,000<span>원</span></p>
             <p className="plan-period">3개월 구독 · 일시납</p>
-            <Link href="/books" className="plan-btn" style={{ marginTop: '24px', display: 'inline-block', textDecoration: 'none', textAlign: 'center' }}>도서 선택하고 구독 신청하기</Link>
+            <button onClick={handleSubscribeClick} className="plan-btn" style={{ marginTop: '24px', display: 'inline-block', width: '100%', border: 'none', cursor: 'pointer', textDecoration: 'none', textAlign: 'center' }}>구독 신청하기</button>
 
           </div>
 
