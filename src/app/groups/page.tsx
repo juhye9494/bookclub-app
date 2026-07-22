@@ -46,6 +46,8 @@ const INITIAL_GROUPS = [
 export default function GroupsPage() {
   const [groups, setGroups] = useState<any[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [pendingCreateGroup, setPendingCreateGroup] = useState(false);
+  const [currentTab, setCurrentTab] = useState<'전체' | '모집중'>('모집중');
   const [isRequestAuthorOpen, setIsRequestAuthorOpen] = useState(false);
   const [myMemberships, setMyMemberships] = useState<Set<string>>(new Set());
   const [myCreatedGroups, setMyCreatedGroups] = useState<Set<string>>(new Set());
@@ -80,6 +82,14 @@ export default function GroupsPage() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (user && pendingCreateGroup) {
+      setIsCreateOpen(true);
+      setPendingCreateGroup(false);
+    }
+  }, [user, pendingCreateGroup]);
+  
   // Selected group for detail view modal
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const closeDetail = () => setSelectedGroup(null);
@@ -222,6 +232,19 @@ export default function GroupsPage() {
       
       alert('독서모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
     }
+  };
+
+  const handleOpenCreateGroup = () => {
+    if (!user) {
+      setPendingCreateGroup(true);
+      window.dispatchEvent(
+        new CustomEvent('open-login', {
+          detail: { mode: 'login' },
+        })
+      );
+      return;
+    }
+    setIsCreateOpen(true);
   };
 
   const handleCreateGroup = async () => {
@@ -443,10 +466,34 @@ export default function GroupsPage() {
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 5vw 120px' }}>
         
         {/* Buttons Row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
-          <h2 style={{ fontFamily: 'var(--serif)', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
-            현재 가입 가능한 독서모임 목록 ({groups.length}개)
-          </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <h2 style={{ fontFamily: 'var(--serif)', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+              독서모임 목록
+            </h2>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={() => setCurrentTab('전체')}
+                style={{
+                  padding: '8px 16px', borderRadius: '30px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', border: '1px solid',
+                  background: currentTab === '전체' ? 'var(--accent)' : '#fff',
+                  color: currentTab === '전체' ? '#fff' : 'var(--text-mid)',
+                  borderColor: currentTab === '전체' ? 'var(--accent)' : 'var(--border)'
+                }}>
+                전체 ({groups.length})
+              </button>
+              <button 
+                onClick={() => setCurrentTab('모집중')}
+                style={{
+                  padding: '8px 16px', borderRadius: '30px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', border: '1px solid',
+                  background: currentTab === '모집중' ? 'var(--accent)' : '#fff',
+                  color: currentTab === '모집중' ? '#fff' : 'var(--text-mid)',
+                  borderColor: currentTab === '모집중' ? 'var(--accent)' : 'var(--border)'
+                }}>
+                모집중 ({groups.filter(g => !(g.status === '모집마감' || g.membersCount >= g.maxMembers)).length})
+              </button>
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <Link 
               href="/inquiry?category=저자 섭외 문의"
@@ -456,7 +503,7 @@ export default function GroupsPage() {
             </Link>
             <button 
               className="groups-create-submit-btn"
-              onClick={() => setIsCreateOpen(true)}
+              onClick={handleOpenCreateGroup}
             >
               ＋ 독서모임 만들기
             </button>
@@ -465,7 +512,13 @@ export default function GroupsPage() {
 
         {/* Groups Grid */}
         <div className="groups-grid">
-          {groups.map(group => {
+          {groups
+            .filter(group => {
+              if (currentTab === '전체') return true;
+              const isClosed = group.status === '모집마감' || group.membersCount >= group.maxMembers;
+              return !isClosed;
+            })
+            .map(group => {
             const isMember = myMemberships.has(group.id);
             const isFull = group.membersCount >= group.maxMembers;
             const isCreator = user?.id === group.creator_id;
@@ -548,6 +601,11 @@ export default function GroupsPage() {
             );
           })}
         </div>
+        {groups.filter(group => currentTab === '전체' ? true : !(group.status === '모집마감' || group.membersCount >= group.maxMembers)).length === 0 && (
+          <div style={{ padding: '60px', textAlign: 'center', color: '#8a8478', border: '1px dashed #cfc8b8', borderRadius: '8px', margin: '20px 0' }}>
+            현재 모집 중인 독서모임이 없습니다.
+          </div>
+        )}
 
        </main>
 {selectedGroup && (
