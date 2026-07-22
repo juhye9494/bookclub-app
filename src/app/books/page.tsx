@@ -34,11 +34,27 @@ export default function BooksPage() {
   }, []);
 
   const checkSubscription = async (userId: string) => {
+    // 1. 현재 활성 기수 확인
+    const { data: cycles } = await supabase
+      .from('cycles')
+      .select('id')
+      .eq('status', 'active')
+      .order('start_date', { ascending: false })
+      .limit(1);
+
+    if (!cycles || cycles.length === 0) {
+      setIsSubscriber(false);
+      return;
+    }
+    const activeCycleId = cycles[0].id;
+
+    // 2. 해당 유저가 활성 기수에 대해 유효한 DONE 주문이 있는지 확인
     const { data: doneOrders } = await supabase
       .from('orders')
       .select('selected_books, order_status')
       .eq('user_id', userId)
       .eq('payment_status', 'DONE')
+      .eq('cycle_id', activeCycleId)
       .order('created_at', { ascending: false })
       .limit(1);
 

@@ -44,12 +44,26 @@ export async function POST(req: Request) {
 
 
 
-    // 2. DB 기반 중복 결제 차단 로직 (유효한 DONE 주문 확인)
+    // 2. 현재 활성화된 기수(Cycle) 식별
+    const { data: cycles } = await supabaseAdmin
+      .from('cycles')
+      .select('id')
+      .eq('status', 'active')
+      .order('start_date', { ascending: false })
+      .limit(1);
+
+    const activeCycleId = cycles && cycles.length > 0 ? cycles[0].id : null;
+    if (!activeCycleId) {
+      return NextResponse.json({ error: '현재 결제 가능한 활성 기수가 없습니다.' }, { status: 400 });
+    }
+
+    // 3. DB 기반 중복 결제 차단 로직 (해당 기수에 대한 유효한 DONE 주문 확인)
     const { data: existingOrders, error: checkError } = await supabaseAdmin
       .from('orders')
       .select('id')
       .eq('user_id', user.id)
-      .eq('payment_status', 'DONE');
+      .eq('payment_status', 'DONE')
+      .eq('cycle_id', activeCycleId);
 
     if (checkError) {
       console.error('[SUPABASE_ERROR] Init - Failed to check existing orders:', checkError);
@@ -57,8 +71,8 @@ export async function POST(req: Request) {
     }
 
     if (existingOrders && existingOrders.length > 0) {
-      console.warn(`[PAYMENT_INIT] 중복 결제 차단(DB). User ID: ${user.id}`);
-      return NextResponse.json({ error: '이미 구독 중인 회원입니다.' }, { status: 409 });
+      console.warn(`[PAYMENT_INIT] 중복 결제 차단(DB). User ID: ${user.id}, Cycle ID: ${activeCycleId}`);
+      return NextResponse.json({ error: '이미 해당 기수를 구독 중인 회원입니다.' }, { status: 409 });
     }
 
     // PENDING 상태의 주문 사전 생성
@@ -69,6 +83,7 @@ export async function POST(req: Request) {
       user_phone: user.user_metadata?.phone || 'Unknown',
       user_address: user.user_metadata?.address || 'Unknown',
       selected_books: [], // 도서 선택은 결제 완료 후 마이페이지에서 별도로 진행
+      cycle_id: activeCycleId, // 현재 결제 중인 기수 연결
       total_amount: EXPECTED_AMOUNT,
       payment_order_id: orderId,
       payment_status: 'PENDING',

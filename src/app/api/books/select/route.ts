@@ -87,17 +87,18 @@ export async function POST(req: Request) {
       }
     }
 
-    // 유효한 DONE 주문 조회 (결제 완료된 주문)
+    // 유효한 DONE 주문 조회 (결제 완료된 주문이면서 현재 기수인 경우)
     const { data: doneOrders } = await supabaseAdmin
       .from('orders')
       .select('*')
       .eq('user_id', user.id)
       .eq('payment_status', 'DONE')
+      .eq('cycle_id', activeCycle.id)
       .order('created_at', { ascending: false })
       .limit(1);
 
     if (!doneOrders || doneOrders.length === 0) {
-      return NextResponse.json({ error: '결제 완료된 구독 내역(DONE 주문)이 없습니다.' }, { status: 403 });
+      return NextResponse.json({ error: '결제 완료된 구독 내역(DONE 주문)이 없거나, 현재 기수에 해당하는 구독 내역이 아닙니다.' }, { status: 403 });
     }
 
     const order = doneOrders[0];
