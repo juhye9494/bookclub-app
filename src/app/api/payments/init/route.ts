@@ -42,11 +42,7 @@ export async function POST(req: Request) {
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // 1. JWT 메타데이터 기반 중복 차단
-    if (user.user_metadata?.has_paid) {
-      console.warn(`[PAYMENT_INIT] 중복 결제 차단(has_paid). User ID: ${user.id}`);
-      return NextResponse.json({ error: '이미 구독 중인 회원입니다.' }, { status: 409 });
-    }
+
 
     // 2. DB 기반 중복 결제 차단 로직 (유효한 DONE 주문 확인)
     const { data: existingOrders, error: checkError } = await supabaseAdmin
