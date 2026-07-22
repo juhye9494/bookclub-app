@@ -50,23 +50,40 @@ function SuccessContent() {
         }
       }
 
-      // DB에 주문 정보 저장
-      await supabase.from('orders').insert([{
-        user_id: user.id,
-        user_email: user.email,
-        user_name: user.user_metadata?.name || 'Unknown',
-        user_phone: user.user_metadata?.phone || 'Unknown',
-        user_address: user.user_metadata?.address || 'Unknown',
-        selected_books: books,
-        total_amount: Number(amount) || 45000,
-        payment_order_id: orderId,
-        payment_key: paymentKey || null,
-      }]);
+      try {
+        const response = await fetch('/api/payments/confirm', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || ''}`,
+          },
+          body: JSON.stringify({
+            paymentKey,
+            orderId,
+            amount,
+            books,
+            user,
+          }),
+        });
 
-      // 사용자 메타데이터 업데이트
-      await supabase.auth.updateUser({ data: { has_paid: true } });
-      alert('구독 결제가 완료되었습니다.\n구독 도서를 선택해주세요.');
-      window.location.href = '/books';
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // 세션 강제 갱신으로 클라이언트 메타데이터 동기화 (선택사항)
+          await supabase.auth.refreshSession();
+          
+          alert('구독 결제가 완료되었습니다.\n구독 도서를 선택해주세요.');
+          window.location.href = '/books';
+        } else {
+          console.error('결제 승인 실패:', data.error);
+          const errorCode = data.code || 'CONFIRM_FAILED';
+          const errorMessage = data.error || '결제 승인에 실패했습니다.';
+          window.location.href = `/fail?code=${errorCode}&message=${encodeURIComponent(errorMessage)}`;
+        }
+      } catch (err) {
+        console.error('서버 통신 오류:', err);
+        window.location.href = `/fail?code=NETWORK_ERROR&message=${encodeURIComponent('서버와의 통신에 실패했습니다.')}`;
+      }
     }
 
     recordPayment();
