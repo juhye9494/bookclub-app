@@ -159,6 +159,20 @@ export default function BooksPage() {
   const recommendedBook = books[finalRecIdx];
   const otherBooks = books.map((book, originalIdx) => ({ book, originalIdx })).filter((_, idx) => idx !== finalRecIdx).slice(0, 20);
 
+  const getBrightness = (hex: string) => {
+    if (!hex) return 0;
+    const cleanHex = hex.replace('#', '');
+    const r = parseInt(cleanHex.slice(0, 2), 16);
+    const g = parseInt(cleanHex.slice(2, 4), 16);
+    const b = parseInt(cleanHex.slice(4, 6), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000;
+  };
+
+  const isLightBg = activeBook ? getBrightness(activeBook.bg) > 130 : false;
+  const textColor = isLightBg ? '#121931' : '#ffffff';
+  const descColor = isLightBg ? '#3b4b72' : 'rgba(255, 255, 255, 0.8)';
+  const overlayColor = isLightBg ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)', paddingTop: '64px' }}>
       <style>{`
@@ -184,23 +198,28 @@ export default function BooksPage() {
       {isDetailOpen && activeBook ? (
         /* ===== BOOK DETAIL VIEW ===== */
         <div className="book-detail-view" style={{ paddingBottom: '120px' }}>
-          <div className="dv-hero" style={{ display: 'flex', flexDirection: 'column', minHeight: 'auto', padding: '0' }}>
-            <div className="dv-hero-bg" style={{ background: `linear-gradient(160deg, ${activeBook.bgDark} 0%, ${activeBook.bg} 100%)` }}></div>
+          <div className="dv-hero" style={{ display: 'flex', flexDirection: 'column', minHeight: 'auto', padding: '0', position: 'relative' }}>
+            <div className="dv-hero-bg" style={{ background: `linear-gradient(110deg, ${activeBook.bgDark} 0%, ${activeBook.bg} 100%)` }}></div>
+            {/* Overlay for readability */}
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: overlayColor, zIndex: 0 }}></div>
+            
             <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '1100px', margin: '0 auto', padding: '32px 5vw 16px' }}>
-              <button className="dv-back-white" onClick={closeDetail}>
+              <button className="dv-back-white" onClick={closeDetail} style={{ color: textColor, borderColor: isLightBg ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)' }}>
                 <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 도서 목록으로
               </button>
             </div>
-            <div className="dv-hero-inner" style={{ padding: '16px 5vw 64px' }}>
+            <div className="dv-hero-inner" style={{ padding: '16px 5vw 64px', position: 'relative', zIndex: 1 }}>
               <div className="dv-cover"><img src={activeBook.img} alt="" /></div>
               <div className="dv-meta">
-                <p className="dv-genre">{activeBook.genre}</p>
-                <h2 className="dv-title">{activeBook.title}</h2>
-                <p className="dv-author">{activeBook.author}</p>
+                <p className="dv-genre" style={{ color: descColor, border: `1px solid ${descColor}` }}>{activeBook.genre}</p>
+                <h2 className="dv-title" style={{ color: textColor }}>{activeBook.title}</h2>
+                <p className="dv-author" style={{ color: descColor }}>{activeBook.author}</p>
                 <div className="dv-tags">
                   {activeBook.tags.map((t: string, i: number) => (
-                    <span key={i} className={`dv-tag ${t === '강연 포함' ? 'lecture' : ''}`}>{t}</span>
+                    <span key={i} className={`dv-tag ${t === '강연 포함' ? 'lecture' : ''}`} style={t !== '강연 포함' ? { background: isLightBg ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)', color: textColor } : {}}>
+                      {t}
+                    </span>
                   ))}
                 </div>
               </div>

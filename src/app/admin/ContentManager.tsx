@@ -370,6 +370,69 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
   const DRAFT_KEY = 'bookEditDraft';
   const GENRE_OPTIONS = ['경제·경영', '인문사회', '자기계발', '재테크', '소설', '예술', '건강'];
 
+  const extractColors = (imgUrl: string): Promise<{ bg: string, bgDark: string }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject('No context');
+        canvas.width = 64;
+        canvas.height = 64;
+        ctx.drawImage(img, 0, 0, 64, 64);
+        
+        const imageData = ctx.getImageData(0, 0, 64, 64).data;
+        const colorCounts: Record<string, number> = {};
+        const colors = [];
+
+        for (let i = 0; i < imageData.length; i += 4) {
+          const r = imageData[i], g = imageData[i+1], b = imageData[i+2], a = imageData[i+3];
+          if (a < 128) continue;
+          
+          const qR = Math.round(r / 15) * 15;
+          const qG = Math.round(g / 15) * 15;
+          const qB = Math.round(b / 15) * 15;
+          
+          if ((qR < 30 && qG < 30 && qB < 30) || (qR > 225 && qG > 225 && qB > 225)) continue;
+          
+          const key = `${qR},${qG},${qB}`;
+          if (!colorCounts[key]) {
+            colorCounts[key] = 0;
+            colors.push({ r: qR, g: qG, b: qB });
+          }
+          colorCounts[key]++;
+        }
+
+        colors.sort((a, b) => colorCounts[`${b.r},${b.g},${b.b}`] - colorCounts[`${a.r},${a.g},${a.b}`]);
+        const topColors = colors.slice(0, 5);
+        if (topColors.length === 0) return reject('No valid colors');
+        
+        const withLum = topColors.map(c => ({
+          ...c,
+          lum: 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+        }));
+        
+        withLum.sort((a, b) => a.lum - b.lum);
+        
+        const darkColor = withLum[0];
+        const lightColor = withLum[withLum.length > 1 ? Math.floor(withLum.length / 2) : 0];
+        
+        const rgbToHex = (r: number, g: number, b: number) => '#' + [r, g, b].map(x => {
+          const hex = x.toString(16);
+          return hex.length === 1 ? '0' + hex : hex;
+        }).join('');
+
+        resolve({
+          bgDark: rgbToHex(darkColor.r, darkColor.g, darkColor.b),
+          bg: rgbToHex(lightColor.r, lightColor.g, lightColor.b)
+        });
+      };
+      img.onerror = () => reject('Image load failed');
+      img.src = imgUrl;
+    });
+  };
+
   // 초기값: localStorage에 임시저장 데이터가 있으면 복원 여부 확인
   const [formData, setFormData] = useState(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem(DRAFT_KEY) : null;
@@ -395,6 +458,20 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
       setFormData((prev: any) => ({ ...prev, lecture: { ...prev.lecture, [field]: value } }));
     } else {
       setFormData((prev: any) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleAutoExtractColor = async (url?: string) => {
+    const targetUrl = url || formData.cover;
+    if (!targetUrl) {
+      alert('표지 URL이 없습니다. 먼저 표지 이미지를 등록해주세요.');
+      return;
+    }
+    try {
+      const colors = await extractColors(targetUrl);
+      setFormData((prev: any) => ({ ...prev, bg: colors.bg, bgDark: colors.bgDark }));
+    } catch (e) {
+      alert('표지 색상을 자동으로 추출하지 못했습니다. 색상 코드를 직접 선택해주세요.');
     }
   };
 
@@ -445,11 +522,19 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4px' }}>
             <label style={{ fontSize: '0.8rem' }}>표지 URL</label>
-            <label style={{ cursor: 'pointer', background: '#f3ede2', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
-              📷 파일 업로드
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button 
+                type="button" 
+                onClick={() => handleAutoExtractColor()} 
+                style={{ background: '#eef2ff', color: '#4f46e5', border: 'none', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                🎨 색상 추출
+              </button>
+              <label style={{ cursor: 'pointer', background: '#f3ede2', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                📷 업로드
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
                 const fileExt = file.name.split('.').pop();
                 const fileName = `cover_${Date.now()}.${fileExt}`;
                 const { error } = await supabase.storage.from('books').upload(`covers/${fileName}`, file);
@@ -457,10 +542,12 @@ function BookEditForm({ book, onSave, onCancel }: { book: any, onSave: (b: any) 
                 const { data } = supabase.storage.from('books').getPublicUrl(`covers/${fileName}`);
                 setFormData((prev: any) => ({ ...prev, cover: data.publicUrl }));
                 e.target.value = '';
+                handleAutoExtractColor(data.publicUrl);
               }} />
             </label>
+            </div>
           </div>
-          <input name="cover" value={formData.cover || ''} onChange={handleChange} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
+          <input name="cover" value={formData.cover || ''} onChange={handleChange} onBlur={() => handleAutoExtractColor()} style={{ width: '100%', padding: '8px', border: '1px solid #cfc8b8', borderRadius: '4px' }} />
         </div>
         <div>
           <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>배경 테마 색상 (밝은색)</label>
