@@ -188,6 +188,21 @@ export default function MyPage() {
     alert('✉️ 비밀번호 재설정 링크가 이메일로 발송되었습니다.\n이메일을 확인해주세요.');
   };
 
+  const getStatusDisplay = (order: any) => {
+    const ps = order.payment_status || 'PENDING';
+    const os = order.order_status || '배송준비중';
+    
+    if (ps === 'PENDING') return { label: '결제 미완료', bg: '#fef3c7', color: '#d97706' };
+    if (ps === 'CANCELED') return { label: '결제취소', bg: '#fee2e2', color: '#dc2626' };
+    if (ps === 'FAILED') return { label: '결제실패', bg: '#fee2e2', color: '#dc2626' };
+    
+    // ps === 'DONE' 인 경우
+    if (os === '배송완료') return { label: '배송완료', bg: '#ecfdf5', color: '#059669' };
+    if (os === '배송중') return { label: '배송중', bg: '#eef5ff', color: '#3b82f6' };
+    
+    return { label: '배송준비중', bg: '#ecfdf5', color: '#059669' };
+  };
+
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontFamily: 'var(--sans)' }}>로딩중...</div>;
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box', fontFamily: 'var(--sans)' };
@@ -232,7 +247,9 @@ export default function MyPage() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                {orders.map((order) => (
+                {orders.map((order) => {
+                  const statusUI = getStatusDisplay(order);
+                  return (
                   <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     {/* 주문 헤더 */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
@@ -244,10 +261,10 @@ export default function MyPage() {
                       </div>
                       <span style={{
                         padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap',
-                        background: order.order_status === '배송완료' ? '#ecfdf5' : order.order_status === '배송중' ? '#eef5ff' : 'var(--bg-warm)',
-                        color: order.order_status === '배송완료' ? '#059669' : order.order_status === '배송중' ? '#3b82f6' : 'var(--accent)',
+                        background: statusUI.bg,
+                        color: statusUI.color,
                       }}>
-                        {order.order_status}
+                        {statusUI.label}
                       </span>
                     </div>
 
@@ -281,7 +298,8 @@ export default function MyPage() {
                       <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '1.05rem' }}>{(order.total_amount || 45000).toLocaleString()}원</span>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>

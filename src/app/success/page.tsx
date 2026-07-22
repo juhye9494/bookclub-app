@@ -15,6 +15,8 @@ function SuccessContent() {
   const impSuccess = searchParams.get('imp_success');
   const errorMsg = searchParams.get('error_msg') || '결제에 실패하였습니다.';
   const [selectedBooks, setSelectedBooks] = useState<any[]>([]);
+  const [isConfirming, setIsConfirming] = useState(true);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   useEffect(() => {
     // 아임포트 모바일 리다이렉트 결제 실패인 경우 실패 페이지로 이동 (하위호환)
@@ -24,21 +26,38 @@ function SuccessContent() {
     }
 
     async function recordPayment() {
-      if (!orderId) return;
+      if (!orderId) {
+        setConfirmError('주문 번호가 누락되었습니다.');
+        setIsConfirming(false);
+        return;
+      }
+      
+      console.log('[SUCCESS_PAGE] 결제 승인 프로세스 시작. orderId:', orderId);
 
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
-      if (!user) return;
+      
+      if (!user) {
+        console.warn('[SUCCESS_PAGE] 로그인 세션이 없습니다. 결제 승인을 중단합니다.');
+        setConfirmError('로그인 세션이 만료되었습니다. 다시 로그인 후 시도해주세요.');
+        setIsConfirming(false);
+        return;
+      }
+
+      console.log('[SUCCESS_PAGE] 로그인 유저 확인 완료.');
 
       // 이미 기록했는지 확인
-      if (user.user_metadata?.has_paid) return;
+      if (user.user_metadata?.has_paid) {
+        console.log('[SUCCESS_PAGE] 이미 유효한 구독자입니다. 마이페이지로 이동합니다.');
+        window.location.href = '/mypage';
+        return;
+      }
 
       // 선택한 책 정보 가져오기
       const savedSelection = sessionStorage.getItem('bookSelection');
       let books: any[] = [];
       if (savedSelection) {
         const indices = JSON.parse(savedSelection);
-        // Fetch books from Supabase
         const { data: cycles } = await supabase.from('cycles').select('*').eq('status', 'active').limit(1);
         if (cycles && cycles.length > 0) {
           const activeCycle = cycles[0];
@@ -51,6 +70,7 @@ function SuccessContent() {
       }
 
       try {
+        console.log('[SUCCESS_PAGE] 서버 Confirm API 호출 시도...');
         const response = await fetch('/api/payments/confirm', {
           method: 'POST',
           headers: {
@@ -69,25 +89,52 @@ function SuccessContent() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-          // 세션 강제 갱신으로 클라이언트 메타데이터 동기화 (선택사항)
+          console.log('[SUCCESS_PAGE] 서버 Confirm API 성공. 세션 갱신 및 마이페이지 이동');
+          // 세션 강제 갱신으로 클라이언트 메타데이터 동기화
           await supabase.auth.refreshSession();
           
-          alert('구독 결제가 완료되었습니다.\n구독 도서를 선택해주세요.');
-          window.location.href = '/books';
+          alert('결제 및 구독이 완료되었습니다.');
+          window.location.href = '/mypage';
         } else {
-          console.error('결제 승인 실패:', data.error);
-          const errorCode = data.code || 'CONFIRM_FAILED';
-          const errorMessage = data.error || '결제 승인에 실패했습니다.';
-          window.location.href = `/fail?code=${errorCode}&message=${encodeURIComponent(errorMessage)}`;
+          console.error('[SUCCESS_PAGE] 결제 승인 실패:', data.error);
+          setConfirmError(data.error || '결제 승인에 실패했습니다.');
+          setIsConfirming(false);
         }
       } catch (err) {
-        console.error('서버 통신 오류:', err);
-        window.location.href = `/fail?code=NETWORK_ERROR&message=${encodeURIComponent('서버와의 통신에 실패했습니다.')}`;
+        console.error('[SUCCESS_PAGE] 서버 통신 오류:', err);
+        setConfirmError('서버와의 통신에 실패했습니다.');
+        setIsConfirming(false);
       }
     }
 
     recordPayment();
   }, [orderId, amount, impSuccess, errorMsg, paymentKey]);
+
+  if (isConfirming) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--sans)', padding: '80px 20px 60px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--text)', marginBottom: '12px' }}>결제 승인 중입니다...</h2>
+          <p style={{ color: 'var(--text-muted)' }}>잠시만 기다려주세요. 창을 닫지 마세요.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (confirmError) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--sans)', padding: '80px 20px 60px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ textAlign: 'center', background: '#fff', padding: '40px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⚠️</div>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#dc2626', marginBottom: '12px' }}>결제 승인 실패</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>{confirmError}</p>
+          <Link href="/books" style={{ padding: '12px 24px', background: 'var(--accent)', color: '#fff', borderRadius: '100px', textDecoration: 'none', fontWeight: 600 }}>
+            다시 시도하기
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--sans)', padding: '80px 20px 60px' }}>
