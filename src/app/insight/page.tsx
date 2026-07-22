@@ -73,7 +73,10 @@ const INSIGHT_POSTS = [
 ];
 
 export default function PlusInsightPage() {
+  const PAGE_SIZE = 6;
   const [posts, setPosts] = useState<any[]>(INSIGHT_POSTS);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
   const [comments, setComments] = useState<any>({});
   // Admin email whitelist for comment deletion
@@ -84,20 +87,29 @@ export default function PlusInsightPage() {
   const [likes, setLikes] = useState<any>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    // Load posts from Supabase
-    async function loadPosts() {
-      const { data, error } = await supabase
-        .from('insights')
-        .select('*')
-        .order('order_idx', { ascending: true });
-      if (data && data.length > 0) {
-        setPosts(data);
-      }
-      // If empty or error, keep using INSIGHT_POSTS fallback
-    }
-    loadPosts();
+  // Load posts from Supabase
+  const loadPosts = async (page: number) => {
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
 
+    const { data, count, error } = await supabase
+      .from('insights')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, to);
+
+    if (data && data.length > 0) {
+      setPosts(data);
+      setTotalPages(Math.ceil((count ?? 0) / PAGE_SIZE));
+    }
+  };
+
+  useEffect(() => {
+    loadPosts(currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
     // 로그인 사용자 이름 자동 반영
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -320,6 +332,47 @@ const handleDeleteComment = (postId: string, commentId: number) => {
           );
         })}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginBottom: '80px' }}>
+          <button 
+            disabled={currentPage === 1} 
+            onClick={() => {
+              setCurrentPage(currentPage - 1);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }} 
+            style={{ background: 'transparent', border: 'none', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text)', fontSize: '0.9rem' }}
+          >
+            ‹ 이전
+          </button>
+          {[...Array(totalPages)].map((_, idx) => {
+            const page = idx + 1;
+            return (
+              <button 
+                key={page} 
+                onClick={() => {
+                  setCurrentPage(page);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }} 
+                style={{ background: currentPage === page ? 'var(--accent)' : 'transparent', color: currentPage === page ? '#fff' : 'var(--text)', border: 'none', borderRadius: '4px', padding: '4px 12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: currentPage === page ? 700 : 400 }}
+              >
+                {page}
+              </button>
+            );
+          })}
+          <button 
+            disabled={currentPage === totalPages} 
+            onClick={() => {
+              setCurrentPage(currentPage + 1);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }} 
+            style={{ background: 'transparent', border: 'none', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text)', fontSize: '0.9rem' }}
+          >
+            다음 ›
+          </button>
+        </div>
+      )}
 
       {/* Detail Post Overlay Modal */}
       {selectedPost && (

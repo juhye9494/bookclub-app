@@ -3,53 +3,60 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function InsightManager() {
+  const PAGE_SIZE = 6;
   const [posts, setPosts] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [editing, setEditing] = useState<any | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
+  const loadData = async (page: number) => {
     setLoading(true);
-    const { data, error } = await supabase
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, count, error } = await supabase
       .from('insights')
-      .select('*')
-      .order('order_idx', { ascending: true });
-    if (data) setPosts(data);
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, to);
+
+    if (data) {
+      setPosts(data);
+      setTotalPages(Math.ceil((count ?? 0) / PAGE_SIZE));
+    }
     setLoading(false);
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(currentPage); }, [currentPage]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('이 글을 삭제하시겠습니까?')) return;
     await supabase.from('insights').delete().eq('id', id);
-    await loadData();
+    
+    // Check if current page is empty
+    if (posts.length === 1 && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    } else {
+      await loadData(currentPage);
+    }
   };
 
   const handleSave = async (post: any) => {
     if (isCreating) {
-      const newPost = { ...post, id: 'insight-' + Date.now(), order_idx: posts.length };
+      const newPost = { ...post, id: 'insight-' + Date.now() };
       const { error } = await supabase.from('insights').insert(newPost);
       if (error) { alert('저장 실패: ' + error.message); return; }
+      setCurrentPage(1);
     } else {
       const { error } = await supabase.from('insights').update(post).eq('id', post.id);
       if (error) { alert('수정 실패: ' + error.message); return; }
     }
     setEditing(null);
     setIsCreating(false);
-    await loadData();
-  };
-
-  const movePost = async (index: number, direction: number) => {
-    const items = [...posts];
-    if (index + direction < 0 || index + direction >= items.length) return;
-    const temp = items[index];
-    items[index] = items[index + direction];
-    items[index + direction] = temp;
-    for (let i = 0; i < items.length; i++) {
-      await supabase.from('insights').update({ order_idx: i }).eq('id', items[i].id);
-    }
-    await loadData();
+    await loadData(isCreating ? 1 : currentPage);
   };
 
   if (loading && posts.length === 0) return <div style={{ padding: '40px', textAlign: 'center' }}>인사이트 데이터 불러오는 중...</div>;
@@ -84,11 +91,7 @@ export default function InsightManager() {
         {posts.map((post, index) => (
           editing?.id === post.id ? null : (
             <div key={post.id} style={{ display: 'flex', background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e5dfd2', gap: '16px', alignItems: 'center' }}>
-              {/* Order arrows */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <button onClick={() => movePost(index, -1)} disabled={index === 0} style={{ padding: '2px 6px', background: index === 0 ? '#f3ede2' : '#e5dfd2', border: 'none', borderRadius: '4px', cursor: index === 0 ? 'not-allowed' : 'pointer', color: index === 0 ? '#cfc8b8' : '#1a1815' }}>▲</button>
-                <button onClick={() => movePost(index, 1)} disabled={index === posts.length - 1} style={{ padding: '2px 6px', background: index === posts.length - 1 ? '#f3ede2' : '#e5dfd2', border: 'none', borderRadius: '4px', cursor: index === posts.length - 1 ? 'not-allowed' : 'pointer', color: index === posts.length - 1 ? '#cfc8b8' : '#1a1815' }}>▼</button>
-              </div>
+              {/* Order arrows removed */}
 
               {/* Thumbnail */}
               <div style={{ width: '80px', height: '56px', background: '#f3ede2', borderRadius: '6px', overflow: 'hidden', flexShrink: 0 }}>
@@ -117,6 +120,38 @@ export default function InsightManager() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
+          <button 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(currentPage - 1)} 
+            style={{ background: 'transparent', border: 'none', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#cfc8b8' : '#1a1815', fontSize: '0.9rem' }}
+          >
+            ‹ 이전
+          </button>
+          {[...Array(totalPages)].map((_, idx) => {
+            const page = idx + 1;
+            return (
+              <button 
+                key={page} 
+                onClick={() => setCurrentPage(page)} 
+                style={{ background: currentPage === page ? '#1a1815' : 'transparent', color: currentPage === page ? '#fff' : '#1a1815', border: 'none', borderRadius: '4px', padding: '4px 12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: currentPage === page ? 700 : 400 }}
+              >
+                {page}
+              </button>
+            );
+          })}
+          <button 
+            disabled={currentPage === totalPages} 
+            onClick={() => setCurrentPage(currentPage + 1)} 
+            style={{ background: 'transparent', border: 'none', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#cfc8b8' : '#1a1815', fontSize: '0.9rem' }}
+          >
+            다음 ›
+          </button>
+        </div>
+      )}
     </div>
   );
 }
