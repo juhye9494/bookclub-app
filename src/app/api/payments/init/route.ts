@@ -62,18 +62,18 @@ export async function POST(req: Request) {
     }
 
     // PENDING 상태의 주문 사전 생성
-    const { error: insertError } = await supabaseAdmin.from('orders').insert([{
+    const { data: newOrder, error: insertError } = await supabaseAdmin.from('orders').insert([{
       user_id: user.id,
       user_email: user.email,
       user_name: user.user_metadata?.name || 'Unknown',
       user_phone: user.user_metadata?.phone || 'Unknown',
       user_address: user.user_metadata?.address || 'Unknown',
-      selected_books: books || [],
+      selected_books: [], // 도서 선택은 결제 완료 후 마이페이지에서 별도로 진행
       total_amount: EXPECTED_AMOUNT,
       payment_order_id: orderId,
       payment_status: 'PENDING',
       is_test: isTest
-    }]);
+    }]).select().single();
 
     if (insertError) {
       console.error('[SUPABASE_ERROR] Init - Failed to pre-create order:', insertError);

@@ -14,6 +14,9 @@ export default function BooksPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailIdx, setDetailIdx] = useState<number | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [isSubscriber, setIsSubscriber] = useState(false);
+  const [isSelectionPeriod, setIsSelectionPeriod] = useState(false);
+  const [hasSelectedBooks, setHasSelectedBooks] = useState(false);
   const [user, setUser] = useState<any>(null);
   const scrollPosRef = useRef<number>(0);
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -21,21 +24,40 @@ export default function BooksPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) checkSubscription(session.user.id);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) checkSubscription(session.user.id);
     });
-    const handleAuthSuccess = () => {
-      if (selected.size === MAX_SELECT) setIsPaymentOpen(true);
-    };
-    window.addEventListener('auth-success', handleAuthSuccess);
-    return () => {
-      subscription.unsubscribe();
-      window.removeEventListener('auth-success', handleAuthSuccess);
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
+  const checkSubscription = async (userId: string) => {
+    const { data: doneOrders } = await supabase
+      .from('orders')
+      .select('selected_books, order_status')
+      .eq('user_id', userId)
+      .eq('payment_status', 'DONE')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (doneOrders && doneOrders.length > 0) {
+      setIsSubscriber(true);
+      const order = doneOrders[0];
+      if (order.selected_books && Array.isArray(order.selected_books) && order.selected_books.length === 4) {
+        setHasSelectedBooks(true);
+      }
+    } else {
+      setIsSubscriber(false);
+    }
+  };
+
   const handlePayment = async () => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
     try {
       const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
       
@@ -44,20 +66,16 @@ export default function BooksPage() {
         return;
       }
 
-      // 1. 서버에 주문 초기화 (PENDING) 및 고유 orderId 발급 요청
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       
-      // selected_books 정보를 함께 전달 (selected 배열을 참조해 books 객체 배열 생성 등 필요)
-      const selectedBooksArr = Array.from(selected).map(idx => books[idx]).filter(Boolean);
-
       const initRes = await fetch('/api/payments/init', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` }),
         },
-        body: JSON.stringify({ books: selectedBooksArr }),
+        body: JSON.stringify({}),
       });
 
       const initData = await initRes.json();
@@ -90,12 +108,61 @@ export default function BooksPage() {
     }
   };
 
+  const handleSaveSelection = async () => {
+    if (selected.size !== 4) return;
+    
+    if (!agreeTerms) {
+      alert('이용약관에 동의해주세요.');
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    
+    const selectedBooksArr = Array.from(selected).map(idx => books[idx]).filter(Boolean);
+
+    try {
+      const res = await fetch('/api/books/select', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ books: selectedBooksArr }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert('도서 선택이 완료되었습니다!');
+        window.location.href = '/mypage';
+      } else {
+        alert(data.error || '도서 저장에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('네트워크 오류가 발생했습니다.');
+    }
+  };
+
   useEffect(() => {
     async function loadBooks() {
       const { data: cycles } = await supabase.from('cycles').select('*').eq('status', 'active').order('start_date', { ascending: false }).limit(1);
       if (cycles && cycles.length > 0) {
         const cycle = cycles[0];
         setCycleLabel(cycle.label);
+        
+        const now = new Date();
+        const selStartStr = cycle.selection_start_date || cycle.start_date;
+        const selEndStr = cycle.selection_end_date || cycle.end_date;
+        if (selStartStr && selEndStr) {
+          const selStart = new Date(selStartStr);
+          const selEnd = new Date(selEndStr);
+          selEnd.setHours(23, 59, 59, 999);
+          setIsSelectionPeriod(now >= selStart && now <= selEnd);
+        } else {
+          setIsSelectionPeriod(true);
+        }
+
         const { data: bData } = await supabase.from('books').select('*').eq('cycle_id', cycle.id);
         if (bData) {
           const sortedBooks = [...bData].sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0)).slice(0, 25);
@@ -391,62 +458,77 @@ export default function BooksPage() {
                   </div>
                 ))}
               </div>
-
-              {/* Footer / Selection bar */}
-              <div className="shelf-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '32px', marginTop: '24px' }}>
-                <p className="shelf-hint">{selected.size === 0 ? '원하는 책을 골라보세요 (최대 4권)' : `${selected.size}권이 담겼어요!`}</p>
-                <div className="shelf-counter">
-                  <div className="counter-dots">
-                    {[0, 1, 2, 3].map((dot) => (<div key={dot} className={`counter-dot ${dot < selected.size ? 'filled' : ''}`}></div>))}
-                  </div>
-                  <span>{selected.size} / 4권</span>
-                </div>
-                <button className={`btn-delivery ${selected.size > 0 ? 'visible' : ''}`} onClick={() => {
-                  if (user) { setIsPaymentOpen(true); }
-                  else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
-                }}>선택한 {selected.size}권 신청하기</button>
-              </div>
             </>
           )}
         </div>
       )}
 
-      {/* FLOATING CART BAR (Shared) */}
-      <SelectedBooksBar 
-        selected={selected} 
-        books={books} 
-        toggleBook={toggleBook} 
-        onApply={() => {
-          if (user) { setIsPaymentOpen(true); }
-          else { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); }
-        }} 
-      />
+      {/* FLOATING CART BAR OR SUBSCRIBE BANNER */}
+      {!isSubscriber ? (
+        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>먼저 구독 결제를 완료해주세요.</span>
+          <button onClick={() => {
+            if (user) setIsPaymentOpen(true);
+            else window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
+          }} style={{ padding: '12px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '100px', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            구독 결제하기
+          </button>
+        </div>
+      ) : hasSelectedBooks ? (
+        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>이미 도서 선택을 완료했습니다.</span>
+        </div>
+      ) : !isSelectionPeriod ? (
+        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ef4444' }}>도서 선택 기간이 아닙니다.</span>
+        </div>
+      ) : (
+        <SelectedBooksBar 
+          selected={selected} 
+          books={books} 
+          toggleBook={toggleBook} 
+          onApply={() => {
+            if (selected.size === 4) setIsPaymentOpen(true);
+            else alert('4권을 모두 선택해주세요.');
+          }} 
+        />
+      )}
 
-      {/* PAYMENT MODAL */}
+      {/* PAYMENT OR SAVE MODAL */}
       <div className={`modal-overlay ${isPaymentOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsPaymentOpen(false); }}>
         <div className="modal" style={{ maxHeight: '85vh', overflowY: 'auto' }}>
           <button className="modal-close" onClick={() => setIsPaymentOpen(false)}>✕</button>
           <div style={{ textAlign: 'center', marginBottom: '20px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '22px' }} /></div>
-          <h3>구독 신청</h3>
-          <p className="modal-sub">선택하신 {selected.size}권이 담겼습니다.{selected.size < 4 && ` (나머지 ${4 - selected.size}권은 나중에 추가 선택 가능)`}</p>
-          <div className="selected-books-preview">
-            {Array.from(selected).map((idx) => books[idx] && (
-              <div key={idx} className="preview-book" style={{ background: books[idx].bg }}>
-                <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          
+          {!isSubscriber ? (
+            <>
+              <h3>구독 결제</h3>
+              <p className="modal-sub">한경 언더라인 독서클럽 구독을 시작합니다.</p>
+              <div className="plan-detail">
+                <div className="plan-row"><span className="label">구독 플랜</span><span className="value">3개월권</span></div>
+                <div className="plan-row"><span className="label">도서 선택</span><span className="value">결제 후 선택</span></div>
+                <div className="plan-row"><span className="label">웰컴 굿즈</span><span className="value">무료 증정</span></div>
+                <div className="plan-row total"><span className="label">합계</span><span className="value">45,000원</span></div>
               </div>
-            ))}
-          </div>
-          <div className="plan-detail">
-            <div className="plan-row"><span className="label">구독 플랜</span><span className="value">3개월권</span></div>
-            <div className="plan-row"><span className="label">선택 도서</span><span className="value">{selected.size}권 (최대 4권)</span></div>
-            <div className="plan-row"><span className="label">웰컴 굿즈</span><span className="value">무료 증정</span></div>
-            <div className="plan-row total"><span className="label">합계</span><span className="value">45,000원</span></div>
-          </div>
+            </>
+          ) : (
+            <>
+              <h3>도서 선택 확정</h3>
+              <p className="modal-sub">선택하신 도서 4권으로 확정합니다.</p>
+              <div className="selected-books-preview">
+                {Array.from(selected).map((idx) => books[idx] && (
+                  <div key={idx} className="preview-book" style={{ background: books[idx].bg }}>
+                    <img src={books[idx].img} alt={books[idx].title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* 배송/환불 안내 */}
           <div style={{ margin: '16px 0', padding: '14px 16px', background: '#f9fafb', borderRadius: '10px', fontSize: '0.78rem', color: '#6b7280', lineHeight: 1.7 }}>
             <p style={{ fontWeight: 600, color: '#374151', marginBottom: '6px' }}>📦 배송 안내</p>
-            <p>• 결제 완료 후 영업일 기준 3~5일 이내 발송됩니다.</p>
+            <p>• 결제(선택) 완료 후 영업일 기준 3~5일 이내 발송됩니다.</p>
             <p>• 웰컴 굿즈는 최초 1회 무료 배송됩니다.</p>
             <p style={{ fontWeight: 600, color: '#374151', marginTop: '10px', marginBottom: '6px' }}>↩️ 환불 안내</p>
             <p>• 결제일로부터 7일 이내 청약철회 시 전액 환불 가능</p>
@@ -465,7 +547,7 @@ export default function BooksPage() {
               />
               <span>
                 <strong style={{ color: 'var(--text)' }}>[필수]</strong>{' '}
-                <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={(e) => { e.preventDefault(); window.open('javascript:void(0)'); /* Footer의 약관 참조 */ }}>이용약관</span>,{' '}
+                <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={(e) => { e.preventDefault(); window.open('javascript:void(0)'); }}>이용약관</span>,{' '}
                 <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>개인정보처리방침</span>,{' '}
                 <span style={{ textDecoration: 'underline', cursor: 'pointer' }}>환불규정</span>에 동의합니다.
               </span>

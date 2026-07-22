@@ -46,22 +46,6 @@ function SuccessContent() {
 
       console.log('[SUCCESS_PAGE] 로그인 유저 확인 완료.');
 
-      // 선택한 책 정보 가져오기
-      const savedSelection = sessionStorage.getItem('bookSelection');
-      let books: any[] = [];
-      if (savedSelection) {
-        const indices = JSON.parse(savedSelection);
-        const { data: cycles } = await supabase.from('cycles').select('*').eq('status', 'active').limit(1);
-        if (cycles && cycles.length > 0) {
-          const activeCycle = cycles[0];
-          const { data: booksData } = await supabase.from('books').select('*').eq('cycle_id', activeCycle.id);
-          if (booksData) {
-            books = indices.map((idx: number) => booksData[idx]).filter(Boolean);
-            setSelectedBooks(books);
-          }
-        }
-      }
-
       try {
         console.log('[SUCCESS_PAGE] 서버 Confirm API 호출 시도...');
         const response = await fetch('/api/payments/confirm', {
@@ -74,7 +58,6 @@ function SuccessContent() {
             paymentKey,
             orderId,
             amount,
-            books,
             user,
           }),
         });
@@ -86,7 +69,7 @@ function SuccessContent() {
           // 세션 강제 갱신으로 클라이언트 메타데이터 동기화
           await supabase.auth.refreshSession();
           
-          alert('결제 및 구독이 완료되었습니다.');
+          alert('결제가 완료되었습니다. 도서 선택 기간에 책을 선택해주세요.');
           window.location.href = '/mypage';
         } else {
           console.error('[SUCCESS_PAGE] 결제 승인 실패:', data.error);
@@ -156,31 +139,13 @@ function SuccessContent() {
           </div>
         </div>
 
-        {/* 선택 도서 목록 */}
-        {selectedBooks.length > 0 && (
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '16px' }}>
-            <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px' }}>선택 도서</p>
-            {selectedBooks.map((book: any, idx: number) => (
-              <div key={idx} style={{ display: 'flex', gap: '14px', alignItems: 'center', padding: '10px 0', borderBottom: idx < selectedBooks.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
-                <div style={{ width: '44px', height: '60px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#f3f4f6' }}>
-                  {book.cover && <img src={book.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111', marginBottom: '2px' }}>{book.title}</p>
-                  <p style={{ fontSize: '0.78rem', color: '#9ca3af' }}>{book.author}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* 배송 안내 */}
         <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '16px' }}>
           <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px' }}>📦 배송 안내</p>
           <div style={{ fontSize: '0.85rem', color: '#374151', lineHeight: 1.8 }}>
-            <p>• 영업일 기준 <strong>3~5일 이내</strong> 발송됩니다.</p>
-            <p>• 웰컴 굿즈가 함께 배송됩니다.</p>
-            <p>• 배송 상태는 <strong>마이페이지</strong>에서 확인 가능합니다.</p>
+            <p>· 영업일 기준 <strong>3~5일 이내</strong> 발송됩니다.</p>
+            <p>· 도서 선택 후 웰컴 굿즈가 함께 배송됩니다.</p>
+            <p>· 배송 상태는 <strong>마이페이지</strong>에서 확인 가능합니다.</p>
           </div>
         </div>
 

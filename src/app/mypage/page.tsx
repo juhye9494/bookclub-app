@@ -197,10 +197,12 @@ export default function MyPage() {
     if (ps === 'FAILED') return { label: '결제실패', bg: '#fee2e2', color: '#dc2626' };
     
     // ps === 'DONE' 인 경우
+    const hasBooks = order.selected_books && order.selected_books.length === 4;
+    
     if (os === '배송완료') return { label: '배송완료', bg: '#ecfdf5', color: '#059669' };
     if (os === '배송중') return { label: '배송중', bg: '#eef5ff', color: '#3b82f6' };
     
-    return { label: '배송준비중', bg: '#ecfdf5', color: '#059669' };
+    return { label: hasBooks ? '도서 선택 완료' : '도서 선택 대기', bg: '#ecfdf5', color: '#059669' };
   };
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontFamily: 'var(--sans)' }}>로딩중...</div>;
@@ -249,6 +251,8 @@ export default function MyPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {orders.map((order) => {
                   const statusUI = getStatusDisplay(order);
+                  const isDone = order.payment_status === 'DONE';
+                  const hasSelectedBooks = order.selected_books && order.selected_books.length > 0;
                   return (
                   <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     {/* 주문 헤더 */}
@@ -259,31 +263,42 @@ export default function MyPage() {
                         </span>
                         <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>한경 언더라인 독서클럽 3개월권</h3>
                       </div>
-                      <span style={{
-                        padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap',
-                        background: statusUI.bg,
-                        color: statusUI.color,
-                      }}>
-                        {statusUI.label}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{
+                          padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap',
+                          background: statusUI.bg,
+                          color: statusUI.color,
+                        }}>
+                          {statusUI.label}
+                        </span>
+                        {isDone && !hasSelectedBooks && (
+                          <Link href="/books" style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: 'var(--accent)', color: '#fff', textDecoration: 'none' }}>
+                            도서 선택하기
+                          </Link>
+                        )}
+                      </div>
                     </div>
 
                     {/* 선택 도서 */}
                     <div style={{ marginBottom: '20px' }}>
                       <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>선택 도서</h4>
-                      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                        {(order.selected_books || []).map((book: any, idx: number) => (
-                          <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 200px', minWidth: '180px' }}>
-                            <div style={{ width: '48px', height: '66px', background: '#f3f4f6', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border)' }}>
-                              {book.img || book.cover ? <img src={book.img || book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                      {!hasSelectedBooks ? (
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>아직 도서를 선택하지 않았습니다.</p>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                          {(order.selected_books || []).map((book: any, idx: number) => (
+                            <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 200px', minWidth: '180px' }}>
+                              <div style={{ width: '48px', height: '66px', background: '#f3f4f6', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border)' }}>
+                                {book.img || book.cover ? <img src={book.img || book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                              </div>
+                              <div>
+                                <p style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.3 }}>{book.title}</p>
+                                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '3px' }}>{book.author}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.3 }}>{book.title}</p>
-                              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '3px' }}>{book.author}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* 배송 정보 */}
