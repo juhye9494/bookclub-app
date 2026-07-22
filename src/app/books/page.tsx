@@ -43,14 +43,36 @@ export default function BooksPage() {
         alert('결제 라이브러리가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
         return;
       }
+
+      // 1. 서버에 주문 초기화 (PENDING) 및 고유 orderId 발급 요청
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      // selected_books 정보를 함께 전달 (selected 배열을 참조해 books 객체 배열 생성 등 필요)
+      const selectedBooksArr = Array.from(selected).map(idx => books[idx]).filter(Boolean);
+
+      const initRes = await fetch('/api/payments/init', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ books: selectedBooksArr }),
+      });
+
+      const initData = await initRes.json();
+      if (!initRes.ok || !initData.orderId) {
+        alert('주문 생성에 실패했습니다. 다시 시도해주세요.');
+        return;
+      }
       
       const tossPayments = await (window as any).TossPayments(clientKey);
       const payment = tossPayments.payment({ customerKey: user?.id || 'ANONYMOUS' });
       
       await payment.requestPayment({
         method: 'CARD',
-        amount: { currency: 'KRW', value: 45000 },
-        orderId: `order_${new Date().getTime()}`,
+        amount: { currency: 'KRW', value: initData.amount },
+        orderId: initData.orderId,
         orderName: '한경 언더라인 독서클럽 3개월권',
         successUrl: `${window.location.origin}/success`,
         failUrl: `${window.location.origin}/fail`,
