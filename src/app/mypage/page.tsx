@@ -69,8 +69,9 @@ export default function MyPage() {
 
       const { data: doneOrders } = await supabase
         .from('orders')
-        .select('*')
+        .select('*, cycle:cycles!fk_orders_cycle_id(id, name, label, book_order_start_date, book_order_end_date, status, max_book_count)')
         .eq('user_id', session.user.id)
+        .neq('payment_status', 'PENDING')
         .order('created_at', { ascending: false });
 
       if (doneOrders) {
@@ -201,19 +202,23 @@ export default function MyPage() {
     alert('✉️ 비밀번호 재설정 링크가 이메일로 발송되었습니다.\n이메일을 확인해주세요.');
   };
 
-  const getStatusDisplay = (order: any) => {
+  const getStatusDisplay = (order: any, isOrderAllowed: boolean) => {
     const ps = order.payment_status || 'PENDING';
     
     if (ps === 'PENDING') return { label: '결제 미완료', bg: '#fef3c7', color: '#d97706' };
     if (ps === 'CANCELLED') return { label: '취소', bg: '#fee2e2', color: '#dc2626' };
     if (ps === 'FAILED') return { label: '결제실패', bg: '#fee2e2', color: '#dc2626' };
     
+    const cycle = order.cycle || {};
+    const maxCount = cycle.max_book_count || 4;
     const activeBooksCount = (order.book_orders || [])
       .filter((bo: any) => bo.order_status !== '주문취소')
       .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
       
-    if (activeBooksCount === 4) return { label: '도서 선택 완료 (구독됨)', bg: '#ecfdf5', color: '#059669' };
-    return { label: `도서 선택 대기 (${activeBooksCount}/4)`, bg: '#eef5ff', color: '#3b82f6' };
+    if (activeBooksCount >= maxCount) return { label: '도서 선택 완료 (구독됨)', bg: '#ecfdf5', color: '#059669' };
+    
+    if (!isOrderAllowed) return { label: '도서 신청 대기', bg: '#f3f4f6', color: '#6b7280' };
+    return { label: `도서 선택 대기 (${activeBooksCount}/${maxCount})`, bg: '#eef5ff', color: '#3b82f6' };
   };
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontFamily: 'var(--sans)' }}>로딩중...</div>;
@@ -261,19 +266,20 @@ export default function MyPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {orders.map((order) => {
-                  const statusUI = getStatusDisplay(order);
+                  const cycle = order.cycle || {};
                   const isDone = order.payment_status === 'DONE';
                   const activeBooksCount = (order.book_orders || [])
                     .filter((bo: any) => bo.order_status !== '주문취소')
                     .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
-                  const cycle = order.cycles || {};
                   const maxCount = cycle.max_book_count || 4;
                   const hasSelectedBooks = activeBooksCount >= maxCount;
                   
                   const now = new Date();
                   const orderStart = cycle.book_order_start_date ? new Date(cycle.book_order_start_date) : new Date('2000-01-01');
-                  const isOrderAllowed = now >= orderStart;
+                  const orderEnd = cycle.book_order_end_date ? new Date(cycle.book_order_end_date) : new Date('2099-12-31');
+                  const isOrderAllowed = (now >= orderStart && now <= orderEnd && cycle.status !== 'closed');
                   const cycleName = cycle.name || cycle.label || order.cycle_id;
+                  const statusUI = getStatusDisplay(order, isOrderAllowed);
                   return (
                   <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     {/* 주문 헤더 */}
@@ -292,13 +298,23 @@ export default function MyPage() {
                         }}>
                           {statusUI.label}
                         </span>
-                        {isDone && !hasSelectedBooks && (
+                        {isDone && !hasSelectedBooks && isOrderAllowed && (
                           <Link href={{ pathname: '/books', query: { subOrderId: order.id } }} style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: 'var(--accent)', color: '#fff', textDecoration: 'none' }}>
                             도서 선택하기
                           </Link>
                         )}
                       </div>
                       </div>
+                      
+                      {isDone && !hasSelectedBooks && !isOrderAllowed && (
+                        <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
+                          <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                            <strong style={{ color: 'var(--accent)' }}>도서 신청은 {orderStart.getFullYear()}년 {orderStart.getMonth() + 1}월 {orderStart.getDate()}일부터 가능합니다.</strong><br/>
+                            9월부터 웰컴키트가 발송되며,<br/>
+                            도서 신청 순서에 따라 순차 배송됩니다.
+                          </p>
+                        </div>
+                      )}
                       
                       {isDone && (
                         <>
