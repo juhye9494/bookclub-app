@@ -9,7 +9,7 @@ interface Order {
   user_name: string;
   user_phone: string;
   user_address: string;
-  selected_books: any[];
+  book_order_items: any[];
   total_amount: number;
   order_status: string;
   tracking_number: string;
@@ -18,11 +18,17 @@ interface Order {
 }
 
 const STATUS_OPTIONS = [
-  { value: '발송대기', label: '발송대기', color: '#f59e0b', bg: '#fef3c7' },
-  { value: '발송완료', label: '발송완료', color: '#10b981', bg: '#d1fae5' },
-  { value: '배송중', label: '배송중', color: '#3b82f6', bg: '#dbeafe' },
-  { value: '배송완료', label: '배송완료', color: '#6b7280', bg: '#f3f4f6' },
+  { value: '주문접수', color: '#f59e0b', bg: '#fef3c7' },
+  { value: '배송준비중', color: '#f59e0b', bg: '#fef3c7' },
+  { value: '배송중', color: '#3b82f6', bg: '#dbeafe' },
+  { value: '배송완료', color: '#10b981', bg: '#d1fae5' },
+  { value: '주문취소', color: '#ef4444', bg: '#fee2e2' },
 ];
+
+function getStatusLabel(status: string) {
+  if (status === '주문접수') return '발송대기';
+  return status;
+}
 
 export default function ShippingManager() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -38,16 +44,44 @@ export default function ShippingManager() {
 
   async function loadOrders() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) {
-      // 기존 order_status가 '배송준비중'인 것을 '발송대기'로 매핑
-      const mapped = data.map(o => ({
-        ...o,
-        order_status: o.order_status === '배송준비중' ? '발송대기' : (o.order_status || '발송대기'),
-        tracking_number: o.tracking_number || ''
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      setLoading(false);
+      return;
+    }
+    const token = session.session.access_token;
+    
+    let bOrders = null;
+    try {
+      const res = await fetch('/api/admin/book-orders', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        console.error('Failed to load orders:', data.error);
+      } else {
+        bOrders = data.orders;
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
+    }
+    if (bOrders) {
+      const mapped = bOrders.map((bo: any) => ({
+        id: bo.id,
+        user_id: bo.user_id,
+        user_email: bo.subscription_order?.user_email || '',
+        user_name: bo.subscription_order?.user_name || '',
+        user_phone: bo.subscription_order?.user_phone || '',
+        user_address: bo.subscription_order?.user_address || '',
+        book_order_items: (bo.book_order_items || []).map((item: any) => ({ title: item.title_snapshot, cover: '' })),
+        total_amount: bo.subscription_order?.total_amount || 45000,
+        order_status: bo.order_status || '주문접수',
+        tracking_number: bo.tracking_number || '',
+        payment_order_id: bo.subscription_order?.payment_order_id || '',
+        created_at: bo.created_at
       }));
       setOrders(mapped);
     }
@@ -57,38 +91,58 @@ export default function ShippingManager() {
   // 상태별 카운트
   const counts = {
     all: orders.length,
-    '발송대기': orders.filter(o => o.order_status === '발송대기').length,
-    '발송완료': orders.filter(o => o.order_status === '발송완료').length,
+    '주문접수': orders.filter(o => o.order_status === '주문접수').length,
+    '배송준비중': orders.filter(o => o.order_status === '배송준비중').length,
     '배송중': orders.filter(o => o.order_status === '배송중').length,
     '배송완료': orders.filter(o => o.order_status === '배송완료').length,
+    '주문취소': orders.filter(o => o.order_status === '주문취소').length,
   };
 
   const filteredOrders = filter === 'all' ? orders : orders.filter(o => o.order_status === filter);
 
   // 개별 상태 변경
   const updateStatus = async (orderId: string, newStatus: string) => {
-    const { error } = await supabase.from('orders').update({ order_status: newStatus }).eq('id', orderId);
-    if (error) { alert('상태 업데이트 실패: ' + error.message); return; }
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, order_status: newStatus } : o));
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+      const token = session.session.access_token;
+      const res = await fetch(`/api/admin/book-orders/${orderId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (!res.ok) { alert('상태 업데이트 실패: ' + (data.error || '알 수 없는 오류')); return; }
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, order_status: newStatus } : o));
+    } catch (e: any) { alert('상태 업데이트 실패: ' + e.message); }
   };
 
   // 일괄 상태 변경
-  const bulkUpdateStatus = async (newStatus: string) => {
-    if (checkedIds.size === 0) { alert('선택된 주문이 없습니다.'); return; }
-    const ids = Array.from(checkedIds);
-    const { error } = await supabase.from('orders').update({ order_status: newStatus }).in('id', ids);
-    if (error) { alert('일괄 업데이트 실패: ' + error.message); return; }
-    setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, order_status: newStatus } : o));
-    setCheckedIds(new Set());
-  };
+  
 
   // 송장번호 저장
   const saveTracking = async (orderId: string) => {
-    const { error } = await supabase.from('orders').update({ tracking_number: trackingInput }).eq('id', orderId);
-    if (error) { alert('송장번호 저장 실패: ' + error.message); return; }
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, tracking_number: trackingInput } : o));
-    setEditingTracking(null);
-    setTrackingInput('');
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+      const token = session.session.access_token;
+      const res = await fetch(`/api/admin/book-orders/${orderId}/tracking`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ tracking_number: trackingInput })
+      });
+      const data = await res.json();
+      if (!res.ok) { alert('송장번호 저장 실패: ' + (data.error || '알 수 없는 오류')); return; }
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, tracking_number: trackingInput } : o));
+      setEditingTracking(null);
+      setTrackingInput('');
+    } catch (e: any) { alert('송장번호 저장 실패: ' + e.message); }
   };
 
   // 체크박스 토글
@@ -113,7 +167,7 @@ export default function ShippingManager() {
     if (target.length === 0) return;
     const headers = ['주문일자', '주문번호', '고객명', '이메일', '연락처', '배송주소', '상태', '송장번호', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3'];
     const rows = target.map(order => {
-      const books = order.selected_books || [];
+      const books = order.book_order_items || [];
       return [
         new Date(order.created_at).toLocaleDateString(),
         order.payment_order_id,
@@ -152,10 +206,11 @@ export default function ShippingManager() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' }}>
         {[
           { label: '전체', value: counts.all, icon: '📋', key: 'all' },
-          { label: '발송대기', value: counts['발송대기'], icon: '⏳', key: '발송대기' },
-          { label: '발송완료', value: counts['발송완료'], icon: '✅', key: '발송완료' },
-          { label: '배송중', value: counts['배송중'], icon: '🚚', key: '배송중' },
-          { label: '배송완료', value: counts['배송완료'], icon: '📬', key: '배송완료' },
+          { label: getStatusLabel('주문접수'), value: counts['주문접수'], icon: '⏳', key: '주문접수' },
+          { label: getStatusLabel('배송준비중'), value: counts['배송준비중'], icon: '📦', key: '배송준비중' },
+          { label: getStatusLabel('배송중'), value: counts['배송중'], icon: '🚚', key: '배송중' },
+          { label: getStatusLabel('배송완료'), value: counts['배송완료'], icon: '📬', key: '배송완료' },
+          { label: getStatusLabel('주문취소'), value: counts['주문취소'], icon: '❌', key: '주문취소' },
         ].map(item => (
           <div
             key={item.key}
@@ -181,29 +236,13 @@ export default function ShippingManager() {
       {/* 액션 바 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {checkedIds.size > 0 && (
-            <>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent)' }}>
-                {checkedIds.size}건 선택
-              </span>
-              <button onClick={() => bulkUpdateStatus('발송완료')} style={{ padding: '6px 14px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
-                ✅ 일괄 발송완료
-              </button>
-              <button onClick={() => bulkUpdateStatus('배송중')} style={{ padding: '6px 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
-                🚚 일괄 배송중
-              </button>
-              <button onClick={() => bulkUpdateStatus('배송완료')} style={{ padding: '6px 14px', background: '#6b7280', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
-                📬 일괄 배송완료
-              </button>
-            </>
-          )}
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={loadOrders} style={{ padding: '8px 16px', background: '#fff', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer' }}>
             🔄 새로고침
           </button>
           <button onClick={downloadCSV} style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
-            📥 CSV 다운로드{checkedIds.size > 0 ? ` (${checkedIds.size}건)` : ''}
+            📥 CSV 다운로드
           </button>
         </div>
       </div>
@@ -213,9 +252,7 @@ export default function ShippingManager() {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '900px' }}>
           <thead>
             <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
-              <th style={{ padding: '12px 10px', width: '36px' }}>
-                <input type="checkbox" checked={checkedIds.size === filteredOrders.length && filteredOrders.length > 0} onChange={toggleAll} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-              </th>
+              
               <th style={thStyle}>주문일</th>
               <th style={thStyle}>고객</th>
               <th style={thStyle}>배송지</th>
@@ -226,15 +263,13 @@ export default function ShippingManager() {
           </thead>
           <tbody>
             {filteredOrders.length === 0 ? (
-              <tr><td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' }}>
+              <tr><td colSpan={6} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' }}>
                 {filter === 'all' ? '주문 내역이 없습니다.' : `'${filter}' 상태의 주문이 없습니다.`}
               </td></tr>
             ) : (
               filteredOrders.map(order => (
-                <tr key={order.id} style={{ borderBottom: '1px solid #f3f4f6', background: checkedIds.has(order.id) ? '#fefce8' : 'transparent' }}>
-                  <td style={{ padding: '12px 10px' }}>
-                    <input type="checkbox" checked={checkedIds.has(order.id)} onChange={() => toggleCheck(order.id)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-                  </td>
+                <tr key={order.id} style={{ borderBottom: '1px solid #f3f4f6', background: 'transparent' }}>
+                  
                   <td style={{ ...tdStyle, whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
                     <div style={{ fontWeight: 600 }}>{new Date(order.created_at).toLocaleDateString()}</div>
                     <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{new Date(order.created_at).toLocaleTimeString()}</div>
@@ -248,13 +283,13 @@ export default function ShippingManager() {
                     {order.user_address || '-'}
                   </td>
                   <td style={{ ...tdStyle, minWidth: '160px' }}>
-                    {(order.selected_books || []).map((b: any, idx: number) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: idx < (order.selected_books?.length || 0) - 1 ? '4px' : 0, fontSize: '0.8rem' }}>
+                    {(order.book_order_items || []).map((b: any, idx: number) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: idx < (order.book_order_items?.length || 0) - 1 ? '4px' : 0, fontSize: '0.8rem' }}>
                         {b.cover && <div style={{ width: '24px', height: '32px', borderRadius: '2px 4px 4px 2px', overflow: 'hidden', flexShrink: 0 }}><img src={b.cover} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /></div>}
                         <span style={{ fontWeight: 500 }}>{b.title}</span>
                       </div>
                     ))}
-                    {(!order.selected_books || order.selected_books.length === 0) && <span style={{ color: '#d1d5db' }}>-</span>}
+                    {(!order.book_order_items || order.book_order_items.length === 0) && <span style={{ color: '#d1d5db' }}>-</span>}
                   </td>
                   <td style={{ ...tdStyle, minWidth: '140px' }}>
                     {editingTracking === order.id ? (
@@ -293,7 +328,7 @@ export default function ShippingManager() {
                         ...getStatusStyle(order.order_status)
                       }}
                     >
-                      {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{getStatusLabel(s.value)}</option>)}
                     </select>
                   </td>
                 </tr>

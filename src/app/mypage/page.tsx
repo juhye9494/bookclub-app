@@ -212,7 +212,7 @@ export default function MyPage() {
       .filter((bo: any) => bo.order_status !== '주문취소')
       .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
       
-    if (activeBooksCount === 4) return { label: '도서 선택 완료', bg: '#ecfdf5', color: '#059669' };
+    if (activeBooksCount === 4) return { label: '도서 선택 완료 (구독됨)', bg: '#ecfdf5', color: '#059669' };
     return { label: `도서 선택 대기 (${activeBooksCount}/4)`, bg: '#eef5ff', color: '#3b82f6' };
   };
 
@@ -293,10 +293,12 @@ export default function MyPage() {
                           </Link>
                         )}
                       </div>
-                    </div>
-
-                    <div style={{ marginBottom: '20px' }}>
-                      <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>도서 주문 현황</h4>
+                      </div>
+                      
+                      {isDone && (
+                        <>
+                          <div style={{ marginBottom: '20px' }}>
+                            <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>도서 주문 현황</h4>
                       {(!order.book_orders || order.book_orders.length === 0) ? (
                         <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>아직 신청된 도서 주문이 없습니다.</p>
                       ) : (
@@ -319,8 +321,9 @@ export default function MyPage() {
                         </div>
                       )}
                     </div>
-
-                    {/* 배송 정보 */}
+                        </>
+                      )}
+                      {/* 배송 정보 */}
                     <div style={{ background: '#f9fafb', padding: '14px 18px', borderRadius: '10px', fontSize: '0.84rem', lineHeight: 1.7, color: 'var(--text-mid)' }}>
                       <strong>배송지:</strong> {order.user_name} ({order.user_phone}) <br/>
                       {order.user_address}
