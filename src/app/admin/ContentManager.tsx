@@ -12,7 +12,8 @@ export default function ContentManager() {
   
   const [formData, setFormData] = useState({
     cycle_id: '', title: '', author: '', genre: '', description: '', 
-    cover: '', tags: '', is_public: true, is_orderable: true, is_deleted: false, order_idx: 0
+    cover: '', tags: '', is_public: true, is_orderable: true, is_deleted: false, order_idx: 0,
+    bg: '#3b4b72', bgDark: '#121931', is_new: false
   });
 
   const loadData = async () => {
@@ -46,16 +47,35 @@ export default function ContentManager() {
       setFormData({
         cycle_id: book.cycle_id, title: book.title, author: book.author || '', genre: book.genre || '', 
         description: book.description || '', cover: book.cover || '', tags: (book.tags || []).join(', '), 
-        is_public: book.is_public, is_orderable: book.is_orderable, is_deleted: book.is_deleted, order_idx: book.order_idx || 0
+        is_public: book.is_public, is_orderable: book.is_orderable, is_deleted: book.is_deleted, order_idx: book.order_idx || 0,
+        bg: book.bg_color || '#3b4b72', bgDark: book.bg_color_dark || '#121931', is_new: !!book.is_new
       });
     } else {
       setEditingBook(null);
       setFormData({
         cycle_id: selectedCycleId || '', title: '', author: '', genre: '', description: '', 
-        cover: '', tags: '', is_public: true, is_orderable: true, is_deleted: false, order_idx: 0
+        cover: '', tags: '', is_public: true, is_orderable: true, is_deleted: false, order_idx: 0, bg: '#3b4b72', bgDark: '#121931', is_new: false
       });
     }
     setIsModalOpen(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '')}`;
+      const filePath = `covers/${fileName}`;
+      const { error } = await supabase.storage.from('books').upload(filePath, file);
+      if (error) {
+        alert('이미지 업로드 실패: ' + error.message);
+        return;
+      }
+      const { data } = supabase.storage.from('books').getPublicUrl(filePath);
+      setFormData(prev => ({ ...prev, cover: data.publicUrl }));
+    } catch (err: any) {
+      alert('업로드 중 오류 발생: ' + err.message);
+    }
   };
 
   const handleSave = async () => {
@@ -168,7 +188,10 @@ export default function ContentManager() {
 
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 600 }}>표지 이미지 URL</label>
-              <input type="text" value={formData.cover} onChange={e => setFormData({...formData, cover: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }} />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input type="text" value={formData.cover} onChange={e => setFormData({...formData, cover: e.target.value})} style={{ flex: 1, padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }} />
+                <input type="file" accept="image/*" onChange={handleFileUpload} style={{ padding: '4px' }} />
+              </div>
             </div>
 
             <div style={{ marginBottom: '12px' }}>
@@ -178,10 +201,24 @@ export default function ContentManager() {
 
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 600 }}>설명</label>
-              <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }} />
+              <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '4px', minHeight: '220px', resize: 'vertical' }} />
             </div>
 
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', padding: '12px', background: '#f9fafb', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 600 }}>배경색 (bg_color)</label>
+                <input type="color" value={formData.bg} onChange={e => setFormData({...formData, bg: e.target.value})} style={{ width: '40px', height: '36px', padding: '2px', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 600 }}>어두운 배경색 (bg_color_dark)</label>
+                <input type="color" value={formData.bgDark} onChange={e => setFormData({...formData, bgDark: e.target.value})} style={{ width: '40px', height: '36px', padding: '2px', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }} />
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', padding: '12px', background: '#f9fafb', borderRadius: '8px', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={formData.is_new} onChange={e => setFormData({...formData, is_new: e.target.checked})} /> 신간 표시 (NEW)
+              </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer' }}>
                 <input type="checkbox" checked={formData.is_public} onChange={e => setFormData({...formData, is_public: e.target.checked})} /> 공개 (Public)
               </label>

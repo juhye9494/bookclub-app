@@ -24,6 +24,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { cycle_id } = body;
 
+    if (!user.email) {
+      return NextResponse.json({ error: '회원 이메일 정보를 확인할 수 없습니다.' }, { status: 400 });
+    }
+
     if (!cycle_id) {
       return NextResponse.json({ error: 'cycle_id is required' }, { status: 400 });
     }
@@ -87,6 +91,11 @@ export async function POST(req: Request) {
       .from('orders')
       .insert({
         user_id: user.id,
+        user_email: user.email,
+        user_name: user.user_metadata?.name || 'Unknown',
+        user_phone: user.user_metadata?.phone || 'Unknown',
+        user_address: user.user_metadata?.address || 'Unknown',
+        is_test: process.env.VERCEL_ENV !== 'production',
         payment_order_id: orderId,
         payment_status: 'PENDING',
         selected_books: [],

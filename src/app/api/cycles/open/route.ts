@@ -16,7 +16,7 @@ export async function GET() {
 
     const { data: cycles, error } = await supabaseAdmin
       .from('cycles')
-      .select('id, name, subscription_start_date, subscription_end_date, max_book_count, status')
+      .select('id, name, subscription_start_date, subscription_end_date, selection_start_date, selection_end_date, max_book_count, status')
       .neq('status', 'closed')
       .lte('subscription_start_date', now)
       .gte('subscription_end_date', now)

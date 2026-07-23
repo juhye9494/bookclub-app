@@ -151,7 +151,7 @@ export default function PaymentPage() {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#111' }}>{cycle.name}</div>
                   <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '4px' }}>
-                    신청 기간: {new Date(cycle.subscription_start_date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })} ~ {new Date(cycle.subscription_end_date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}
+                    신청 기간: {new Date(cycle.selection_start_date || cycle.subscription_start_date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })} ~ {new Date(cycle.selection_end_date || cycle.subscription_end_date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}
                   </div>
                 </div>
               </label>

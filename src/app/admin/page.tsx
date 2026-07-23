@@ -76,7 +76,7 @@ export default function AdminPage() {
               {tab === 'shipping' && '책 발송 관리'}
               {tab === 'cycles' && '기수 관리'}
               {tab === 'content' && '기수별 도서 관리'}
-              {tab === 'members' && '회원 및 배송 관리'}
+              {tab === 'members' && '회원 관리'}
               {tab === 'events' && '이벤트 관리'}
               {tab === 'insights' && '인사이트 관리'}
               {tab === 'inquiries' && '고객 센터 문의'}
