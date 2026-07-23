@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       // 2. 주문 상태를 CANCELED로 업데이트
       await supabaseAdmin
         .from('orders')
-        .update({ payment_status: 'CANCELED' })
+        .update({ payment_status: 'CANCELLED' })
         .eq('id', order.id);
 
       // 3. 해당 사용자의 다른 유효한(DONE) 주문이 남아있는지 확인

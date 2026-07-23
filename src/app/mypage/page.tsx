@@ -205,7 +205,7 @@ export default function MyPage() {
     const ps = order.payment_status || 'PENDING';
     
     if (ps === 'PENDING') return { label: '결제 미완료', bg: '#fef3c7', color: '#d97706' };
-    if (ps === 'CANCELED') return { label: '결제취소', bg: '#fee2e2', color: '#dc2626' };
+    if (ps === 'CANCELLED') return { label: '취소', bg: '#fee2e2', color: '#dc2626' };
     if (ps === 'FAILED') return { label: '결제실패', bg: '#fee2e2', color: '#dc2626' };
     
     const activeBooksCount = (order.book_orders || [])

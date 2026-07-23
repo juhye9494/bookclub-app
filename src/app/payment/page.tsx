@@ -38,7 +38,14 @@ export default function PaymentPage() {
 
     setLoading(true);
     try {
-      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+      
+      if (!clientKey) {
+        console.error('[CRITICAL] NEXT_PUBLIC_TOSS_CLIENT_KEY is not configured.');
+        alert('결제 설정을 확인할 수 없습니다. 관리자에게 문의해주세요.');
+        setLoading(false);
+        return;
+      }
       
       if (typeof (window as any).TossPayments === 'undefined') {
         alert('결제 라이브러리가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
