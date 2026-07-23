@@ -312,7 +312,10 @@ export default function MyPage() {
                   const orderEnd = cycle.book_order_end_date ? new Date(cycle.book_order_end_date) : new Date('2099-12-31');
                   const subEnd = cycle.subscription_end_date ? new Date(cycle.subscription_end_date) : new Date('2099-12-31');
                   const isOrderAllowed = (now >= orderStart && now <= orderEnd && cycle.status !== 'closed');
-                  const cycleName = cycle.name || cycle.label || '구독권'; // FAILED, CANCELLED doesn't show cycle_id
+                  const cycleDisplayName = cycle?.name || cycle?.label || '';
+                  const subscriptionTitle = cycleDisplayName
+                    ? `${cycleDisplayName} 구독권`
+                    : '구독권';
                   const statusUI = getStatusDisplay(order, isOrderAllowed);
                   
                   const isRefundable = isDone && !!order.cycle_id && now <= subEnd && now < orderStart && cycle.status !== 'closed' && !hasActiveBookOrders;
@@ -325,7 +328,7 @@ export default function MyPage() {
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                               {new Date(order.created_at).toLocaleDateString('ko-KR')} · 주문번호: {order.payment_order_id}
                             </span>
-                            <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>구독권 결제 취소 내역</h3>
+                            <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>{subscriptionTitle}</h3>
                           </div>
                           <div>
                             <span style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: statusUI.bg, color: statusUI.color }}>
@@ -372,7 +375,7 @@ export default function MyPage() {
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           {new Date(order.created_at).toLocaleDateString('ko-KR')} · 주문번호: {order.payment_order_id}
                         </span>
-                        <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>{cycleName} 구독권</h3>
+                        <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>{subscriptionTitle}</h3>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{
