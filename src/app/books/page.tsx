@@ -299,46 +299,6 @@ export default function BooksPage() {
   const descColor = isLightBg ? '#3b4b72' : 'rgba(255, 255, 255, 0.8)';
   const overlayColor = isLightBg ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
 
-  const BOOK_ORDER_MAINTENANCE = true;
-
-  if (BOOK_ORDER_MAINTENANCE) {
-    return (
-      <div
-        style={{
-          background: 'var(--bg)',
-          minHeight: '100vh',
-          fontFamily: 'var(--sans)',
-          paddingTop: '120px',
-          textAlign: 'center',
-        }}
-      >
-        <h1
-          style={{
-            fontSize: '2rem',
-            fontWeight: 700,
-            marginBottom: '24px',
-          }}
-        >
-          시스템 점검 안내
-        </h1>
-
-        <p
-          style={{
-            fontSize: '1.1rem',
-            color: 'var(--text-mid)',
-            lineHeight: 1.8,
-          }}
-        >
-          도서 주문 시스템을 점검 중입니다.
-          <br />
-          구독 결제 기능은 정상적으로 이용할 수 있으며,
-          <br />
-          도서 주문은 점검 완료 후 다시 이용하실 수 있습니다.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)', paddingTop: '64px' }}>
       <style>{`

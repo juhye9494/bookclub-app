@@ -1,18 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const BOOK_ORDER_MAINTENANCE = true;
-
 export async function POST(req: Request) {
-  if (BOOK_ORDER_MAINTENANCE) {
-    return NextResponse.json(
-      {
-        error:
-          '도서 주문 시스템을 점검 중입니다. 잠시 후 다시 이용해주세요.',
-      },
-      { status: 503 }
-    );
-  }
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
