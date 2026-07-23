@@ -717,9 +717,7 @@ export default function MyPage() {
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px', color: '#111827' }}>구독 결제 취소</h3>
             <p style={{ fontSize: '0.9rem', color: '#4b5563', lineHeight: 1.6, marginBottom: '24px' }}>
               구독을 취소하면 결제금액 45,000원이 전액 취소되며,<br/>
-              해당 기수의 도서 신청 권한도 사라집니다.<br/><br/>
-              결제 취소 후에는 되돌릴 수 없습니다.<br/>
-              <strong>구독을 취소하시겠습니까?</strong>
+              해당 기수의 도서 신청 권한도 사라집니다.
             </p>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button 
