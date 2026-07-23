@@ -176,7 +176,7 @@ export async function POST(req: Request) {
       // 4. 정상 완료 시 상태 갱신 (조건부)
       const { data: updatedOrder, error: updateError } = await supabaseAdmin
         .from('orders')
-        .update({ payment_status: 'DONE' })
+        .update({ payment_status: 'DONE', payment_key: paymentKey })
         .eq('id', order.id)
         .eq('payment_status', 'PENDING')
         .select('id')

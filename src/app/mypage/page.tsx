@@ -14,6 +14,36 @@ export default function MyPage() {
   const [cycles, setCycles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('orders');
+  const [cancelingOrderId, setCancelingOrderId] = useState<string | null>(null);
+  const [isCancelProcessing, setIsCancelProcessing] = useState(false);
+  
+  const handleCancelOrder = async (orderId: string) => {
+    setIsCancelProcessing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch('/api/payments/refund', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ orderId })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || '결제 취소 중 오류가 발생했습니다.');
+      } else {
+        alert('구독 결제가 취소되었습니다.');
+        setOrders(orders.map(o => o.id === orderId ? { ...o, payment_status: 'CANCELLED' } : o));
+      }
+    } catch (e: any) {
+      alert('취소 요청에 실패했습니다.');
+    } finally {
+      setIsCancelProcessing(false);
+      setCancelingOrderId(null);
+    }
+  };
   const [activitySubTab, setActivitySubTab] = useState<'groups' | 'events'>('groups');
   const [groupParticipations, setGroupParticipations] = useState<any[]>([]);
   const [eventParticipations, setEventParticipations] = useState<any[]>([]);
@@ -69,7 +99,7 @@ export default function MyPage() {
 
       const { data: doneOrders } = await supabase
         .from('orders')
-        .select('*, cycle:cycles!fk_orders_cycle_id(id, name, label, book_order_start_date, book_order_end_date, status, max_book_count)')
+        .select('*, cycle:cycles!fk_orders_cycle_id(id, name, label, subscription_end_date, book_order_start_date, book_order_end_date, status, max_book_count)')
         .eq('user_id', session.user.id)
         .neq('payment_status', 'PENDING')
         .order('created_at', { ascending: false });
@@ -268,18 +298,72 @@ export default function MyPage() {
                 {orders.map((order) => {
                   const cycle = order.cycle || {};
                   const isDone = order.payment_status === 'DONE';
+                  const isCancelled = order.payment_status === 'CANCELLED';
+                  const isFailed = order.payment_status === 'FAILED';
                   const activeBooksCount = (order.book_orders || [])
                     .filter((bo: any) => bo.order_status !== '주문취소')
                     .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
                   const maxCount = cycle.max_book_count || 4;
                   const hasSelectedBooks = activeBooksCount >= maxCount;
+                  const hasActiveBookOrders = activeBooksCount > 0;
                   
                   const now = new Date();
                   const orderStart = cycle.book_order_start_date ? new Date(cycle.book_order_start_date) : new Date('2000-01-01');
                   const orderEnd = cycle.book_order_end_date ? new Date(cycle.book_order_end_date) : new Date('2099-12-31');
+                  const subEnd = cycle.subscription_end_date ? new Date(cycle.subscription_end_date) : new Date('2099-12-31');
                   const isOrderAllowed = (now >= orderStart && now <= orderEnd && cycle.status !== 'closed');
-                  const cycleName = cycle.name || cycle.label || order.cycle_id;
+                  const cycleName = cycle.name || cycle.label || '구독권'; // FAILED, CANCELLED doesn't show cycle_id
                   const statusUI = getStatusDisplay(order, isOrderAllowed);
+                  
+                  const isRefundable = isDone && !!order.cycle_id && now <= subEnd && now < orderStart && cycle.status !== 'closed' && !hasActiveBookOrders;
+
+                  if (isCancelled) {
+                    return (
+                      <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              {new Date(order.created_at).toLocaleDateString('ko-KR')} · 주문번호: {order.payment_order_id}
+                            </span>
+                            <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>구독권 결제 취소 내역</h3>
+                          </div>
+                          <div>
+                            <span style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: statusUI.bg, color: statusUI.color }}>
+                              {statusUI.label}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ padding: '16px', background: '#fef2f2', borderRadius: '12px', border: '1px solid #fee2e2' }}>
+                          <p style={{ fontSize: '0.85rem', color: '#b91c1c', margin: 0 }}>해당 결제가 취소되어 전액 환불 처리되었습니다.</p>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', fontSize: '0.9rem' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>결제 금액&nbsp;&nbsp;</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: '1.05rem', textDecoration: 'line-through' }}>{(order.total_amount || 45000).toLocaleString()}원</span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (isFailed) {
+                    return (
+                      <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              {new Date(order.created_at).toLocaleDateString('ko-KR')} · 주문번호: {order.payment_order_id}
+                            </span>
+                            <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>결제 실패 내역</h3>
+                          </div>
+                          <div>
+                            <span style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: statusUI.bg, color: statusUI.color }}>
+                              {statusUI.label}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                   <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     {/* 주문 헤더 */}
@@ -303,6 +387,14 @@ export default function MyPage() {
                             도서 선택하기
                           </Link>
                         )}
+                        {isRefundable && (
+                          <button 
+                            onClick={() => setCancelingOrderId(order.id)}
+                            style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: '#f3f4f6', color: '#4b5563', border: 'none', cursor: 'pointer' }}
+                          >
+                            구독 취소
+                          </button>
+                        )}
                       </div>
                       </div>
                       
@@ -313,6 +405,19 @@ export default function MyPage() {
                             {orderStart.getFullYear()}년 {orderStart.getMonth() + 1}월부터 웰컴키트가 발송되며,<br/>
                             도서 신청 순서에 따라 순차 배송됩니다.
                           </p>
+                        </div>
+                      )}
+
+                      {isDone && !isRefundable && (
+                        <div style={{ padding: '16px', background: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                          <p style={{ fontSize: '0.85rem', color: '#92400e', lineHeight: 1.6, margin: 0, flex: 1 }}>
+                            도서 신청 기간이 시작된 이후에는 마이페이지에서 직접 구독을 취소할 수 없습니다.<br/>
+                            웰컴키트 및 도서 발송이 진행될 수 있으므로, 환불을 원하시는 경우 1:1 문의를 통해 요청해주세요.<br/>
+                            발송된 웰컴키트·도서 비용과 배송비 등이 환불금에서 차감될 수 있습니다.
+                          </p>
+                          <Link href="/inquiry" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600, background: '#fff', color: '#92400e', border: '1px solid #fcd34d', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                            1:1 환불 문의
+                          </Link>
                         </div>
                       )}
                       
@@ -363,7 +468,7 @@ export default function MyPage() {
           </>
         )}
 
-        {/* 탭 3: 활동내역 */}
+{/* 탭 3: 활동내역 */}
         {activeTab === 'activity' && (
           <div>
             {/* 서브탭 */}
@@ -602,6 +707,36 @@ export default function MyPage() {
               setAddress(data.address);
               setIsPostcodeOpen(false);
             }} />
+          </div>
+        </div>
+      )}
+      {/* 취소 모달 */}
+      {cancelingOrderId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '32px', width: 'min(400px, 90vw)', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px', color: '#111827' }}>구독 결제 취소</h3>
+            <p style={{ fontSize: '0.9rem', color: '#4b5563', lineHeight: 1.6, marginBottom: '24px' }}>
+              구독을 취소하면 결제금액 45,000원이 전액 취소되며,<br/>
+              해당 기수의 도서 신청 권한도 사라집니다.<br/><br/>
+              결제 취소 후에는 되돌릴 수 없습니다.<br/>
+              <strong>구독을 취소하시겠습니까?</strong>
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setCancelingOrderId(null)} 
+                disabled={isCancelProcessing}
+                style={{ flex: 1, padding: '12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, cursor: isCancelProcessing ? 'not-allowed' : 'pointer' }}
+              >
+                돌아가기
+              </button>
+              <button 
+                onClick={() => handleCancelOrder(cancelingOrderId)} 
+                disabled={isCancelProcessing}
+                style={{ flex: 1, padding: '12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, cursor: isCancelProcessing ? 'not-allowed' : 'pointer', opacity: isCancelProcessing ? 0.7 : 1 }}
+              >
+                {isCancelProcessing ? '취소 처리 중...' : '구독 취소하기'}
+              </button>
+            </div>
           </div>
         </div>
       )}
