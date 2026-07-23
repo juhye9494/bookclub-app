@@ -31,6 +31,7 @@ export default function PaymentPage() {
   }, []);
 
   const handlePayment = async () => {
+    let token: string | undefined;
     if (!selectedCycleId) {
       alert('구독할 기수를 선택해주세요.');
       return;

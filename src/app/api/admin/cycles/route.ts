@@ -48,9 +48,10 @@ export async function POST(req: Request) {
     if (userError || !user || !isAdmin(user.email)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await req.json();
-    const { id, name, subscription_start_date, subscription_end_date, book_order_start_date, book_order_end_date, shipping_start_date, operation_end_date, max_book_count, status } = body;
+    const { name, subscription_start_date, subscription_end_date, book_order_start_date, book_order_end_date, shipping_start_date, operation_end_date, max_book_count, status } = body;
+    let { id } = body;
 
-    if (!id || !name || !subscription_start_date || !subscription_end_date || !book_order_start_date || !book_order_end_date || !shipping_start_date || !operation_end_date) {
+    if (!name || !subscription_start_date || !subscription_end_date || !book_order_start_date || !book_order_end_date || !shipping_start_date || !operation_end_date) {
       return NextResponse.json({ error: '필수 값이 누락되었습니다.' }, { status: 400 });
     }
 
@@ -58,6 +59,27 @@ export async function POST(req: Request) {
     if (new Date(book_order_start_date) >= new Date(book_order_end_date)) return NextResponse.json({ error: '도서 주문 시작일은 종료일보다 이전이어야 합니다.' }, { status: 400 });
     if (new Date(shipping_start_date) > new Date(operation_end_date)) return NextResponse.json({ error: '배송 시작일은 운영 종료일 이전이어야 합니다.' }, { status: 400 });
     if (max_book_count < 1) return NextResponse.json({ error: '최대 도서 권수는 1 이상이어야 합니다.' }, { status: 400 });
+
+        if (!id) {
+      const year = new Date(subscription_start_date).getFullYear() || new Date().getFullYear();
+      const prefix = `cycle-${year}-h`;
+      const { data: existingCycles } = await supabaseAdmin
+        .from('cycles')
+        .select('id')
+        .like('id', `${prefix}%`);
+      
+      let maxNum = 0;
+      if (existingCycles) {
+        existingCycles.forEach(c => {
+          const match = c.id.match(new RegExp(`${prefix}(\\d+)`));
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNum) maxNum = num;
+          }
+        });
+      }
+      id = `${prefix}${maxNum + 1}`;
+    }
 
     const { data: existing } = await supabaseAdmin.from('cycles').select('id').eq('id', id).single();
     if (existing) return NextResponse.json({ error: '이미 존재하는 기수 ID입니다.' }, { status: 400 });

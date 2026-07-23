@@ -165,7 +165,7 @@ export default function ShippingManager() {
   const downloadCSV = () => {
     const target = checkedIds.size > 0 ? orders.filter(o => checkedIds.has(o.id)) : filteredOrders;
     if (target.length === 0) return;
-    const headers = ['주문일자', '주문번호', '고객명', '이메일', '연락처', '배송주소', '상태', '송장번호', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3'];
+    const headers = ['주문일자', '주문번호', '고객명', '이메일', '연락처', '배송주소', '상태', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3'];
     const rows = target.map(order => {
       const books = order.book_order_items || [];
       return [
@@ -254,16 +254,17 @@ export default function ShippingManager() {
             <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
               
               <th style={thStyle}>주문일</th>
-              <th style={thStyle}>고객</th>
+              <th style={thStyle}>고객명</th>
+              <th style={thStyle}>이메일</th>
+              <th style={thStyle}>연락처</th>
               <th style={thStyle}>배송지</th>
               <th style={thStyle}>선택 도서</th>
-              <th style={thStyle}>송장번호</th>
               <th style={thStyle}>상태</th>
             </tr>
           </thead>
           <tbody>
             {filteredOrders.length === 0 ? (
-              <tr><td colSpan={6} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' }}>
+              <tr><td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' }}>
                 {filter === 'all' ? '주문 내역이 없습니다.' : `'${filter}' 상태의 주문이 없습니다.`}
               </td></tr>
             ) : (
@@ -274,10 +275,14 @@ export default function ShippingManager() {
                     <div style={{ fontWeight: 600 }}>{new Date(order.created_at).toLocaleDateString()}</div>
                     <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{new Date(order.created_at).toLocaleTimeString()}</div>
                   </td>
-                  <td style={{ ...tdStyle, minWidth: '120px' }}>
+                  <td style={{ ...tdStyle, minWidth: '100px' }}>
                     <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#111' }}>{order.user_name}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{order.user_email}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{order.user_phone}</div>
+                  </td>
+                  <td style={{ ...tdStyle, minWidth: '120px', fontSize: '0.75rem', color: '#4b5563' }}>
+                    {order.user_email}
+                  </td>
+                  <td style={{ ...tdStyle, minWidth: '110px', fontSize: '0.75rem', color: '#4b5563' }}>
+                    {order.user_phone}
                   </td>
                   <td style={{ ...tdStyle, fontSize: '0.78rem', color: '#6b7280', maxWidth: '180px' }}>
                     {order.user_address || '-'}
@@ -291,29 +296,7 @@ export default function ShippingManager() {
                     ))}
                     {(!order.book_order_items || order.book_order_items.length === 0) && <span style={{ color: '#d1d5db' }}>-</span>}
                   </td>
-                  <td style={{ ...tdStyle, minWidth: '140px' }}>
-                    {editingTracking === order.id ? (
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <input
-                          value={trackingInput}
-                          onChange={(e) => setTrackingInput(e.target.value)}
-                          placeholder="송장번호 입력"
-                          style={{ width: '100px', padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '0.78rem' }}
-                          onKeyDown={(e) => e.key === 'Enter' && saveTracking(order.id)}
-                          autoFocus
-                        />
-                        <button onClick={() => saveTracking(order.id)} style={{ padding: '4px 8px', background: '#1a1815', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer' }}>저장</button>
-                        <button onClick={() => setEditingTracking(null)} style={{ padding: '4px 8px', background: '#f3f4f6', border: 'none', borderRadius: '4px', fontSize: '0.72rem', cursor: 'pointer' }}>취소</button>
-                      </div>
-                    ) : (
-                      <div
-                        onClick={() => { setEditingTracking(order.id); setTrackingInput(order.tracking_number || ''); }}
-                        style={{ cursor: 'pointer', fontSize: '0.8rem', color: order.tracking_number ? '#374151' : '#d1d5db', padding: '4px 0' }}
-                      >
-                        {order.tracking_number || '+ 송장번호 입력'}
-                      </div>
-                    )}
-                  </td>
+                  
                   <td style={{ ...tdStyle }}>
                     <select
                       value={order.order_status}

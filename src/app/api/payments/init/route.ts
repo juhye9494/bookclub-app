@@ -85,6 +85,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '이미 해당 기수의 구독을 완료하셨습니다.' }, { status: 409 });
     }
 
+    // 2.5 Cleanup old PENDING orders for this user and cycle
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    await supabaseAdmin
+      .from('orders')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('cycle_id', cycle_id)
+      .eq('payment_status', 'PENDING')
+      .lt('created_at', thirtyMinutesAgo);
+
     // 3. Create PENDING order
     // id (UUID) 필드 생략: DB gen_random_uuid()에 의존
     // status 필드 생략: 운영 DB에 없는 커스텀 필드 제거

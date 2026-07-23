@@ -266,9 +266,14 @@ export default function MyPage() {
                   const activeBooksCount = (order.book_orders || [])
                     .filter((bo: any) => bo.order_status !== '주문취소')
                     .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
-                  const cycle = cycles.find(c => c.id === order.cycle_id);
-                  const maxCount = cycle?.max_book_count || 4;
+                  const cycle = order.cycles || {};
+                  const maxCount = cycle.max_book_count || 4;
                   const hasSelectedBooks = activeBooksCount >= maxCount;
+                  
+                  const now = new Date();
+                  const orderStart = cycle.book_order_start_date ? new Date(cycle.book_order_start_date) : new Date('2000-01-01');
+                  const isOrderAllowed = now >= orderStart;
+                  const cycleName = cycle.name || cycle.label || order.cycle_id;
                   return (
                   <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     {/* 주문 헤더 */}
@@ -277,7 +282,7 @@ export default function MyPage() {
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           {new Date(order.created_at).toLocaleDateString('ko-KR')} · 주문번호: {order.payment_order_id}
                         </span>
-                        <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>{cycles.find(c => c.id === order.cycle_id)?.name || order.cycle_id} 구독권</h3>
+                        <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>{cycleName} 구독권</h3>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{
