@@ -11,6 +11,7 @@ export default function MyPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
+  const [cycles, setCycles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('orders');
   const [activitySubTab, setActivitySubTab] = useState<'groups' | 'events'>('groups');
@@ -66,13 +67,25 @@ export default function MyPage() {
         setAddress(fullAddress);
       }
 
-      const { data } = await supabase
+      const { data: doneOrders } = await supabase
         .from('orders')
         .select('*')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });
 
-      if (data) setOrders(data);
+      if (doneOrders) {
+        const { data: bOrders } = await supabase
+          .from('book_orders')
+          .select('*, book_order_items(*)')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
+
+        const combined = doneOrders.map(o => ({
+          ...o,
+          book_orders: bOrders ? bOrders.filter((bo: any) => bo.subscription_order_id === o.id) : []
+        }));
+        setOrders(combined);
+      }
 
       // 활동내역 가져오기
       const { data: memberParts, error: partsErr } = await supabase
@@ -190,19 +203,17 @@ export default function MyPage() {
 
   const getStatusDisplay = (order: any) => {
     const ps = order.payment_status || 'PENDING';
-    const os = order.order_status || '배송준비중';
     
     if (ps === 'PENDING') return { label: '결제 미완료', bg: '#fef3c7', color: '#d97706' };
     if (ps === 'CANCELED') return { label: '결제취소', bg: '#fee2e2', color: '#dc2626' };
     if (ps === 'FAILED') return { label: '결제실패', bg: '#fee2e2', color: '#dc2626' };
     
-    // ps === 'DONE' 인 경우
-    const hasBooks = order.selected_books && order.selected_books.length === 4;
-    
-    if (os === '배송완료') return { label: '배송완료', bg: '#ecfdf5', color: '#059669' };
-    if (os === '배송중') return { label: '배송중', bg: '#eef5ff', color: '#3b82f6' };
-    
-    return { label: hasBooks ? '도서 선택 완료' : '도서 선택 대기', bg: '#ecfdf5', color: '#059669' };
+    const activeBooksCount = (order.book_orders || [])
+      .filter((bo: any) => bo.order_status !== '주문취소')
+      .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
+      
+    if (activeBooksCount === 4) return { label: '도서 선택 완료', bg: '#ecfdf5', color: '#059669' };
+    return { label: `도서 선택 대기 (${activeBooksCount}/4)`, bg: '#eef5ff', color: '#3b82f6' };
   };
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center', fontFamily: 'var(--sans)' }}>로딩중...</div>;
@@ -252,7 +263,12 @@ export default function MyPage() {
                 {orders.map((order) => {
                   const statusUI = getStatusDisplay(order);
                   const isDone = order.payment_status === 'DONE';
-                  const hasSelectedBooks = order.selected_books && order.selected_books.length > 0;
+                  const activeBooksCount = (order.book_orders || [])
+                    .filter((bo: any) => bo.order_status !== '주문취소')
+                    .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
+                  const cycle = cycles.find(c => c.id === order.cycle_id);
+                  const maxCount = cycle?.max_book_count || 4;
+                  const hasSelectedBooks = activeBooksCount >= maxCount;
                   return (
                   <div key={order.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     {/* 주문 헤더 */}
@@ -261,7 +277,7 @@ export default function MyPage() {
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           {new Date(order.created_at).toLocaleDateString('ko-KR')} · 주문번호: {order.payment_order_id}
                         </span>
-                        <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>한경 언더라인 독서클럽 3개월권</h3>
+                        <h3 style={{ fontSize: '1.1rem', marginTop: '4px' }}>{cycles.find(c => c.id === order.cycle_id)?.name || order.cycle_id} 구독권</h3>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{
@@ -272,28 +288,31 @@ export default function MyPage() {
                           {statusUI.label}
                         </span>
                         {isDone && !hasSelectedBooks && (
-                          <Link href="/books" style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: 'var(--accent)', color: '#fff', textDecoration: 'none' }}>
+                          <Link href={{ pathname: '/books', query: { subOrderId: order.id } }} style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: 'var(--accent)', color: '#fff', textDecoration: 'none' }}>
                             도서 선택하기
                           </Link>
                         )}
                       </div>
                     </div>
 
-                    {/* 선택 도서 */}
                     <div style={{ marginBottom: '20px' }}>
-                      <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>선택 도서</h4>
-                      {!hasSelectedBooks ? (
-                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>아직 도서를 선택하지 않았습니다.</p>
+                      <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>도서 주문 현황</h4>
+                      {(!order.book_orders || order.book_orders.length === 0) ? (
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>아직 신청된 도서 주문이 없습니다.</p>
                       ) : (
-                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                          {(order.selected_books || []).map((book: any, idx: number) => (
-                            <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: '1 1 200px', minWidth: '180px' }}>
-                              <div style={{ width: '48px', height: '66px', background: '#f3f4f6', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border)' }}>
-                                {book.img || book.cover ? <img src={book.img || book.cover} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {order.book_orders.map((bo: any) => (
+                            <div key={bo.id} style={{ padding: '16px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>주문일: {new Date(bo.created_at).toLocaleDateString('ko-KR')}</span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: bo.order_status === '주문취소' ? '#ef4444' : 'var(--accent)' }}>{bo.order_status}</span>
                               </div>
-                              <div>
-                                <p style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.3 }}>{book.title}</p>
-                                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '3px' }}>{book.author}</p>
+                              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                {(bo.book_order_items || []).map((item: any) => (
+                                  <div key={item.id} style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#fff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{item.book_title_snapshot}</span>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           ))}

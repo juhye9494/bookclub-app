@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { isAdmin } from '@/utils/admin';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ContentManager from './ContentManager';
@@ -9,6 +10,7 @@ import InsightManager from './InsightManager';
 import MembersManager from './MembersManager';
 import ShippingManager from './ShippingManager';
 import InquiryManager from './InquiryManager';
+import CyclesManager from './CyclesManager';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -24,9 +26,7 @@ export default function AdminPage() {
         return;
       }
 
-      // 관리자 이메일 확인
-      const adminEmails = ['xn940@naver.com', 'ess0317@hankyung.com', 'parkjh@hankyung.com', 'lygin729@hankyung.com', 'mama0707@hankyung.com', 'pdh0109@hankyung.com', 'shchoi@hankyung.com', 'mwd101@hankyung.com', 'sj.flyme@gmail.com'];
-      if (!adminEmails.includes(session.user.email || '')) {
+      if (!isAdmin(session.user.email)) {
         alert("접근 권한이 없습니다. 관리자 계정으로 로그인해주세요.");
         router.push('/');
         return;
@@ -38,10 +38,8 @@ export default function AdminPage() {
 
     checkAdminAndFetchData();
 
-    // Listen for auth state changes (e.g. logging out from the global header)
-    const adminEmails = ['xn940@naver.com', 'ess0317@hankyung.com', 'parkjh@hankyung.com', 'lygin729@hankyung.com', 'mama0707@hankyung.com', 'pdh0109@hankyung.com', 'shchoi@hankyung.com', 'mwd101@hankyung.com', 'sj.flyme@gmail.com'];
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session || !adminEmails.includes(session.user?.email || '')) {
+      if (event === 'SIGNED_OUT' || !session || !isAdmin(session.user?.email)) {
         router.push('/');
       }
     });
@@ -51,7 +49,7 @@ export default function AdminPage() {
     };
   }, [router]);
 
-  const [activeTab, setActiveTab] = useState('shipping'); // 'shipping', 'content', 'members'
+  const [activeTab, setActiveTab] = useState('shipping');
 
   if (loading) return <div style={{ padding: '100px', textAlign: 'center' }}>데이터를 불러오는 중...</div>;
 
@@ -63,74 +61,39 @@ export default function AdminPage() {
         </h1>
         
         {/* TABS */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e5e7eb', marginBottom: '32px' }}>
-          <button 
-            onClick={() => setActiveTab('shipping')} 
-            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'shipping' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'shipping' ? 700 : 500, color: activeTab === 'shipping' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
-          >
-            📦 발송 관리
-          </button>
-          <button 
-            onClick={() => setActiveTab('content')} 
-            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'content' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'content' ? 700 : 500, color: activeTab === 'content' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
-          >
-            📚 콘텐츠(도서/시즌) 관리
-          </button>
-          <button 
-            onClick={() => setActiveTab('events')} 
-            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'events' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'events' ? 700 : 500, color: activeTab === 'events' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
-          >
-            📅 이벤트 관리
-          </button>
-          <button 
-            onClick={() => setActiveTab('insights')} 
-            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'insights' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'insights' ? 700 : 500, color: activeTab === 'insights' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
-          >
-            📝 인사이트 관리
-          </button>
-          <button 
-            onClick={() => setActiveTab('members')} 
-            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'members' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'members' ? 700 : 500, color: activeTab === 'members' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
-          >
-            👥 회원 관리
-          </button>
-          <button 
-            onClick={() => setActiveTab('inquiry')} 
-            style={{ padding: '12px 24px', background: 'none', border: 'none', borderBottom: activeTab === 'inquiry' ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: '-2px', fontWeight: activeTab === 'inquiry' ? 700 : 500, color: activeTab === 'inquiry' ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem' }}
-          >
-            💬 1:1 문의
-          </button>
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e5e7eb', marginBottom: '32px', overflowX: 'auto' }}>
+          {['shipping', 'cycles', 'content', 'members', 'events', 'insights', 'inquiries'].map((tab) => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab)} 
+              style={{ 
+                padding: '12px 16px', background: 'none', border: 'none', 
+                borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent', 
+                marginBottom: '-2px', fontWeight: activeTab === tab ? 700 : 500, 
+                color: activeTab === tab ? 'var(--text)' : '#6b7280', cursor: 'pointer', fontSize: '1rem', whiteSpace: 'nowrap'
+              }}
+            >
+              {tab === 'shipping' && '책 발송 관리'}
+              {tab === 'cycles' && '기수 관리'}
+              {tab === 'content' && '기수별 도서 관리'}
+              {tab === 'members' && '회원 및 배송 관리'}
+              {tab === 'events' && '이벤트 관리'}
+              {tab === 'insights' && '인사이트 관리'}
+              {tab === 'inquiries' && '고객 센터 문의'}
+            </button>
+          ))}
         </div>
 
-        {/* TAB 1: SHIPPING */}
-        {activeTab === 'shipping' && (
-          <ShippingManager />
-        )}
-
-        {/* TAB 2: CONTENT */}
-        {activeTab === 'content' && (
-          <ContentManager />
-        )}
-
-        {/* TAB 4: EVENTS */}
-        {activeTab === 'events' && (
-          <EventManager />
-        )}
-
-        {/* TAB: INSIGHTS */}
-        {activeTab === 'insights' && (
-          <InsightManager />
-        )}
-
-        {/* TAB 3: MEMBERS */}
-        {activeTab === 'members' && (
-          <MembersManager />
-        )}
-
-        {/* TAB: INQUIRY */}
-        {activeTab === 'inquiry' && (
-          <InquiryManager />
-        )}
+        {/* CONTENT */}
+        <div style={{ background: '#fff', borderRadius: '16px', padding: '32px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+          {activeTab === 'shipping' && <ShippingManager />}
+          {activeTab === 'cycles' && <CyclesManager />}
+          {activeTab === 'content' && <ContentManager />}
+          {activeTab === 'members' && <MembersManager />}
+          {activeTab === 'events' && <EventManager />}
+          {activeTab === 'insights' && <InsightManager />}
+          {activeTab === 'inquiries' && <InquiryManager />}
+        </div>
       </main>
     </div>
   );

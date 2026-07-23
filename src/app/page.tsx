@@ -46,59 +46,7 @@ export default function Home() {
       window.dispatchEvent(new CustomEvent('open-login'));
       return;
     }
-    if (user.user_metadata?.has_paid) {
-      router.push('/books');
-      return;
-    }
-
-    try {
-      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_oEjb0gm23P55WYjKGQpnVpGwBJn5';
-      if (typeof (window as any).TossPayments === 'undefined') {
-        alert('결제 라이브러리가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
-        return;
-      }
-      
-      // 1. 서버에 주문 초기화 (PENDING) 및 고유 orderId 발급 요청
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      
-      const initRes = await fetch('/api/payments/init', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify({ books: [] }),
-      });
-
-      const initData = await initRes.json();
-      if (!initRes.ok || !initData.orderId) {
-        alert(initData.error || '주문 생성에 실패했습니다. 다시 시도해주세요.');
-        return;
-      }
-
-      const tossPayments = await (window as any).TossPayments(clientKey);
-      const payment = tossPayments.payment({ customerKey: user.id });
-      
-      await payment.requestPayment({
-        method: 'CARD',
-        amount: { currency: 'KRW', value: initData.amount },
-        orderId: initData.orderId,
-        orderName: '한경 언더라인 독서클럽 3개월권',
-        successUrl: `${window.location.origin}/success`,
-        failUrl: `${window.location.origin}/fail`,
-        customerEmail: user.email || '',
-        customerName: user.user_metadata?.name || '구독자',
-        customerMobilePhone: (user.user_metadata?.phone || '').replace(/-/g, ''),
-      });
-    } catch (err: any) {
-      if (err?.code === 'PAY_PROCESS_CANCELED' || err?.code === 'USER_CANCEL') {
-        alert('결제가 완료되지 않았습니다.\n다시 시도해주세요.');
-      } else {
-        console.error(err);
-        alert('결제창을 띄우는 데 실패했습니다. 잠시 후 다시 시도해주세요.');
-      }
-    }
+    router.push('/payment');
   };
 
   useEffect(() => {

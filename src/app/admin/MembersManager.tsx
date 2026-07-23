@@ -15,21 +15,32 @@ interface Profile {
 interface Order {
   id: string;
   user_id: string;
-  user_email: string;
-  user_name: string;
-  selected_books: any[];
+  cycle_id: string;
   total_amount: number;
+  payment_status: string;
+  created_at: string;
+}
+
+interface BookOrder {
+  id: string;
+  user_id: string;
+  cycle_id: string;
   order_status: string;
   created_at: string;
+  book_order_items: { id: string; book_title_snapshot: string; }[];
 }
 
 export default function MembersManager() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [bookOrders, setBookOrders] = useState<BookOrder[]>([]);
+  const [cycles, setCycles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'subscribed' | 'free'>('all');
+  const [selectedCycleId, setSelectedCycleId] = useState<string>('all');
   const [selectedMember, setSelectedMember] = useState<Profile | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -37,264 +48,224 @@ export default function MembersManager() {
 
   async function loadData() {
     setLoading(true);
-    const [profilesRes, ordersRes] = await Promise.all([
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Fetch cycles using admin API
+    const cyclesRes = await fetch('/api/admin/cycles', {
+      headers: { 'Authorization': `Bearer ${session?.access_token}` }
+    });
+    const cyclesData = await cyclesRes.json();
+    const cyclesList = cyclesData.cycles || [];
+    setCycles(cyclesList);
+
+    const [profilesRes, ordersRes, bookOrdersRes] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('orders').select('*').order('created_at', { ascending: false })
+      supabase.from('orders').select('*').order('created_at', { ascending: false }),
+      supabase.from('book_orders').select('*, book_order_items(*)').order('created_at', { ascending: false })
     ]);
     if (profilesRes.data) setProfiles(profilesRes.data);
     if (ordersRes.data) setOrders(ordersRes.data);
+    if (bookOrdersRes.data) setBookOrders(bookOrdersRes.data);
     setLoading(false);
   }
 
-  // 회원별 주문 내역 가져오기
   function getOrdersForMember(userId: string) {
-    return orders.filter(o => o.user_id === userId);
+    return orders.filter(o => o.user_id === userId && o.payment_status === 'DONE' && (selectedCycleId === 'all' || o.cycle_id === selectedCycleId));
+  }
+  
+  function getBookOrdersForMember(userId: string) {
+    return bookOrders.filter(bo => bo.user_id === userId && (selectedCycleId === 'all' || bo.cycle_id === selectedCycleId));
   }
 
-  // 구독 여부 확인
   function isSubscribed(userId: string) {
-    return orders.some(o => o.user_id === userId);
+    return orders.some(o => o.user_id === userId && o.payment_status === 'DONE' && (selectedCycleId === 'all' || o.cycle_id === selectedCycleId));
   }
 
-  // 필터링 + 검색
   const filteredProfiles = profiles.filter(p => {
     const matchSearch = !search || 
       (p.name || '').toLowerCase().includes(search.toLowerCase()) ||
       (p.email || '').toLowerCase().includes(search.toLowerCase()) ||
       (p.phone || '').includes(search);
-    
-    const matchFilter = filter === 'all' ||
-      (filter === 'subscribed' && isSubscribed(p.id)) ||
-      (filter === 'free' && !isSubscribed(p.id));
-    
+
+    const isSub = isSubscribed(p.id);
+    const matchFilter = filter === 'all' || (filter === 'subscribed' && isSub) || (filter === 'free' && !isSub);
+
     return matchSearch && matchFilter;
   });
 
-  const totalMembers = profiles.length;
-  const subscribedMembers = profiles.filter(p => isSubscribed(p.id)).length;
-  const freeMembers = totalMembers - subscribedMembers;
+  const handleStatusChange = async (bookOrderId: string, newStatus: string, cycleId: string) => {
+    if (!confirm(`상태를 '${newStatus}'(으)로 변경하시겠습니까?`)) return;
 
-  // CSV 다운로드
-  const downloadCSV = () => {
-    if (filteredProfiles.length === 0) return;
-    const headers = ['가입일', '이름', '이메일', '연락처', '주소', '구독상태', '주문수'];
-    const rows = filteredProfiles.map(p => {
-      const memberOrders = getOrdersForMember(p.id);
-      return [
-        new Date(p.created_at).toLocaleDateString(),
-        p.name || '-',
-        p.email || '-',
-        p.phone || '-',
-        `"${p.address || '-'}"`,
-        isSubscribed(p.id) ? '구독회원' : '무료회원',
-        memberOrders.length.toString()
-      ].join(',');
-    });
-    const csv = "\uFEFF" + [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.setAttribute('download', `회원목록_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    setUpdatingId(bookOrderId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/admin/book-orders/${bookOrderId}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || '상태 변경 실패');
+      } else {
+        alert('상태가 변경되었습니다.');
+        loadData();
+      }
+    } catch (e) {
+      alert('요청 중 오류가 발생했습니다.');
+    }
+    setUpdatingId(null);
   };
 
-  if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>회원 데이터를 불러오는 중...</div>;
+  if (loading) return <div>로딩 중...</div>;
 
   return (
     <div>
-      {/* 통계 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '8px' }}>전체 회원</p>
-          <p style={{ fontSize: '2rem', fontWeight: 700, color: '#111' }}>{totalMembers}<span style={{ fontSize: '0.9rem', color: '#999', fontWeight: 400 }}>명</span></p>
-        </div>
-        <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '8px' }}>구독 회원</p>
-          <p style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--accent)' }}>{subscribedMembers}<span style={{ fontSize: '0.9rem', color: '#999', fontWeight: 400 }}>명</span></p>
-        </div>
-        <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '8px' }}>미구독 회원</p>
-          <p style={{ fontSize: '2rem', fontWeight: 700, color: '#6b7280' }}>{freeMembers}<span style={{ fontSize: '0.9rem', color: '#999', fontWeight: 400 }}>명</span></p>
-        </div>
-      </div>
-
-      {/* 검색 & 필터 & 다운로드 */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <input
-          type="text"
-          placeholder="이름, 이메일, 연락처 검색..."
-          value={search}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center' }}>
+        <input 
+          type="text" 
+          placeholder="이름, 이메일, 전화번호 검색" 
+          value={search} 
           onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, minWidth: '200px', padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.9rem', outline: 'none' }}
+          style={{ padding: '12px', width: '300px', border: '1px solid #d1d5db', borderRadius: '8px' }}
         />
-        <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', borderRadius: '8px', padding: '3px' }}>
-          {(['all', 'subscribed', 'free'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              style={{
-                padding: '7px 16px', border: 'none', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
-                background: filter === f ? '#fff' : 'transparent',
-                color: filter === f ? '#111' : '#6b7280',
-                boxShadow: filter === f ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-              }}
-            >
-              {f === 'all' ? '전체' : f === 'subscribed' ? '구독회원' : '미구독'}
-            </button>
-          ))}
-        </div>
-        <button onClick={downloadCSV} style={{ padding: '10px 20px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
-          📥 CSV 다운로드
-        </button>
-        <button onClick={loadData} style={{ padding: '10px 16px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
-          🔄 새로고침
-        </button>
+        <select value={filter} onChange={(e: any) => setFilter(e.target.value)} style={{ padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px' }}>
+          <option value="all">전체 회원</option>
+          <option value="subscribed">구독(결제) 회원</option>
+          <option value="free">미결제 회원</option>
+        </select>
+        <select value={selectedCycleId} onChange={(e: any) => setSelectedCycleId(e.target.value)} style={{ padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px' }}>
+          <option value="all">전체 기수</option>
+          {cycles.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
       </div>
 
-      {/* 회원 목록 테이블 */}
-      <div style={{ background: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-              <th style={{ padding: '14px 16px', fontSize: '0.82rem', color: '#6b7280', fontWeight: 600 }}>상태</th>
-              <th style={{ padding: '14px 16px', fontSize: '0.82rem', color: '#6b7280', fontWeight: 600 }}>이름</th>
-              <th style={{ padding: '14px 16px', fontSize: '0.82rem', color: '#6b7280', fontWeight: 600 }}>이메일</th>
-              <th style={{ padding: '14px 16px', fontSize: '0.82rem', color: '#6b7280', fontWeight: 600 }}>연락처</th>
-              <th style={{ padding: '14px 16px', fontSize: '0.82rem', color: '#6b7280', fontWeight: 600 }}>가입일</th>
-              <th style={{ padding: '14px 16px', fontSize: '0.82rem', color: '#6b7280', fontWeight: 600 }}>주문</th>
-              <th style={{ padding: '14px 16px', fontSize: '0.82rem', color: '#6b7280', fontWeight: 600 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProfiles.length === 0 ? (
+      {selectedCycleId !== 'all' && (() => {
+        const c = cycles.find(x => x.id === selectedCycleId);
+        if (c && new Date() < new Date(c.shipping_start_date)) {
+          return (
+            <div style={{ padding: '16px', background: '#fff3cd', color: '#856404', borderRadius: '8px', marginBottom: '24px' }}>
+              <strong>안내:</strong> {c.name} 도서는 {new Date(c.shipping_start_date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}부터 순차 배송할 수 있습니다. 그 전에는 '주문접수' 및 '주문취소'만 가능합니다.
+            </div>
+          );
+        }
+        return null;
+      })()}
+
+      <div style={{ display: 'grid', gridTemplateColumns: selectedMember ? '1fr 1fr' : '1fr', gap: '24px' }}>
+        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead style={{ background: '#f9fafb' }}>
               <tr>
-                <td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#9ca3af' }}>
-                  {search ? '검색 결과가 없습니다.' : '등록된 회원이 없습니다.'}
-                </td>
+                <th style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>이름</th>
+                <th style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>연락처</th>
+                <th style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>상태</th>
+                <th style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>가입일</th>
               </tr>
-            ) : (
-              filteredProfiles.map(p => {
-                const memberOrders = getOrdersForMember(p.id);
-                const subscribed = memberOrders.length > 0;
-                return (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #e5e7eb', transition: 'background 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                    <td style={{ padding: '14px 16px' }}>
-                      <span style={{
-                        display: 'inline-block', padding: '3px 10px', borderRadius: '100px', fontSize: '0.72rem', fontWeight: 700,
-                        background: subscribed ? '#fef3c7' : '#f3f4f6',
-                        color: subscribed ? '#92400e' : '#6b7280'
-                      }}>
-                        {subscribed ? '구독' : '무료'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 16px', fontSize: '0.9rem', fontWeight: 600, color: '#111' }}>
-                      {p.name || '-'}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: '#374151' }}>
-                      {p.email || '-'}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: '#6b7280' }}>
-                      {p.phone || '-'}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontSize: '0.82rem', color: '#9ca3af' }}>
-                      {new Date(p.created_at).toLocaleDateString()}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: '#374151' }}>
-                      {memberOrders.length > 0 ? `${memberOrders.length}건` : '-'}
-                    </td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <button
-                        onClick={() => setSelectedMember(p)}
-                        style={{ padding: '5px 12px', background: '#f3f4f6', border: 'none', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600, color: '#374151', cursor: 'pointer' }}
-                      >
-                        상세
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredProfiles.map(p => (
+                <tr key={p.id} onClick={() => setSelectedMember(p)} style={{ cursor: 'pointer', background: selectedMember?.id === p.id ? '#f3f4f6' : 'transparent' }}>
+                  <td style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
+                    <div style={{ fontWeight: 600 }}>{p.name || '이름없음'}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{p.email}</div>
+                  </td>
+                  <td style={{ padding: '16px', borderBottom: '1px solid #e5e7eb', fontSize: '0.9rem' }}>{p.phone || '-'}</td>
+                  <td style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
+                    {isSubscribed(p.id) ? 
+                      <span style={{ background: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>구독중</span> : 
+                      <span style={{ background: '#f3f4f6', color: '#4b5563', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>미구독</span>}
+                  </td>
+                  <td style={{ padding: '16px', borderBottom: '1px solid #e5e7eb', fontSize: '0.9rem', color: '#6b7280' }}>
+                    {new Date(p.created_at).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}
+                  </td>
+                </tr>
+              ))}
+              {filteredProfiles.length === 0 && <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>검색 결과가 없습니다.</td></tr>}
+            </tbody>
+          </table>
+        </div>
 
-      <p style={{ marginTop: '12px', fontSize: '0.78rem', color: '#9ca3af' }}>
-        총 {filteredProfiles.length}명 표시 / 전체 {profiles.length}명
-      </p>
-
-      {/* 회원 상세 모달 */}
-      {selectedMember && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={e => { if (e.target === e.currentTarget) setSelectedMember(null); }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '36px', width: 'min(560px, 92vw)', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
+        {selectedMember && (
+          <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '1.3rem', fontWeight: 700 }}>회원 상세 정보</h3>
-              <button onClick={() => setSelectedMember(null)} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '32px', height: '32px', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>회원 상세 정보</h2>
+              <button onClick={() => setSelectedMember(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '12px', marginBottom: '32px', fontSize: '0.95rem' }}>
+              <div style={{ color: '#6b7280' }}>이름</div><div>{selectedMember.name}</div>
+              <div style={{ color: '#6b7280' }}>이메일</div><div>{selectedMember.email}</div>
+              <div style={{ color: '#6b7280' }}>연락처</div><div>{selectedMember.phone}</div>
+              <div style={{ color: '#6b7280' }}>배송지</div><div>{selectedMember.address || '미입력'}</div>
             </div>
 
-            {/* 기본 정보 */}
-            <div style={{ background: '#f9fafb', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>기본 정보</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '2px' }}>이름</p>
-                  <p style={{ fontSize: '0.92rem', fontWeight: 600 }}>{selectedMember.name || '-'}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '2px' }}>이메일</p>
-                  <p style={{ fontSize: '0.92rem' }}>{selectedMember.email || '-'}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '2px' }}>연락처</p>
-                  <p style={{ fontSize: '0.92rem' }}>{selectedMember.phone || '-'}</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '2px' }}>가입일</p>
-                  <p style={{ fontSize: '0.92rem' }}>{new Date(selectedMember.created_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-              <div style={{ marginTop: '12px' }}>
-                <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '2px' }}>배송 주소</p>
-                <p style={{ fontSize: '0.92rem' }}>{selectedMember.address || '미입력'}</p>
-              </div>
-            </div>
-
-            {/* 주문 내역 */}
-            <div>
-              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>주문 내역</p>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>구독 결제 내역 (DONE)</h3>
+            <div style={{ marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {getOrdersForMember(selectedMember.id).length === 0 ? (
-                <p style={{ fontSize: '0.88rem', color: '#9ca3af', padding: '20px', textAlign: 'center', background: '#f9fafb', borderRadius: '12px' }}>주문 내역이 없습니다.</p>
+                <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>해당 기수의 결제 내역이 없습니다.</div>
               ) : (
-                getOrdersForMember(selectedMember.id).map(order => (
-                  <div key={order.id} style={{ background: '#f9fafb', borderRadius: '12px', padding: '16px', marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{new Date(order.created_at).toLocaleDateString()}</span>
-                      <span style={{
-                        padding: '3px 10px', borderRadius: '100px', fontSize: '0.72rem', fontWeight: 700,
-                        background: order.order_status === '배송완료' ? '#d1fae5' : order.order_status === '배송중' ? '#dbeafe' : '#fef3c7',
-                        color: order.order_status === '배송완료' ? '#065f46' : order.order_status === '배송중' ? '#1e40af' : '#92400e'
-                      }}>
-                        {order.order_status}
-                      </span>
+                getOrdersForMember(selectedMember.id).map(o => (
+                  <div key={o.id} style={{ padding: '16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontWeight: 600 }}>{cycles.find(c => c.id === o.cycle_id)?.name || o.cycle_id}</span>
+                      <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>{new Date(o.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</span>
                     </div>
-                    <div style={{ fontSize: '0.82rem', color: '#374151' }}>
-                      {order.selected_books?.map((b: any, i: number) => (
-                        <span key={i}>📖 {b.title}{i < order.selected_books.length - 1 ? ', ' : ''}</span>
-                      ))}
-                    </div>
-                    <p style={{ fontSize: '0.78rem', color: '#9ca3af', marginTop: '6px' }}>{order.total_amount?.toLocaleString()}원</p>
+                    <div style={{ fontSize: '0.9rem', color: '#4b5563' }}>주문번호: {o.id}</div>
                   </div>
                 ))
               )}
             </div>
+
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>도서 주문 및 배송 상태</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {getBookOrdersForMember(selectedMember.id).length === 0 ? (
+                <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>해당 기수의 도서 주문 내역이 없습니다.</div>
+              ) : (
+                getBookOrdersForMember(selectedMember.id).map(bo => {
+                  const cycle = cycles.find(c => c.id === bo.cycle_id);
+                  const canShip = cycle && new Date() >= new Date(cycle.shipping_start_date);
+                  
+                  return (
+                    <div key={bo.id} style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, marginBottom: '4px' }}>{cycle?.name || bo.cycle_id} 도서 주문</div>
+                          <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{new Date(bo.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</div>
+                        </div>
+                        <div>
+                          <select 
+                            value={bo.order_status} 
+                            onChange={(e) => handleStatusChange(bo.id, e.target.value, bo.cycle_id)}
+                            disabled={updatingId === bo.id}
+                            style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #d1d5db' }}
+                          >
+                            <option value="주문접수">주문접수</option>
+                            <option value="배송준비중" disabled={!canShip}>배송준비중 {!canShip && '(제한됨)'}</option>
+                            <option value="배송중" disabled={!canShip}>배송중 {!canShip && '(제한됨)'}</option>
+                            <option value="배송완료" disabled={!canShip}>배송완료 {!canShip && '(제한됨)'}</option>
+                            <option value="주문취소">주문취소</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '4px', fontSize: '0.9rem' }}>
+                        <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                          {(bo.book_order_items || []).map((item, idx) => (
+                            <li key={idx} style={{ marginBottom: '4px' }}>{item.book_title_snapshot}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

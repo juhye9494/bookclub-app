@@ -1,6 +1,8 @@
-"use client"; // Conflict markers removed
-import React, { useState, useEffect } from 'react';
+"use client";
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { isAdmin } from '@/utils/admin';
+import Link from 'next/link';
 
 const INSIGHT_POSTS = [
   {
@@ -80,7 +82,6 @@ export default function PlusInsightPage() {
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
   const [comments, setComments] = useState<any>({});
   // Admin email whitelist for comment deletion
-  const adminEmails = ['shchoi@hankyung.com', 'mwd101@hankyung.com', 'mama0707@hankyung.com', 'pdh0109@hankyung.com', 'parkjh@hankyung.com', 'lygin729@hankyung.com', 'ess0317@hankyung.com', 'xn940@naver.com'];
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [user, setUser] = useState<any>(null);
@@ -455,7 +456,7 @@ const handleDeleteComment = (postId: string, commentId: number) => {
                         <span style={{ fontWeight: 700, color: 'var(--text)' }}>{c.author}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ color: 'var(--text-muted)' }}>{c.date}</span>
-                          {(c.author === user?.user_metadata?.name || adminEmails.includes(user?.email)) && (
+                          {(c.author === user?.user_metadata?.name || isAdmin(user?.email)) && (
                             <button onClick={() => handleDeleteComment(selectedPost.id, c.id)}
                               style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>
                               삭제

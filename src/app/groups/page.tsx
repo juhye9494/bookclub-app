@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { isAdmin } from '@/utils/admin';
 import Link from 'next/link';
 import './groups.css';
 
@@ -51,8 +52,6 @@ export default function GroupsPage() {
   const [isRequestAuthorOpen, setIsRequestAuthorOpen] = useState(false);
   const [myMemberships, setMyMemberships] = useState<Set<string>>(new Set());
   const [myCreatedGroups, setMyCreatedGroups] = useState<Set<string>>(new Set());
-  // Admin email whitelist for group deletion
-  const adminEmails = ['shchoi@hankyung.com', 'mwd101@hankyung.com', 'mama0707@hankyung.com', 'pdh0109@hankyung.com', 'parkjh@hankyung.com', 'lygin729@hankyung.com', 'ess0317@hankyung.com', 'xn940@naver.com'];
   const [editingGroup, setEditingGroup] = useState<any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -580,7 +579,7 @@ export default function GroupsPage() {
                       {isFull ? '정원 마감' : '독서모임 참가 신청'}
                     </button>
                   )}
-                  {adminEmails.includes(user?.email) && (
+                  {isAdmin(user?.email) && (
                     <div className="groups-admin-actions">
                     <button
                       onClick={(e) => { e.stopPropagation(); openEditGroup(group); }}
