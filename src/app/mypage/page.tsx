@@ -310,7 +310,7 @@ export default function MyPage() {
                         <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
                           <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.6, margin: 0 }}>
                             <strong style={{ color: 'var(--accent)' }}>도서 신청은 {orderStart.getFullYear()}년 {orderStart.getMonth() + 1}월 {orderStart.getDate()}일부터 가능합니다.</strong><br/>
-                            9월부터 웰컴키트가 발송되며,<br/>
+                            {orderStart.getFullYear()}년 {orderStart.getMonth() + 1}월부터 웰컴키트가 발송되며,<br/>
                             도서 신청 순서에 따라 순차 배송됩니다.
                           </p>
                         </div>
