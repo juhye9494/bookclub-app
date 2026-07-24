@@ -315,7 +315,7 @@ function BooksContent() {
             <div className="dv-hero-inner" style={{ padding: '16px 5vw 64px', position: 'relative', zIndex: 1 }}>
               <div className="dv-cover"><img src={activeBook.img} alt="" /></div>
               <div className="dv-meta">
-                <p className="dv-genre" style={{ color: descColor, border: `1px solid ${descColor}` }}>{activeBook.genre}</p>
+                <p className="dv-genre" style={{ color: descColor, display: 'inline-block' }}>{activeBook.genre}</p>
                 <h2 className="dv-title" style={{ color: textColor }}>{activeBook.title}</h2>
                 <p className="dv-author" style={{ color: descColor }}>{activeBook.author}</p>
                 <div className="dv-tags">
