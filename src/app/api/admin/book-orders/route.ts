@@ -36,10 +36,7 @@ export async function GET(req: Request) {
           id,
           book_id,
           book_title_snapshot,
-          quantity,
-          books (
-            isbn
-          )
+          quantity
         ),
         subscription_order:orders!book_orders_subscription_order_id_fkey!inner (
           user_email,
@@ -59,7 +56,48 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: '목록 조회 실패' }, { status: 500 });
     }
 
-    return NextResponse.json({ orders: data });
+    const bookIds = Array.from(
+      new Set(
+        (data || [])
+          .flatMap((order: any) => order.book_order_items || [])
+          .map((item: any) => item.book_id)
+          .filter(Boolean)
+      )
+    );
+
+    let isbnMap: Record<string, string> = {};
+
+    if (bookIds.length > 0) {
+      const { data: bookRows, error: booksError } = await supabaseAdmin
+        .from('books')
+        .select('id, isbn')
+        .in('id', bookIds);
+
+      if (booksError) {
+        console.error('Failed to fetch books for ISBNs:', booksError.code);
+        return NextResponse.json(
+          { error: 'Failed to fetch book information' },
+          { status: 500 }
+        );
+      }
+
+      isbnMap = Object.fromEntries(
+        (bookRows || []).map((book: any) => [
+          book.id,
+          book.isbn || ''
+        ])
+      );
+    }
+
+    const enrichedOrders = (data || []).map((order: any) => ({
+      ...order,
+      book_order_items: (order.book_order_items || []).map((item: any) => ({
+        ...item,
+        isbn: item.book_id ? isbnMap[item.book_id] || '' : '',
+      })),
+    }));
+
+    return NextResponse.json({ orders: enrichedOrders });
   } catch (err: any) {
     console.error('Admin order GET error');
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

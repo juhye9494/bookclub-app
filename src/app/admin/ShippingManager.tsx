@@ -300,10 +300,10 @@ export default function ShippingManager() {
         toExcelText(order.user_phone),
         order.user_address || '',
         order.order_status,
-        book1?.book_title_snapshot || '', book1?.books?.isbn ? toExcelText(book1.books.isbn) : '',
-        book2?.book_title_snapshot || '', book2?.books?.isbn ? toExcelText(book2.books.isbn) : '',
-        book3?.book_title_snapshot || '', book3?.books?.isbn ? toExcelText(book3.books.isbn) : '',
-        book4?.book_title_snapshot || '', book4?.books?.isbn ? toExcelText(book4.books.isbn) : '',
+        book1?.book_title_snapshot || '', book1?.isbn ? toExcelText(book1.isbn) : '',
+        book2?.book_title_snapshot || '', book2?.isbn ? toExcelText(book2.isbn) : '',
+        book3?.book_title_snapshot || '', book3?.isbn ? toExcelText(book3.isbn) : '',
+        book4?.book_title_snapshot || '', book4?.isbn ? toExcelText(book4.isbn) : '',
       ];
 
       return values.map(escapeCsvValue).join(',');
