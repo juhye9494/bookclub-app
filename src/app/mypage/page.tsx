@@ -54,12 +54,44 @@ export default function MyPage() {
 
   // Profile edit state
   const [name, setName] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [deletingInquiry, setDeletingInquiry] = useState<string | null>(null);
   const [phone, setPhone] = useState('');
   const [zonecode, setZonecode] = useState('');
   const [address, setAddress] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const handleDeleteInquiry = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!window.confirm('이 문의를 삭제하시겠습니까?')) return;
+
+    setDeletingInquiry(id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('로그인이 필요합니다.');
+
+      const res = await fetch(`/api/inquiries/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error('삭제에 실패했습니다.');
+      }
+
+      alert('문의가 삭제되었습니다.');
+      setInquiries(prev => prev.filter(inq => inq.id !== id));
+    } catch (err: any) {
+      alert(err.message || '오류가 발생했습니다.');
+    } finally {
+      setDeletingInquiry(null);
+    }
+  };
 
   // Password change state
   const [passwordResetSent, setPasswordResetSent] = useState(false);
@@ -690,7 +722,26 @@ export default function MyPage() {
                         <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{inq.title}</p>
                         <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date(inq.created_at).toLocaleDateString('ko-KR')}</p>
                       </div>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{expandedInquiry === inq.id ? '▲' : '▼'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button
+                          onClick={(e) => handleDeleteInquiry(e, inq.id)}
+                          disabled={deletingInquiry === inq.id}
+                          style={{
+                            padding: '4px 10px',
+                            background: '#fff',
+                            color: '#ef4444',
+                            border: '1px solid #fca5a5',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: deletingInquiry === inq.id ? 'not-allowed' : 'pointer',
+                            opacity: deletingInquiry === inq.id ? 0.6 : 1
+                          }}
+                        >
+                          {deletingInquiry === inq.id ? '삭제 중...' : '삭제'}
+                        </button>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{expandedInquiry === inq.id ? '▲' : '▼'}</span>
+                      </div>
                     </div>
                     {expandedInquiry === inq.id && (
                       <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--border)' }}>

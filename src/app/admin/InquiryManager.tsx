@@ -26,6 +26,7 @@ export default function InquiryManager() {
   const [filter, setFilter] = useState('전체');
   const [statusFilter, setStatusFilter] = useState('전체');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deletingInquiry, setDeletingInquiry] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
@@ -114,6 +115,36 @@ export default function InquiryManager() {
     }
   };
 
+  async function handleDeleteInquiry(e: React.MouseEvent, id: string) {
+    e.stopPropagation();
+    if (!window.confirm('이 회원의 문의를 삭제하시겠습니까?')) return;
+
+    setDeletingInquiry(id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('로그인이 필요합니다.');
+
+      const res = await fetch(`/api/admin/inquiries/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error('삭제에 실패했습니다.');
+      }
+
+      setInquiries(prev => prev.filter(inq => inq.id !== id));
+      if (expandedId === id) setExpandedId(null);
+      alert('문의가 삭제되었습니다.');
+    } catch (err: any) {
+      alert(err.message || '오류가 발생했습니다.');
+    } finally {
+      setDeletingInquiry(null);
+    }
+  }
+
   const submitReply = async (id: string) => {
     if (!replyText.trim()) { alert('답변 내용을 입력해주세요.'); return; }
     setSaving(true);
@@ -195,6 +226,23 @@ export default function InquiryManager() {
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '0.78rem', color: '#9ca3af' }}>
                 <span>{inq.user_name}</span>
                 <span>{new Date(inq.created_at).toLocaleDateString()}</span>
+                <button
+                  onClick={(e) => handleDeleteInquiry(e, inq.id)}
+                  disabled={deletingInquiry === inq.id}
+                  style={{
+                    padding: '4px 10px',
+                    background: '#fff',
+                    color: '#ef4444',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: deletingInquiry === inq.id ? 'not-allowed' : 'pointer',
+                    opacity: deletingInquiry === inq.id ? 0.6 : 1
+                  }}
+                >
+                  {deletingInquiry === inq.id ? '삭제 중...' : '삭제'}
+                </button>
                 <span>{expandedId === inq.id ? '▲' : '▼'}</span>
               </div>
             </div>
