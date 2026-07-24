@@ -263,7 +263,13 @@ export default function ShippingManager() {
   const downloadCSV = () => {
     const target = checkedIds.size > 0 ? orders.filter(o => checkedIds.has(o.id)) : filteredOrders;
     if (target.length === 0) return;
-    const headers = ['주문일자', '주문번호', '고객명', '이메일', '연락처', '배송주소', '상태', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3'];
+    
+    const toExcelText = (value: unknown) => {
+      if (value === null || value === undefined || value === '') return '';
+      return `\t${String(value)}`;
+    };
+
+    const headers = ['주문일자', '주문번호', '고객명', '이메일', '연락처', '배송주소', '상태', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3', '도서4', 'ISBN4'];
     const rows = target.map(order => {
       const books = order.book_order_items || [];
       return [
@@ -271,13 +277,14 @@ export default function ShippingManager() {
         order.payment_order_id,
         order.user_name,
         order.user_email,
-        order.user_phone,
+        toExcelText(order.user_phone),
         `"${(order.user_address || '').replace(/"/g, '""')}"`,
         order.order_status,
         order.tracking_number || '',
-        books[0]?.title || '', books[0]?.isbn || '',
-        books[1]?.title || '', books[1]?.isbn || '',
-        books[2]?.title || '', books[2]?.isbn || '',
+        books[0]?.title || '', books[0]?.isbn ? toExcelText(books[0].isbn) : '',
+        books[1]?.title || '', books[1]?.isbn ? toExcelText(books[1].isbn) : '',
+        books[2]?.title || '', books[2]?.isbn ? toExcelText(books[2].isbn) : '',
+        books[3]?.title || '', books[3]?.isbn ? toExcelText(books[3].isbn) : '',
       ].join(',');
     });
     const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n');
