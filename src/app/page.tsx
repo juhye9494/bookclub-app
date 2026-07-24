@@ -353,7 +353,7 @@ export default function Home() {
               <div className="step-circle">02</div>
               <p className="step-num">STEP 2</p>
               <h4 className="step-title">웰컴 굿즈 수령</h4>
-              <p className="step-desc">가입 즉시<br />집으로 배송</p>
+              <p className="step-desc">신청 기간 종료 후<br />집으로 배송</p>
             </div>
             <div className="flow-step reveal" style={{ transitionDelay: '0.25s' }}>
               <div className="step-circle">03</div>
