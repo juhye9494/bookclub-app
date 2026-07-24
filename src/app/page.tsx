@@ -25,6 +25,15 @@ const formatCycleDate = (value?: string | null, includeYear = false) => {
   return includeYear ? `${year}년 ${month}월 ${day}일` : `${month}월 ${day}일`;
 };
 
+const formatKoreanTimestampDate = (value?: string | null) => {
+  if (!value) return '';
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date(value));
+};
+
 export default function Home() {
   const [books, setBooks] = useState<any[]>([]);
   const [cycleLabel, setCycleLabel] = useState<string>('로딩중...');
@@ -478,22 +487,35 @@ export default function Home() {
           <div className="faq-list reveal">
             {[
               {
-                question: '웰컴 굿즈는 언제 배송되나요?',
+                question: '도서는 미리 선택할 수 있나요?',
                 answer: (
                   <>
-                    모집기간 완료 후 9월 1일부터 순차적으로 배송됩니다.<br />
-                    영업일 기준 2주 이내 발송되며,<br />
-                    배송 일정이 지연될 경우 개별 안내를 통해 알려드립니다.
+                    구독 결제 후 도서는 미리 선택하실 수 있으며,<br />
+                    선택한 도서는 이후에도 수정 가능합니다.
+                    {activeCycle?.shipping_start_date && (
+                      <>
+                        <br />
+                        단, 도서 발송은 {formatKoreanTimestampDate(activeCycle.shipping_start_date)}부터 순차적으로 진행될 예정입니다.
+                      </>
+                    )}
                   </>
                 ),
               },
               {
-                question: '도서는 신청 후 언제 배송되나요?',
+                question: '활동 및 참여는 언제부터 시작되나요?',
                 answer: (
                   <>
-                    모집기간 완료 후 9월 1일부터 순차적으로 배송됩니다.<br />
-                    도서는 매주 금요일, 주 1회 발송되며,<br />
-                    택배 배송 특성상 지역에 따라 수령까지 3~5일 정도 소요될 수 있습니다.
+                    {activeCycle?.activity_start_date && (
+                      <>
+                        독서클럽 활동은 {formatCycleDate(activeCycle.activity_start_date)}부터 시작됩니다.<br />
+                      </>
+                    )}
+                    {activeCycle?.recruitment_start_date && activeCycle?.recruitment_end_date && (
+                      <>
+                        모집 기간은 {formatCycleDate(activeCycle.recruitment_start_date)}부터 {formatCycleDate(activeCycle.recruitment_end_date)}까지이며,<br />
+                      </>
+                    )}
+                    독서모임 및 각종 이벤트 참여는 모집 종료 후 가능합니다.
                   </>
                 ),
               },

@@ -11,7 +11,7 @@ export default function CyclesManager() {
     id: '', name: '', status: 'upcoming', max_book_count: 4,
     subscription_start_date: '', subscription_end_date: '',
     book_order_start_date: '', book_order_end_date: '',
-    shipping_start_date: '', operation_end_date: '',
+    shipping_start_date: '', operation_end_date: '', activity_start_date: '',
     recruitment_start_date: '', recruitment_end_date: ''
   });
 
@@ -42,6 +42,7 @@ export default function CyclesManager() {
         book_order_end_date: cycle.book_order_end_date.slice(0, 16),
         shipping_start_date: cycle.shipping_start_date.slice(0, 16),
         operation_end_date: cycle.operation_end_date.slice(0, 16),
+        activity_start_date: cycle.activity_start_date || '',
         recruitment_start_date: cycle.recruitment_start_date || '',
         recruitment_end_date: cycle.recruitment_end_date || ''
       });
@@ -51,7 +52,7 @@ export default function CyclesManager() {
         id: '', name: '', status: 'upcoming', max_book_count: 4,
         subscription_start_date: '', subscription_end_date: '',
         book_order_start_date: '', book_order_end_date: '',
-        shipping_start_date: '', operation_end_date: '',
+        shipping_start_date: '', operation_end_date: '', activity_start_date: '',
         recruitment_start_date: '', recruitment_end_date: ''
       });
     }
@@ -69,6 +70,7 @@ export default function CyclesManager() {
         book_order_end_date: new Date(formData.book_order_end_date).toISOString(),
         shipping_start_date: new Date(formData.shipping_start_date).toISOString(),
         operation_end_date: new Date(formData.operation_end_date).toISOString(),
+        activity_start_date: formData.activity_start_date || null,
         recruitment_start_date: formData.recruitment_start_date || null,
         recruitment_end_date: formData.recruitment_end_date || null,
       };
@@ -206,6 +208,13 @@ export default function CyclesManager() {
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 600 }}>운영 종료일</label>
                 <input type="datetime-local" value={formData.operation_end_date} onChange={e => setFormData({...formData, operation_end_date: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 600 }}>활동 시작일 (FAQ용)</label>
+                <input type="date" value={formData.activity_start_date || ''} onChange={e => setFormData({...formData, activity_start_date: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }} />
               </div>
             </div>
 
