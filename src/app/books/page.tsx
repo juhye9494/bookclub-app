@@ -19,6 +19,8 @@ function BooksContent() {
   const [activeCycle, setActiveCycle] = useState<any>(null);
   const [order, setOrder] = useState<any>(null);
   
+  const [subscriberLoading, setSubscriberLoading] = useState(true);
+  const [subscriberError, setSubscriberError] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [isSelectionPeriod, setIsSelectionPeriod] = useState(false);
   const [isAfterEnd, setIsAfterEnd] = useState(false);
@@ -46,34 +48,108 @@ function BooksContent() {
 
   const loadData = async (userId: string | undefined) => {
     try {
-      // 1. Determine cycle
+      setSubscriberLoading(true);
+      setSubscriberError(false);
       let cycle = null;
-      let orderData = null;
+      let targetOrder = null;
 
       if (subOrderId) {
-        // Find order and cycle
-        const { data: oData } = await supabase
-          .from('orders')
-          .select('id, payment_status, cycle_id, cycles(*), book_orders(*, book_order_items(*))')
-          .eq('id', subOrderId)
-          .single();
-        if (oData && oData.cycles) {
-          orderData = oData;
-          cycle = oData.cycles;
+        if (!userId) {
+          setSubscriberLoading(false);
+          setLoadingBooks(false);
+          return;
         }
+        
+        const { data: subscriptionOrder, error: orderError } = await supabase
+          .from('orders')
+          .select('id, user_id, cycle_id, payment_status, created_at')
+          .eq('id', subOrderId)
+          .eq('user_id', userId)
+          .eq('payment_status', 'DONE')
+          .maybeSingle();
+
+        if (orderError) {
+          console.error(orderError);
+          setSubscriberError(true);
+          setSubscriberLoading(false);
+          setLoadingBooks(false);
+          return;
+        }
+
+        if (subscriptionOrder) {
+          targetOrder = subscriptionOrder;
+          setIsSubscriber(true);
+          if (subscriptionOrder.cycle_id) {
+            const { data: cycleData, error: cycleError } = await supabase
+              .from('cycles')
+              .select('id, status, book_order_end_date, max_book_count, shipping_start_date, name, label')
+              .eq('id', subscriptionOrder.cycle_id)
+              .maybeSingle();
+            
+            if (!cycleError && cycleData && cycleData.status !== 'closed') {
+              cycle = cycleData;
+            }
+          }
+        } else {
+          setIsSubscriber(false);
+        }
+      } else if (userId) {
+        const { data: doneOrders, error: ordersError } = await supabase
+          .from('orders')
+          .select('id, user_id, cycle_id, payment_status, created_at')
+          .eq('user_id', userId)
+          .eq('payment_status', 'DONE')
+          .order('created_at', { ascending: false });
+
+        if (ordersError) {
+          console.error(ordersError);
+          setSubscriberError(true);
+          setSubscriberLoading(false);
+          setLoadingBooks(false);
+          return;
+        }
+
+        if (doneOrders && doneOrders.length > 0) {
+          const cycleIds = Array.from(new Set(doneOrders.map(o => o.cycle_id).filter(Boolean)));
+          let cycleRows: any[] = [];
+          
+          if (cycleIds.length > 0) {
+            const { data: cData } = await supabase
+              .from('cycles')
+              .select('id, status, book_order_end_date, max_book_count, shipping_start_date, name, label')
+              .in('id', cycleIds);
+            if (cData) cycleRows = cData;
+          }
+
+          const now = new Date();
+          const validOrders = doneOrders
+            .map(o => ({ order: o, cycle: cycleRows.find(x => x.id === o.cycle_id) }))
+            .filter(x => x.cycle && x.cycle.status !== 'closed' && new Date(x.cycle.book_order_end_date) >= now);
+
+          if (validOrders.length > 0) {
+            targetOrder = validOrders[0].order;
+            cycle = validOrders[0].cycle;
+            setIsSubscriber(true);
+          } else {
+            setIsSubscriber(false);
+          }
+        } else {
+          setIsSubscriber(false);
+        }
+      } else {
+        setIsSubscriber(false);
       }
 
+      setSubscriberLoading(false);
+
       if (!cycle) {
-        // Fallback to active cycle
         const { data: cycles } = await supabase
           .from('cycles')
           .select('*')
           .eq('status', 'active')
           .order('start_date', { ascending: false })
           .limit(1);
-        if (cycles && cycles.length > 0) {
-          cycle = cycles[0];
-        }
+        if (cycles && cycles.length > 0) cycle = cycles[0];
       }
 
       if (!cycle) {
@@ -81,17 +157,16 @@ function BooksContent() {
         setLoadingBooks(false);
         return;
       }
+      
       setActiveCycle(cycle);
       setCycleLabel(cycle.name || cycle.label || cycle.id);
 
-      // Check dates
       const now = new Date();
       const orderEnd = new Date(cycle.book_order_end_date);
       
       setIsAfterEnd(now > orderEnd);
       setIsSelectionPeriod(now <= orderEnd);
 
-      // Load books
       const { data: bData } = await supabase
         .from('books')
         .select('*')
@@ -119,35 +194,20 @@ function BooksContent() {
         setBooks(formatted);
       }
 
-      // Check user order
-      if (orderData) {
-        setOrder(orderData);
-        setIsSubscriber(orderData.payment_status === 'DONE');
-        const activeBooksCount = (orderData.book_orders || [])
-          .filter((bo: any) => bo.order_status !== '주문취소')
-          .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
-        if (activeBooksCount >= (cycle.max_book_count || 4)) {
-          setHasSelectedBooks(true);
-        }
-      } else if (userId) {
-        const { data: doneOrders } = await supabase
-          .from('orders')
-          .select('id, payment_status, cycle_id, book_orders(*, book_order_items(*))')
-          .eq('user_id', userId)
-          .eq('payment_status', 'DONE')
-          .eq('cycle_id', cycle.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (doneOrders && doneOrders.length > 0) {
-          const o = doneOrders[0];
-          setOrder(o);
-          setIsSubscriber(true);
-          const activeBooksCount = (o.book_orders || [])
-            .filter((bo: any) => bo.order_status !== '주문취소' && bo.id !== editOrderId)
-            .flatMap((bo: any) => bo.book_order_items || [])
-            .reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0);
+      if (targetOrder) {
+        setOrder(targetOrder);
+        const { data: boData } = await supabase
+          .from('book_orders')
+          .select('id, order_status, book_order_items(book_id, quantity)')
+          .eq('subscription_order_id', targetOrder.id)
+          .neq('order_status', '주문취소');
           
+        if (boData) {
+          const activeBooksCount = boData
+            .filter(bo => bo.id !== editOrderId)
+            .flatMap(bo => bo.book_order_items || [])
+            .reduce((sum, item: any) => sum + Number(item.quantity || 0), 0);
+            
           const maxAllowed = Number(cycle.max_book_count || 4) - activeBooksCount;
           setMaxSelectAllowed(Math.max(0, maxAllowed));
           
@@ -156,17 +216,13 @@ function BooksContent() {
           }
           
           if (editOrderId) {
-            const editingBo = o.book_orders.find((bo: any) => bo.id === editOrderId);
+            const editingBo = boData.find(bo => bo.id === editOrderId);
             if (editingBo && editingBo.book_order_items) {
               setSelectedIds(new Set(editingBo.book_order_items.map((item: any) => item.book_id)));
             }
           }
-        } else {
-          setIsSubscriber(false);
-          setOrder(null);
         }
       } else {
-        setIsSubscriber(false);
         setOrder(null);
       }
     } catch (e) {
@@ -178,8 +234,12 @@ function BooksContent() {
   const toggleBook = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     
+    if (subscriberLoading) return;
+    if (subscriberError) {
+      alert('구독 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
     if (!isSubscriber) {
-      alert('구독 결제 후 도서를 신청할 수 있습니다.');
       return;
     }
     if (isAfterEnd) {
@@ -440,9 +500,17 @@ function BooksContent() {
       )}
 
       {/* Floating Status Bar */}
-      {!isSubscriber ? (
+      {subscriberLoading ? (
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>구독 완료 후 도서를 신청할 수 있습니다.</span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>구독 정보를 확인하는 중...</span>
+        </div>
+      ) : subscriberError ? (
+        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ef4444' }}>구독 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</span>
+        </div>
+      ) : !isSubscriber ? (
+        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>구독 결제 후 도서를 신청할 수 있습니다.</span>
         </div>
       ) : hasSelectedBooks ? (
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
