@@ -20,7 +20,6 @@ function BooksContent() {
   const [order, setOrder] = useState<any>(null);
   
   const [isSubscriber, setIsSubscriber] = useState(false);
-  const [isBeforeStart, setIsBeforeStart] = useState(false);
   const [isSelectionPeriod, setIsSelectionPeriod] = useState(false);
   const [isAfterEnd, setIsAfterEnd] = useState(false);
   const [hasSelectedBooks, setHasSelectedBooks] = useState(false);
@@ -89,7 +88,6 @@ function BooksContent() {
       const now = new Date();
       const orderEnd = new Date(cycle.book_order_end_date);
       
-      setIsBeforeStart(false); // No longer applies
       setIsAfterEnd(now > orderEnd);
       setIsSelectionPeriod(now <= orderEnd);
 
@@ -181,11 +179,7 @@ function BooksContent() {
     if (e) e.stopPropagation();
     
     if (!isSubscriber) {
-      alert('구독 결제 후 9월부터 도서를 신청할 수 있습니다.');
-      return;
-    }
-    if (isBeforeStart) {
-      alert('9월부터 웰컴키트가 발송되며, 도서 신청 순서에 따라 순차 배송됩니다.');
+      alert('구독 결제 후 도서를 신청할 수 있습니다.');
       return;
     }
     if (isAfterEnd) {
@@ -448,15 +442,11 @@ function BooksContent() {
       {/* Floating Status Bar */}
       {!isSubscriber ? (
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>구독 완료 후 9월부터 도서를 신청할 수 있습니다.</span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>구독 완료 후 도서를 신청할 수 있습니다.</span>
         </div>
       ) : hasSelectedBooks ? (
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
           <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>모든 도서 선택이 완료되었습니다.</span>
-        </div>
-      ) : isBeforeStart ? (
-        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ef4444' }}>9월부터 웰컴키트가 발송되며, 도서 신청 순서에 따라 순차 배송됩니다.</span>
         </div>
       ) : isAfterEnd ? (
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>

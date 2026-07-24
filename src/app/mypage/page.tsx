@@ -157,7 +157,7 @@ export default function MyPage() {
 
       const { data: doneOrders } = await supabase
         .from('orders')
-        .select('*, cycle:cycles!fk_orders_cycle_id(id, name, label, subscription_end_date, book_order_start_date, book_order_end_date, status, max_book_count)')
+        .select('*, cycle:cycles!fk_orders_cycle_id(id, name, label, subscription_end_date, book_order_start_date, book_order_end_date, status, max_book_count, shipping_start)')
         .eq('user_id', session.user.id)
         .neq('payment_status', 'PENDING')
         .order('created_at', { ascending: false });
@@ -536,6 +536,10 @@ export default function MyPage() {
                               </div>
                               
                               <div style={{ marginTop: '16px', fontSize: '0.82rem', color: '#475569', lineHeight: 1.6 }}>
+                                <p style={{ margin: '0 0 12px 0', color: 'var(--text)' }}>
+                                  <strong>도서 신청이 완료되었습니다.</strong><br/>
+                                  배송은 {order.cycle?.shipping_start ? new Date(order.cycle.shipping_start).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : '지정된 날짜'}부터 순차적으로 시작됩니다.
+                                </p>
                                 <p style={{ margin: '0 0 8px 0', color: '#b45309', fontWeight: 600 }}>배송 준비중일 경우 취소 및 변경이 불가능합니다.</p>
                                 <p style={{ margin: 0 }}>
                                   도서는 운영기간 매주 금요일, 주 1회 발송되며,<br/>
