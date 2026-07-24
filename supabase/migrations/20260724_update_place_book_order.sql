@@ -111,8 +111,24 @@ BEGIN
   END LOOP;
 
   -- 6. Create book_order and items
-  INSERT INTO public.book_orders (subscription_order_id, user_id, cycle_id, order_status)
-  VALUES (p_subscription_order_id, v_order.user_id, v_cycle.id, '주문접수')
+  INSERT INTO public.book_orders (
+    subscription_order_id,
+    user_id,
+    cycle_id,
+    order_status,
+    shipping_name,
+    shipping_phone,
+    shipping_address
+  )
+  VALUES (
+    p_subscription_order_id,
+    v_order.user_id,
+    v_cycle.id,
+    '주문접수',
+    v_order.user_name,
+    v_order.user_phone,
+    v_order.user_address
+  )
   RETURNING id INTO v_new_order_id;
 
   INSERT INTO public.book_order_items (book_order_id, book_id, book_title_snapshot, quantity)

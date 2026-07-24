@@ -8,6 +8,16 @@ import DaumPostcodeEmbed from 'react-daum-postcode';
 type TabType = 'orders' | 'profile' | 'activity' | 'inquiry';
 
 export default function MyPage() {
+  const formatKoreanDate = (value?: string | null) => {
+    if (!value) return "";
+    return new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(new Date(value));
+  };
+
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -66,6 +76,56 @@ export default function MyPage() {
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cancelingBookOrderId, setCancelingBookOrderId] = useState<string | null>(null);
+  const [editingShippingOrderId, setEditingShippingOrderId] = useState<string | null>(null);
+  const [editShippingName, setEditShippingName] = useState("");
+  const [editShippingPhone, setEditShippingPhone] = useState("");
+  const [editShippingAddress, setEditShippingAddress] = useState("");
+  const [shippingSaving, setShippingSaving] = useState(false);
+
+  const handleSaveShipping = async () => {
+    if(!editingShippingOrderId) return;
+    if(!editShippingName || !editShippingPhone || !editShippingAddress) {
+      alert("배송지 정보를 모두 입력해주세요.");
+      return;
+    }
+    setShippingSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/book-orders/${editingShippingOrderId}/shipping-address`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ shipping_name: editShippingName, shipping_phone: editShippingPhone, shipping_address: editShippingAddress })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || "배송지 변경에 실패했습니다.");
+      alert("배송지가 변경되었습니다.");
+      
+      setOrders(prev =>
+        prev.map(order => ({
+          ...order,
+          book_orders: (order.book_orders || []).map((bo: any) =>
+            bo.id === editingShippingOrderId
+              ? {
+                  ...bo,
+                  shipping_name: data.data?.shipping_name,
+                  shipping_phone: data.data?.shipping_phone,
+                  shipping_address: data.data?.shipping_address,
+                }
+              : bo
+          ),
+        }))
+      );
+      
+      setEditingShippingOrderId(null);
+      setEditShippingName('');
+      setEditShippingPhone('');
+      setEditShippingAddress('');
+    } catch(e: any) {
+      alert(e.message);
+    } finally {
+      setShippingSaving(false);
+    }
+  };
 
   const handleCancelBookOrder = async (bookOrderId: string) => {
     if (!window.confirm('선택한 도서 신청을 취소하시겠습니까?')) return;
@@ -231,7 +291,7 @@ export default function MyPage() {
         if (orderIds.length > 0) {
           const { data: boData, error: boErr } = await supabase
             .from('book_orders')
-            .select('id, subscription_order_id, user_id, cycle_id, order_status, created_at, updated_at')
+            .select('id, subscription_order_id, user_id, cycle_id, order_status, shipping_name, shipping_phone, shipping_address, created_at, updated_at')
             .eq('user_id', session.user.id)
             .in('subscription_order_id', orderIds)
             .order('created_at', { ascending: false });
@@ -993,6 +1053,35 @@ export default function MyPage() {
           </div>
         )}
       </main>
+
+      
+      {editingShippingOrderId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', padding: '24px', borderRadius: '16px', width: '100%', maxWidth: '400px' }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '1.2rem', fontWeight: 700 }}>배송지 변경</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>받는 분</label>
+                <input value={editShippingName} onChange={e=>setEditShippingName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>연락처</label>
+                <input value={editShippingPhone} onChange={e=>setEditShippingPhone(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>배송지 주소</label>
+                <input value={editShippingAddress} onChange={e=>setEditShippingAddress(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <button onClick={()=>setEditingShippingOrderId(null)} style={{ flex: 1, padding: '12px', background: '#f3f4f6', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>취소</button>
+              <button onClick={handleSaveShipping} disabled={shippingSaving} style={{ flex: 1, padding: '12px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: shippingSaving ? 'not-allowed' : 'pointer' }}>
+                {shippingSaving ? '저장 중...' : '배송지 저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 우편번호 검색 모달 */}
       {isPostcodeOpen && (
