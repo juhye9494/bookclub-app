@@ -303,7 +303,7 @@ export default function Home() {
           </div>
           <div className="service-cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
             <div className="service-card reveal" style={{ transitionDelay: '0.1s' }}>
-              <div className="card-icon"><img src="/uploads/benefit_welcome.png" alt="웰컴 굿즈" /></div>
+              <div className="card-icon"><img src="/uploads/benefit_welcome_v2.jpg" alt="웰컴 굿즈" /></div>
               <p className="card-tag">독서 습관을 만드는</p>
               <h3 className="card-title">웰컴 굿즈</h3>
               <p className="card-desc">30분을 기록할 수 있는 모래시계와 독서노트, 엽서 세트를 드립니다.<br />(가입 시, 최초 1회 무료 배송)</p>
