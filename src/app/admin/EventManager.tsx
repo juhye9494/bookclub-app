@@ -150,26 +150,91 @@ export default function EventManager() {
     }
   };
 
+  const formatApplicationDate = (value: string) =>
+    new Intl.DateTimeFormat('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    }).format(new Date(value));
+
   const loadParticipants = async () => {
-    const { data } = await supabase.from('event_participants').select('*').order('created_at', { ascending: false });
-    if (data) {
-      const grouped: Record<string, any[]> = {};
-      data.forEach(p => {
-        // 실제 컬럼이 추가될 경우를 대비한 방어적 필터링 (취소 상태 제외)
-        if (p.status === '취소' || p.status === 'CANCELLED' || p.is_cancelled === true) return;
-        
-        if (!grouped[p.event_id]) grouped[p.event_id] = [];
-        
-        // 동일 회원의 유효 신청 1건만 유지 (가장 최근 신청 기준 중복 방지)
-        const uniqueKey = p.user_id || p.user_email;
-        const isDuplicate = grouped[p.event_id].some(existing => (existing.user_id || existing.user_email) === uniqueKey);
-        
-        if (!isDuplicate) {
-          grouped[p.event_id].push(p);
-        }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    
+    if (!token) return;
+
+    try {
+      const res = await fetch('/api/admin/event-participants', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      setParticipants(grouped);
+      const result = await res.json();
+      const data = result.data;
+
+      if (data) {
+        const grouped: Record<string, any[]> = {};
+        data.forEach((p: any) => {
+          if (p.status === '취소' || p.status === 'CANCELLED' || p.is_cancelled === true) return;
+          
+          if (!grouped[p.event_id]) grouped[p.event_id] = [];
+          
+          const uniqueKey = p.user_id || p.user_email;
+          const isDuplicate = grouped[p.event_id].some(existing => (existing.user_id || existing.user_email) === uniqueKey);
+          
+          if (!isDuplicate) {
+            grouped[p.event_id].push(p);
+          }
+        });
+        setParticipants(grouped);
+      }
+    } catch (e) {
+      console.error('Failed to load participants');
     }
+  };
+
+  const handleDownloadCSV = (event: any, applicants: any[]) => {
+    if (!applicants || applicants.length === 0) {
+      alert('다운로드할 신청자가 없습니다.');
+      return;
+    }
+
+    const toExcelText = (value: unknown) => {
+      if (value === null || value === undefined || value === '') return '';
+      return `\t${String(value)}`;
+    };
+
+    const escapeCsvValue = (value: unknown) => {
+      const text = String(value ?? '');
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const headers = ['이벤트명', '이름', '연락처', '신청일'];
+    
+    const rows = applicants.map(p => {
+      return [
+        escapeCsvValue(event.title),
+        escapeCsvValue(p.user_name),
+        escapeCsvValue(toExcelText(p.user_phone)),
+        escapeCsvValue(formatApplicationDate(p.created_at))
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    const safeTitle = event.title.replace(/[\\/:*?"<>|]/g, '');
+    const dateStr = new Date().toISOString().split('T')[0];
+    
+    link.setAttribute('download', `한경언더라인_이벤트신청자_${safeTitle}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   useEffect(() => { loadParticipants(); }, [events]);
@@ -285,19 +350,32 @@ export default function EventManager() {
                 {/* Participant list dropdown */}
                 {viewingParticipants === ev.id && (participants[ev.id]?.length || 0) > 0 && (
                   <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '0 0 10px 10px', padding: '12px 16px', marginTop: '-1px' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#92400e', marginBottom: '8px' }}>신청자 목록 ({participants[ev.id].length}명)</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#92400e', margin: 0 }}>신청자 목록 ({participants[ev.id].length}명)</p>
+                      <button 
+                        onClick={() => handleDownloadCSV(ev, participants[ev.id])}
+                        disabled={participants[ev.id].length === 0}
+                        style={{
+                          fontSize: '0.75rem', padding: '4px 8px', background: '#f59e0b', color: '#fff',
+                          border: 'none', borderRadius: '4px', cursor: participants[ev.id].length === 0 ? 'not-allowed' : 'pointer',
+                          opacity: participants[ev.id].length === 0 ? 0.5 : 1
+                        }}
+                      >
+                        CSV 다운로드
+                      </button>
+                    </div>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                       <thead><tr style={{ borderBottom: '1px solid #fde68a' }}>
                         <th style={{ padding: '6px 8px', textAlign: 'left', color: '#78716c' }}>이름</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'left', color: '#78716c' }}>이메일</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', color: '#78716c' }}>연락처</th>
                         <th style={{ padding: '6px 8px', textAlign: 'left', color: '#78716c' }}>신청일</th>
                       </tr></thead>
                       <tbody>
                         {participants[ev.id].map((p: any) => (
                           <tr key={p.id} style={{ borderBottom: '1px solid #fef3c7' }}>
                             <td style={{ padding: '6px 8px', fontWeight: 600 }}>{p.user_name}</td>
-                            <td style={{ padding: '6px 8px', color: '#78716c' }}>{p.user_email}</td>
-                            <td style={{ padding: '6px 8px', color: '#78716c' }}>{new Date(p.created_at).toLocaleDateString()}</td>
+                            <td style={{ padding: '6px 8px', color: '#78716c' }}>{p.user_phone || '-'}</td>
+                            <td style={{ padding: '6px 8px', color: '#78716c' }}>{formatApplicationDate(p.created_at)}</td>
                           </tr>
                         ))}
                       </tbody>
