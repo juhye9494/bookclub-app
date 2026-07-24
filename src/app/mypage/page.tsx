@@ -161,7 +161,24 @@ export default function MyPage() {
 
       const { data: doneOrders, error: ordersError } = await supabase
         .from('orders')
-        .select('*, cycle:cycles!fk_orders_cycle_id(id, name, label, subscription_end_date, book_order_start_date, book_order_end_date, status, max_book_count, shipping_start)')
+        .select(`
+          id,
+          user_id,
+          user_email,
+          user_name,
+          user_phone,
+          user_address,
+          selected_books,
+          total_amount,
+          payment_order_id,
+          payment_status,
+          order_status,
+          tracking_number,
+          is_test,
+          payment_key,
+          cycle_id,
+          created_at
+        `)
         .eq('user_id', session.user.id)
         .neq('payment_status', 'PENDING')
         .order('created_at', { ascending: false });
@@ -173,6 +190,36 @@ export default function MyPage() {
       } else if (doneOrders) {
         setOrdersFetchError(false);
         const orderIds = doneOrders.map(o => o.id);
+        
+        const cycleIds = Array.from(new Set(doneOrders.map(o => o.cycle_id).filter(Boolean)));
+        let cycleRows: any[] | null = null;
+        
+        if (cycleIds.length > 0) {
+          const { data: cData, error: cErr } = await supabase
+            .from('cycles')
+            .select(`
+              id,
+              name,
+              label,
+              subscription_start_date,
+              subscription_end_date,
+              book_order_start_date,
+              book_order_end_date,
+              shipping_start_date,
+              operation_end_date,
+              status,
+              max_book_count
+            `)
+            .in('id', cycleIds);
+          
+          if (cErr) {
+            console.error('cycles fetch error:', cErr);
+          } else {
+            cycleRows = cData;
+          }
+        }
+        
+        const cyclesById = new Map((cycleRows || []).map(c => [String(c.id), c]));
         
         let bookOrderRows: any[] | null = null;
         let bookItemRows: any[] | null = null;
@@ -254,6 +301,7 @@ export default function MyPage() {
 
         const combined = doneOrders.map(o => ({
           ...o,
+          cycle: o.cycle_id ? (cyclesById.get(String(o.cycle_id)) || null) : null,
           bookOrdersError: !!bookOrdersError || !!bookItemsError,
           book_orders: hydratedBookOrders ? hydratedBookOrders.filter((bo: any) => bo.subscription_order_id === o.id) : []
         }));
@@ -637,7 +685,7 @@ export default function MyPage() {
                               <div style={{ marginTop: '16px', fontSize: '0.82rem', color: '#475569', lineHeight: 1.6 }}>
                                 <p style={{ margin: '0 0 12px 0', color: 'var(--text)' }}>
                                   <strong>도서 신청이 완료되었습니다.</strong><br/>
-                                  배송은 {order.cycle?.shipping_start ? new Date(order.cycle.shipping_start).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : '지정된 날짜'}부터 순차적으로 시작됩니다.
+                                  배송은 {order.cycle?.shipping_start_date ? new Date(order.cycle.shipping_start_date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : '지정된 날짜'}부터 순차적으로 시작됩니다.
                                 </p>
                                 <p style={{ margin: '0 0 8px 0', color: '#b45309', fontWeight: 600 }}>배송 준비중일 경우 취소 및 변경이 불가능합니다.</p>
                                 <p style={{ margin: 0 }}>
