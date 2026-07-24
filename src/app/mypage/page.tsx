@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import DaumPostcodeEmbed from 'react-daum-postcode';
+import Script from 'next/script';
 
 type TabType = 'orders' | 'profile' | 'activity' | 'inquiry';
 
@@ -79,13 +80,42 @@ export default function MyPage() {
   const [editingShippingOrderId, setEditingShippingOrderId] = useState<string | null>(null);
   const [editShippingName, setEditShippingName] = useState("");
   const [editShippingPhone, setEditShippingPhone] = useState("");
-  const [editShippingAddress, setEditShippingAddress] = useState("");
+  const [editShippingPostcode, setEditShippingPostcode] = useState("");
+  const [editShippingBaseAddress, setEditShippingBaseAddress] = useState("");
+  const [editShippingDetailAddress, setEditShippingDetailAddress] = useState("");
   const [shippingSaving, setShippingSaving] = useState(false);
+
+  const openShippingPostcode = () => {
+    const daum = (window as any).daum;
+    if (!daum || !daum.Postcode) {
+      alert("주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+    new daum.Postcode({
+      oncomplete: function (data: any) {
+        setEditShippingPostcode(data.zonecode);
+        setEditShippingBaseAddress(data.address);
+        setEditShippingDetailAddress("");
+        document.getElementById('editShippingDetailAddressInput')?.focus();
+      }
+    }).open();
+  };
 
   const handleSaveShipping = async () => {
     if(!editingShippingOrderId) return;
-    if(!editShippingName || !editShippingPhone || !editShippingAddress) {
+    
+    const finalAddressParts = [];
+    if (editShippingPostcode) finalAddressParts.push(`[${editShippingPostcode}]`);
+    if (editShippingBaseAddress) finalAddressParts.push(editShippingBaseAddress);
+    if (editShippingDetailAddress) finalAddressParts.push(editShippingDetailAddress);
+    const finalShippingAddress = finalAddressParts.join(' ').trim();
+
+    if (!editShippingName.trim() || !editShippingPhone.trim()) {
       alert("배송지 정보를 모두 입력해주세요.");
+      return;
+    }
+    if (!editShippingBaseAddress.trim()) {
+      alert("주소 검색을 통해 배송지를 입력해주세요.");
       return;
     }
     setShippingSaving(true);
@@ -94,7 +124,7 @@ export default function MyPage() {
       const res = await fetch(`/api/book-orders/${editingShippingOrderId}/shipping-address`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
-        body: JSON.stringify({ shipping_name: editShippingName, shipping_phone: editShippingPhone, shipping_address: editShippingAddress })
+        body: JSON.stringify({ shipping_name: editShippingName, shipping_phone: editShippingPhone, shipping_address: finalShippingAddress })
       });
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || "배송지 변경에 실패했습니다.");
@@ -119,7 +149,9 @@ export default function MyPage() {
       setEditingShippingOrderId(null);
       setEditShippingName('');
       setEditShippingPhone('');
-      setEditShippingAddress('');
+      setEditShippingPostcode('');
+      setEditShippingBaseAddress('');
+      setEditShippingDetailAddress('');
     } catch(e: any) {
       alert(e.message);
     } finally {
@@ -531,6 +563,7 @@ export default function MyPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)' }}>
+      <Script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" strategy="lazyOnload" />
       <main style={{ maxWidth: '800px', margin: '0 auto', padding: '96px 5vw 60px' }}>
         {/* 헤더 */}
         <div style={{ marginBottom: '8px' }}>
@@ -586,7 +619,9 @@ export default function MyPage() {
                     .reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0);
                   const maxCount = cycle.max_book_count || 4;
                   const hasSelectedBooks = activeBooksCount >= maxCount;
-                  const hasActiveBookOrders = activeBooksCount > 0;
+                  const hasActiveBookOrders = (order.book_orders || []).some(
+                    (bo: any) => bo.order_status !== '주문취소'
+                  );
                   
                   const now = new Date();
                   const orderEnd = cycle.book_order_end_date ? new Date(cycle.book_order_end_date) : new Date('2099-12-31');
@@ -598,7 +633,7 @@ export default function MyPage() {
                     : '구독권';
                   const statusUI = getStatusDisplay(order, isOrderAllowed);
                   
-                  const isRefundable = isDone && !!order.cycle_id && now <= subEnd && cycle.status !== 'closed' && !hasActiveBookOrders;
+                  const isRefundable = isDone && !!order.cycle_id && now <= subEnd && cycle.status !== 'closed';
 
                   if (isCancelled) {
                     return (
@@ -670,30 +705,52 @@ export default function MyPage() {
                             {hasActiveBookOrders ? '도서 추가 선택' : '도서 선택하기'}
                           </Link>
                         )}
-                        {isRefundable && (
-                          <button 
-                            onClick={() => setCancelingOrderId(order.id)}
-                            style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: '#f3f4f6', color: '#4b5563', border: 'none', cursor: 'pointer' }}
+                        {isDone && (
+                          <span
+                            title={
+                              hasActiveBookOrders
+                                ? '도서 신청 내역이 있어 구독을 취소할 수 없습니다.'
+                                : undefined
+                            }
+                            aria-label={
+                              hasActiveBookOrders
+                                ? '도서 신청 내역이 있어 구독을 취소할 수 없습니다.'
+                                : '구독 취소'
+                            }
+                            style={{
+                              display: 'inline-block',
+                              cursor: hasActiveBookOrders ? 'not-allowed' : 'pointer',
+                            }}
                           >
-                            구독 취소
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!hasActiveBookOrders) {
+                                  setCancelingOrderId(order.id);
+                                }
+                              }}
+                              disabled={hasActiveBookOrders}
+                              style={{
+                                padding: '6px 16px',
+                                borderRadius: '20px',
+                                fontSize: '0.82rem',
+                                fontWeight: 700,
+                                whiteSpace: 'nowrap',
+                                background: hasActiveBookOrders ? '#f3f4f6' : '#fff',
+                                color: hasActiveBookOrders ? '#9ca3af' : '#ef4444',
+                                border: hasActiveBookOrders
+                                  ? '1px solid #e5e7eb'
+                                  : '1px solid #fca5a5',
+                                cursor: hasActiveBookOrders ? 'not-allowed' : 'pointer',
+                                pointerEvents: hasActiveBookOrders ? 'none' : 'auto',
+                              }}
+                            >
+                              구독 취소
+                            </button>
+                          </span>
                         )}
                       </div>
                       </div>
-                      
-
-                      {isDone && !isRefundable && (
-                        <div style={{ padding: '16px', background: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                          <p style={{ fontSize: '0.85rem', color: '#92400e', lineHeight: 1.6, margin: 0, flex: 1 }}>
-                            도서 신청 기간이 시작된 이후에는 마이페이지에서 직접 구독을 취소할 수 없습니다.<br/>
-                            웰컴키트 및 도서 발송이 진행될 수 있으므로, 환불을 원하시는 경우 1:1 문의를 통해 요청해주세요.<br/>
-                            발송된 웰컴키트·도서 비용과 배송비 등이 환불금에서 차감될 수 있습니다.
-                          </p>
-                          <Link href="/inquiry" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600, background: '#fff', color: '#92400e', border: '1px solid #fcd34d', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                            1:1 환불 문의
-                          </Link>
-                        </div>
-                      )}
                       
                       {isDone && (
                         <>
@@ -989,7 +1046,15 @@ export default function MyPage() {
                       setEditingShippingOrderId(bo.id);
                       setEditShippingName(shippingName);
                       setEditShippingPhone(shippingPhone);
-                      setEditShippingAddress(shippingAddress);
+                      const match = shippingAddress.match(/^\[(.*?)\]\s*(.*)$/);
+                      if (match) {
+                        setEditShippingPostcode(match[1]);
+                        setEditShippingBaseAddress(match[2]);
+                      } else {
+                        setEditShippingPostcode('');
+                        setEditShippingBaseAddress(shippingAddress);
+                      }
+                      setEditShippingDetailAddress('');
                     }}
                     style={{
                       padding: '8px 16px',
@@ -1045,11 +1110,7 @@ export default function MyPage() {
                     </div>
                         </>
                       )}
-                      {/* 배송 정보 */}
-                    <div style={{ background: '#f9fafb', padding: '14px 18px', borderRadius: '10px', fontSize: '0.84rem', lineHeight: 1.7, color: 'var(--text-mid)' }}>
-                      <strong>배송지:</strong> {order.user_name} ({order.user_phone}) <br/>
-                      {order.user_address}
-                    </div>
+
 
                     {/* 결제 금액 */}
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', fontSize: '0.9rem' }}>
@@ -1339,7 +1400,12 @@ export default function MyPage() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>배송지 주소</label>
-                <input value={editShippingAddress} onChange={e=>setEditShippingAddress(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input readOnly value={editShippingPostcode} placeholder="우편번호" style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb' }} />
+                  <button onClick={openShippingPostcode} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>주소 검색</button>
+                </div>
+                <input readOnly value={editShippingBaseAddress} placeholder="기본 주소" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', marginBottom: '8px' }} />
+                <input id="editShippingDetailAddressInput" value={editShippingDetailAddress} onChange={e=>setEditShippingDetailAddress(e.target.value)} placeholder="상세 주소" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
