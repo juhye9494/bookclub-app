@@ -16,6 +16,8 @@ export default function MyPage() {
   const [activeTab, setActiveTab] = useState<TabType>('orders');
   const [cancelingOrderId, setCancelingOrderId] = useState<string | null>(null);
   const [isCancelProcessing, setIsCancelProcessing] = useState(false);
+  const [ordersFetchError, setOrdersFetchError] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   
   const handleCancelOrder = async (orderId: string) => {
     setIsCancelProcessing(true);
@@ -155,25 +157,113 @@ export default function MyPage() {
         setAddress(fullAddress);
       }
 
-      const { data: doneOrders } = await supabase
+      setOrdersLoading(true);
+
+      const { data: doneOrders, error: ordersError } = await supabase
         .from('orders')
         .select('*, cycle:cycles!fk_orders_cycle_id(id, name, label, subscription_end_date, book_order_start_date, book_order_end_date, status, max_book_count, shipping_start)')
         .eq('user_id', session.user.id)
         .neq('payment_status', 'PENDING')
         .order('created_at', { ascending: false });
 
-      if (doneOrders) {
-        const { data: bOrders } = await supabase
-          .from('book_orders')
-          .select('*, book_order_items(*, book:books(id, title, cover_url, author))')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false });
+      if (ordersError) {
+        console.error('orders fetch error:', ordersError);
+        setOrdersFetchError(true);
+        setOrdersLoading(false);
+      } else if (doneOrders) {
+        setOrdersFetchError(false);
+        const orderIds = doneOrders.map(o => o.id);
+        
+        let bookOrderRows: any[] | null = null;
+        let bookItemRows: any[] | null = null;
+        let bookRows: any[] | null = null;
+        let bookOrdersError = null;
+        let bookItemsError = null;
+        let booksError = null;
+
+        if (orderIds.length > 0) {
+          const { data: boData, error: boErr } = await supabase
+            .from('book_orders')
+            .select('id, subscription_order_id, user_id, cycle_id, order_status, created_at, updated_at')
+            .eq('user_id', session.user.id)
+            .in('subscription_order_id', orderIds)
+            .order('created_at', { ascending: false });
+
+          if (boErr) {
+            console.error('book orders fetch error:', boErr);
+            bookOrdersError = boErr;
+          } else {
+            bookOrderRows = boData;
+          }
+        }
+
+        if (bookOrderRows && bookOrderRows.length > 0) {
+          const bookOrderIds = bookOrderRows.map(bo => bo.id);
+          const { data: itemsData, error: itemsErr } = await supabase
+            .from('book_order_items')
+            .select('id, book_order_id, book_id, title_snapshot, quantity, created_at')
+            .in('book_order_id', bookOrderIds);
+            
+          if (itemsErr) {
+            console.error('book order items fetch error:', itemsErr);
+            bookItemsError = itemsErr;
+          } else {
+            bookItemRows = itemsData;
+          }
+        }
+
+        if (bookItemRows && bookItemRows.length > 0) {
+          const uniqueBookIds = Array.from(new Set(bookItemRows.map(item => item.book_id).filter(id => id)));
+          if (uniqueBookIds.length > 0) {
+            const { data: bData, error: bErr } = await supabase
+              .from('books')
+              .select('id, title, author, cover_url')
+              .in('id', uniqueBookIds);
+              
+            if (bErr) {
+              console.error('books fetch error:', bErr);
+              booksError = bErr;
+            } else {
+              bookRows = bData;
+            }
+          }
+        }
+
+        const booksById = new Map(
+          (bookRows || []).map(book => [String(book.id), book])
+        );
+
+        const itemsByOrderId = new Map<string, any[]>();
+        (bookItemRows || []).forEach(item => {
+          const key = String(item.book_order_id);
+          const current = itemsByOrderId.get(key) || [];
+          current.push({
+            ...item,
+            book: item.book_id ? (booksById.get(String(item.book_id)) || null) : null,
+          });
+          itemsByOrderId.set(key, current);
+        });
+
+        let hydratedBookOrders = null;
+        if (bookOrderRows) {
+          hydratedBookOrders = bookOrderRows.map(bo => ({
+            ...bo,
+            book_order_items: itemsByOrderId.get(String(bo.id)) || [],
+          }));
+        }
 
         const combined = doneOrders.map(o => ({
           ...o,
-          book_orders: bOrders ? bOrders.filter((bo: any) => bo.subscription_order_id === o.id) : []
+          bookOrdersError: !!bookOrdersError || !!bookItemsError,
+          book_orders: hydratedBookOrders ? hydratedBookOrders.filter((bo: any) => bo.subscription_order_id === o.id) : []
         }));
+        
         setOrders(combined);
+        setOrdersLoading(false);
+      } else {
+        setOrdersFetchError(false);
+        setOrders([]);
+        setOrdersLoading(false);
       }
 
       // 활동내역 가져오기
@@ -358,11 +448,18 @@ export default function MyPage() {
             >{tab.label}</button>
           ))}
         </div>
-
         {/* 탭 1: 구독 내역 */}
         {activeTab === 'orders' && (
           <>
-            {orders.length === 0 ? (
+            {ordersLoading ? (
+              <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
+                불러오는 중...
+              </div>
+            ) : ordersFetchError ? (
+              <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
+                구독 내역을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+              </div>
+            ) : orders.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px 0', background: '#fff', borderRadius: '16px', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📚</div>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>아직 구독 내역이 없습니다.</p>
@@ -494,8 +591,10 @@ export default function MyPage() {
                         <>
                           <div style={{ marginBottom: '20px' }}>
                             <h4 style={{ fontSize: '0.9rem', marginBottom: '16px', color: 'var(--text)', fontWeight: 700 }}>도서 주문 현황 (현재 선택: {activeBooksCount}/{maxCount}권)</h4>
-                      {(!order.book_orders || order.book_orders.length === 0) ? (
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>아직 신청된 도서 주문이 없습니다.</p>
+                      {order.bookOrdersError ? (
+                        <p style={{ fontSize: '0.85rem', color: '#ef4444' }}>도서 주문 내역을 불러오지 못했습니다.</p>
+                      ) : (!order.book_orders || order.book_orders.length === 0) ? (
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>아직 신청한 도서 주문이 없습니다.</p>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                           {order.book_orders.map((bo: any) => {
