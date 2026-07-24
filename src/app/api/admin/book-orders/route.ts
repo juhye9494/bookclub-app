@@ -36,7 +36,10 @@ export async function GET(req: Request) {
           id,
           book_id,
           book_title_snapshot,
-          quantity
+          quantity,
+          books (
+            isbn
+          )
         ),
         subscription_order:orders!book_orders_subscription_order_id_fkey!inner (
           user_email,

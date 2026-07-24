@@ -269,25 +269,46 @@ export default function ShippingManager() {
       return `\t${String(value)}`;
     };
 
+    const escapeCsvValue = (value: unknown) => {
+      const text = String(value ?? '');
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const formatOrderDate = (value: string) =>
+      new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+      }).format(new Date(value));
+
     const headers = ['주문일자', '주문번호', '고객명', '이메일', '연락처', '배송주소', '상태', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3', '도서4', 'ISBN4'];
+    const headerRow = headers.map(escapeCsvValue).join(',');
+
     const rows = target.map(order => {
       const books = order.book_order_items || [];
-      return [
-        new Date(order.created_at).toLocaleDateString(),
+      const book1 = books[0];
+      const book2 = books[1];
+      const book3 = books[2];
+      const book4 = books[3];
+
+      const values = [
+        formatOrderDate(order.created_at),
         order.payment_order_id,
         order.user_name,
         order.user_email,
         toExcelText(order.user_phone),
-        `"${(order.user_address || '').replace(/"/g, '""')}"`,
+        order.user_address || '',
         order.order_status,
-        order.tracking_number || '',
-        books[0]?.title || '', books[0]?.isbn ? toExcelText(books[0].isbn) : '',
-        books[1]?.title || '', books[1]?.isbn ? toExcelText(books[1].isbn) : '',
-        books[2]?.title || '', books[2]?.isbn ? toExcelText(books[2].isbn) : '',
-        books[3]?.title || '', books[3]?.isbn ? toExcelText(books[3].isbn) : '',
-      ].join(',');
+        book1?.book_title_snapshot || '', book1?.books?.isbn ? toExcelText(book1.books.isbn) : '',
+        book2?.book_title_snapshot || '', book2?.books?.isbn ? toExcelText(book2.books.isbn) : '',
+        book3?.book_title_snapshot || '', book3?.books?.isbn ? toExcelText(book3.books.isbn) : '',
+        book4?.book_title_snapshot || '', book4?.books?.isbn ? toExcelText(book4.books.isbn) : '',
+      ];
+
+      return values.map(escapeCsvValue).join(',');
     });
-    const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n');
+    const csvContent = "\uFEFF" + [headerRow, ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
