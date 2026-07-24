@@ -19,9 +19,16 @@ const REVIEWS = [
   { stars:'★★★★★', quote:'"독서 노트가 의외로 너무 좋아요."', author:'30대 디자이너, 서울' }
 ];
 
+const formatCycleDate = (value?: string | null, includeYear = false) => {
+  if (!value) return '';
+  const [year, month, day] = value.split('-').map(Number);
+  return includeYear ? `${year}년 ${month}월 ${day}일` : `${month}월 ${day}일`;
+};
+
 export default function Home() {
   const [books, setBooks] = useState<any[]>([]);
   const [cycleLabel, setCycleLabel] = useState<string>('로딩중...');
+  const [activeCycle, setActiveCycle] = useState<any>(null);
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   
@@ -55,6 +62,7 @@ export default function Home() {
       if (cycles && cycles.length > 0) {
         const cycle = cycles[0];
         setCycleLabel(cycle.label);
+        setActiveCycle(cycle);
         const { data: bData } = await supabase.from('books').select('*').eq('cycle_id', cycle.id);
         if (bData) {
           const sortedBooks = [...bData].sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0)).slice(0, 25);
@@ -403,7 +411,36 @@ export default function Home() {
             <p className="plan-name">한경 언더라인 독서클럽 3개월권</p>
             <p className="plan-price">45,000<span>원</span></p>
             <p className="plan-period">3개월 구독 · 일시납</p>
-            <button onClick={handleSubscribeClick} className="plan-btn" style={{ marginTop: '24px', display: 'inline-block', width: '100%', border: 'none', cursor: 'pointer', textDecoration: 'none', textAlign: 'center' }}>구독 신청하기</button>
+            
+            {activeCycle?.recruitment_start_date && activeCycle?.recruitment_end_date && (
+              <div style={{
+                marginTop: '16px',
+                padding: '12px 16px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: '#f3f4f6',
+                textAlign: 'center',
+                wordBreak: 'keep-all',
+                lineHeight: '1.4'
+              }}>
+                {(() => {
+                  const startYear = activeCycle.recruitment_start_date.split('-')[0];
+                  const endYear = activeCycle.recruitment_end_date.split('-')[0];
+                  const sameYear = startYear === endYear;
+                  
+                  const startLabel = formatCycleDate(activeCycle.recruitment_start_date, !sameYear);
+                  const endLabel = formatCycleDate(activeCycle.recruitment_end_date, !sameYear);
+                  const cycleNumberLabel = activeCycle.name?.match(/\d+기/)?.[0] || activeCycle.label || activeCycle.name || '현재 기수';
+                  
+                  return `${cycleNumberLabel} 모집 기간 : ${startLabel} ~ ${endLabel}`;
+                })()}
+              </div>
+            )}
+            
+            <button onClick={handleSubscribeClick} className="plan-btn" style={{ marginTop: activeCycle?.recruitment_start_date && activeCycle?.recruitment_end_date ? '20px' : '24px', display: 'inline-block', width: '100%', border: 'none', cursor: 'pointer', textDecoration: 'none', textAlign: 'center' }}>구독 신청하기</button>
 
           </div>
 

@@ -11,7 +11,8 @@ export default function CyclesManager() {
     id: '', name: '', status: 'upcoming', max_book_count: 4,
     subscription_start_date: '', subscription_end_date: '',
     book_order_start_date: '', book_order_end_date: '',
-    shipping_start_date: '', operation_end_date: ''
+    shipping_start_date: '', operation_end_date: '',
+    recruitment_start_date: '', recruitment_end_date: ''
   });
 
   const loadCycles = async () => {
@@ -40,7 +41,9 @@ export default function CyclesManager() {
         book_order_start_date: cycle.book_order_start_date.slice(0, 16),
         book_order_end_date: cycle.book_order_end_date.slice(0, 16),
         shipping_start_date: cycle.shipping_start_date.slice(0, 16),
-        operation_end_date: cycle.operation_end_date.slice(0, 16)
+        operation_end_date: cycle.operation_end_date.slice(0, 16),
+        recruitment_start_date: cycle.recruitment_start_date || '',
+        recruitment_end_date: cycle.recruitment_end_date || ''
       });
     } else {
       setEditingCycle(null);
@@ -48,7 +51,8 @@ export default function CyclesManager() {
         id: '', name: '', status: 'upcoming', max_book_count: 4,
         subscription_start_date: '', subscription_end_date: '',
         book_order_start_date: '', book_order_end_date: '',
-        shipping_start_date: '', operation_end_date: ''
+        shipping_start_date: '', operation_end_date: '',
+        recruitment_start_date: '', recruitment_end_date: ''
       });
     }
     setIsModalOpen(true);
@@ -65,6 +69,8 @@ export default function CyclesManager() {
         book_order_end_date: new Date(formData.book_order_end_date).toISOString(),
         shipping_start_date: new Date(formData.shipping_start_date).toISOString(),
         operation_end_date: new Date(formData.operation_end_date).toISOString(),
+        recruitment_start_date: formData.recruitment_start_date || null,
+        recruitment_end_date: formData.recruitment_end_date || null,
       };
 
       const url = editingCycle ? `/api/admin/cycles/${editingCycle.id}` : '/api/admin/cycles';
@@ -169,6 +175,15 @@ export default function CyclesManager() {
 
             <div style={{ background: '#f9fafb', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
               <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 600 }}>모집 표시 시작일</label>
+                <input type="date" value={formData.recruitment_start_date} onChange={e => setFormData({...formData, recruitment_start_date: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }} />
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 600 }}>모집 표시 종료일</label>
+                <input type="date" value={formData.recruitment_end_date} onChange={e => setFormData({...formData, recruitment_end_date: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }} />
+              </div>
+
+              <div style={{ marginBottom: '12px', marginTop: '12px', borderTop: '1px solid #e5e7eb', paddingTop: '12px' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', fontWeight: 600 }}>구독 신청 시작일</label>
                 <input type="datetime-local" value={formData.subscription_start_date} onChange={e => setFormData({...formData, subscription_start_date: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }} />
               </div>
