@@ -30,7 +30,8 @@ function BooksContent() {
   const [submitting, setSubmitting] = useState(false);
   
   const scrollPosRef = useRef<number>(0);
-  const MAX_SELECT = 4;
+  const [maxSelectAllowed, setMaxSelectAllowed] = useState(4);
+  const editOrderId = searchParams.get('editOrderId');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -86,12 +87,11 @@ function BooksContent() {
 
       // Check dates
       const now = new Date();
-      const orderStart = new Date(cycle.book_order_start_date);
       const orderEnd = new Date(cycle.book_order_end_date);
       
-      setIsBeforeStart(now < orderStart);
+      setIsBeforeStart(false); // No longer applies
       setIsAfterEnd(now > orderEnd);
-      setIsSelectionPeriod(now >= orderStart && now <= orderEnd);
+      setIsSelectionPeriod(now <= orderEnd);
 
       // Load books
       const { data: bData } = await supabase
@@ -146,10 +146,22 @@ function BooksContent() {
           setOrder(o);
           setIsSubscriber(true);
           const activeBooksCount = (o.book_orders || [])
-            .filter((bo: any) => bo.order_status !== '주문취소')
-            .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
+            .filter((bo: any) => bo.order_status !== '주문취소' && bo.id !== editOrderId)
+            .flatMap((bo: any) => bo.book_order_items || [])
+            .reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0);
+          
+          const maxAllowed = Number(cycle.max_book_count || 4) - activeBooksCount;
+          setMaxSelectAllowed(Math.max(0, maxAllowed));
+          
           if (activeBooksCount >= (cycle.max_book_count || 4)) {
             setHasSelectedBooks(true);
+          }
+          
+          if (editOrderId) {
+            const editingBo = o.book_orders.find((bo: any) => bo.id === editOrderId);
+            if (editingBo && editingBo.book_order_items) {
+              setSelectedIds(new Set(editingBo.book_order_items.map((item: any) => item.book_id)));
+            }
           }
         } else {
           setIsSubscriber(false);
@@ -185,7 +197,7 @@ function BooksContent() {
       const next = new Set(prev);
       if (next.has(id)) { next.delete(id); }
       else {
-        if (next.size >= MAX_SELECT) { alert(`최대 ${MAX_SELECT}권까지만 선택할 수 있습니다.`); return prev; }
+        if (next.size >= maxSelectAllowed) { alert(`최대 ${maxSelectAllowed}권까지만 선택 가능합니다.`); return prev; }
         const b = books.find(x => x.id === id);
         if (b && b.is_orderable === false) {
            alert('이 도서는 현재 주문할 수 없습니다.');
@@ -237,21 +249,26 @@ function BooksContent() {
         return;
       }
       
-      const res = await fetch('/api/books/select', {
+      const endpoint = editOrderId ? '/api/books/edit-select' : '/api/books/select';
+      const requestBody = editOrderId 
+        ? { editOrderId, bookIds: Array.from(selectedIds) }
+        : { subOrderId: order.id, bookIds: Array.from(selectedIds) };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ subOrderId: order.id, bookIds: Array.from(selectedIds) })
+        body: JSON.stringify(requestBody)
       });
 
       const data = await res.json();
       if (res.ok) {
-        alert('도서 주문이 완료되었습니다.');
+        alert(editOrderId ? '도서 변경이 완료되었습니다.' : '도서 주문이 완료되었습니다.');
         router.push('/mypage');
       } else {
-        alert(data.error || '도서 저장에 실패했습니다.');
+        alert(data.error || '도서 처리에 실패했습니다.');
       }
     } catch (err) {
       console.error(err);
@@ -450,7 +467,7 @@ function BooksContent() {
           <div>
             <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>선택한 도서</span>
             <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent)', marginLeft: '8px' }}>{selectedIds.size}</span>
-            <span style={{ color: '#6b7280' }}> / {MAX_SELECT}권</span>
+            <span style={{ color: '#6b7280' }}> / {maxSelectAllowed}권</span>
           </div>
           <button 
             onClick={() => {

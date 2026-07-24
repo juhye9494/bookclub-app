@@ -63,6 +63,32 @@ export default function MyPage() {
   const [detailAddress, setDetailAddress] = useState('');
   const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cancelingBookOrderId, setCancelingBookOrderId] = useState<string | null>(null);
+
+  const handleCancelBookOrder = async (bookOrderId: string) => {
+    if (!window.confirm('선택한 도서 신청을 취소하시겠습니까?')) return;
+    setCancelingBookOrderId(bookOrderId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('로그인이 필요합니다.');
+
+      const res = await fetch(`/api/book-orders/${bookOrderId}/cancel`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || '취소 중 오류가 발생했습니다.');
+      alert('도서 신청이 취소되었습니다.');
+      // Update local state instead of full reload for better UX if needed, or reload:
+      window.location.reload();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setCancelingBookOrderId(null);
+    }
+  };
 
   const handleDeleteInquiry = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -139,7 +165,7 @@ export default function MyPage() {
       if (doneOrders) {
         const { data: bOrders } = await supabase
           .from('book_orders')
-          .select('*, book_order_items(*)')
+          .select('*, book_order_items(*, book:books(id, title, cover_url, author))')
           .eq('user_id', session.user.id)
           .order('created_at', { ascending: false });
 
@@ -351,23 +377,23 @@ export default function MyPage() {
                   const isFailed = order.payment_status === 'FAILED';
                   const activeBooksCount = (order.book_orders || [])
                     .filter((bo: any) => bo.order_status !== '주문취소')
-                    .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
+                    .flatMap((bo: any) => bo.book_order_items || [])
+                    .reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0);
                   const maxCount = cycle.max_book_count || 4;
                   const hasSelectedBooks = activeBooksCount >= maxCount;
                   const hasActiveBookOrders = activeBooksCount > 0;
                   
                   const now = new Date();
-                  const orderStart = cycle.book_order_start_date ? new Date(cycle.book_order_start_date) : new Date('2000-01-01');
                   const orderEnd = cycle.book_order_end_date ? new Date(cycle.book_order_end_date) : new Date('2099-12-31');
                   const subEnd = cycle.subscription_end_date ? new Date(cycle.subscription_end_date) : new Date('2099-12-31');
-                  const isOrderAllowed = (now >= orderStart && now <= orderEnd && cycle.status !== 'closed');
+                  const isOrderAllowed = (now <= orderEnd && cycle.status !== 'closed');
                   const cycleDisplayName = cycle?.name || cycle?.label || '';
                   const subscriptionTitle = cycleDisplayName
                     ? `${cycleDisplayName} 구독권`
                     : '구독권';
                   const statusUI = getStatusDisplay(order, isOrderAllowed);
                   
-                  const isRefundable = isDone && !!order.cycle_id && now <= subEnd && now < orderStart && cycle.status !== 'closed' && !hasActiveBookOrders;
+                  const isRefundable = isDone && !!order.cycle_id && now <= subEnd && cycle.status !== 'closed' && !hasActiveBookOrders;
 
                   if (isCancelled) {
                     return (
@@ -436,7 +462,7 @@ export default function MyPage() {
                         </span>
                         {isDone && !hasSelectedBooks && isOrderAllowed && (
                           <Link href={{ pathname: '/books', query: { subOrderId: order.id } }} style={{ padding: '6px 16px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', background: 'var(--accent)', color: '#fff', textDecoration: 'none' }}>
-                            도서 선택하기
+                            {hasActiveBookOrders ? '도서 추가 선택' : '도서 선택하기'}
                           </Link>
                         )}
                         {isRefundable && (
@@ -450,15 +476,6 @@ export default function MyPage() {
                       </div>
                       </div>
                       
-                      {isDone && !hasSelectedBooks && !isOrderAllowed && (
-                        <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
-                          <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                            <strong style={{ color: 'var(--accent)' }}>도서 신청은 {orderStart.getFullYear()}년 {orderStart.getMonth() + 1}월 {orderStart.getDate()}일부터 가능합니다.</strong><br/>
-                            {orderStart.getFullYear()}년 {orderStart.getMonth() + 1}월부터 웰컴키트가 발송되며,<br/>
-                            도서 신청 순서에 따라 순차 배송됩니다.
-                          </p>
-                        </div>
-                      )}
 
                       {isDone && !isRefundable && (
                         <div style={{ padding: '16px', background: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
@@ -476,26 +493,73 @@ export default function MyPage() {
                       {isDone && (
                         <>
                           <div style={{ marginBottom: '20px' }}>
-                            <h4 style={{ fontSize: '0.85rem', marginBottom: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>도서 주문 현황</h4>
+                            <h4 style={{ fontSize: '0.9rem', marginBottom: '16px', color: 'var(--text)', fontWeight: 700 }}>도서 주문 현황 (현재 선택: {activeBooksCount}/{maxCount}권)</h4>
                       {(!order.book_orders || order.book_orders.length === 0) ? (
-                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>아직 신청된 도서 주문이 없습니다.</p>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>아직 신청된 도서 주문이 없습니다.</p>
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                          {order.book_orders.map((bo: any) => (
-                            <div key={bo.id} style={{ padding: '16px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>주문일: {new Date(bo.created_at).toLocaleDateString('ko-KR')}</span>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: bo.order_status === '주문취소' ? '#ef4444' : 'var(--accent)' }}>{bo.order_status}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                          {order.book_orders.map((bo: any) => {
+                            const isEditable = bo.order_status === '주문접수';
+                            const displayStatus = bo.order_status === '주문접수' ? '주문 접수'
+                              : bo.order_status === '배송준비중' ? '배송 준비중'
+                              : bo.order_status === '배송중' ? '배송중'
+                              : bo.order_status === '배송완료' ? '배송완료'
+                              : bo.order_status === '주문취소' ? '주문취소'
+                              : bo.order_status;
+                            return (
+                            <div key={bo.id} style={{ padding: '20px', borderRadius: '16px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                  주문접수일: {new Date(bo.created_at).toLocaleDateString('ko-KR')}
+                                </span>
+                                <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600, background: bo.order_status === '주문취소' ? '#fef2f2' : '#e0e7ff', color: bo.order_status === '주문취소' ? '#ef4444' : '#4338ca' }}>
+                                  발송 상태: {displayStatus}
+                                </span>
                               </div>
-                              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                {(bo.book_order_items || []).map((item: any) => (
-                                  <div key={item.id} style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#fff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{item.book_title_snapshot}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {(bo.book_order_items || []).map((item: any) => {
+                                  const displayTitle = item.book?.title || item.title_snapshot || '도서명 없음';
+                                  return (
+                                  <div key={item.id} style={{ display: 'flex', gap: '16px', alignItems: 'center', background: '#fff', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                    {item.book?.cover_url ? (
+                                      <img src={item.book.cover_url} alt={displayTitle} style={{ width: '48px', height: '68px', objectFit: 'cover', borderRadius: '4px' }} />
+                                    ) : (
+                                      <div style={{ width: '48px', height: '68px', background: '#e2e8f0', borderRadius: '4px' }}></div>
+                                    )}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                      <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{displayTitle}</span>
+                                      {item.book?.author && <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{item.book.author}</span>}
+                                    </div>
                                   </div>
-                                ))}
+                                  );
+                                })}
                               </div>
+                              
+                              <div style={{ marginTop: '16px', fontSize: '0.82rem', color: '#475569', lineHeight: 1.6 }}>
+                                <p style={{ margin: '0 0 8px 0', color: '#b45309', fontWeight: 600 }}>배송 준비중일 경우 취소 및 변경이 불가능합니다.</p>
+                                <p style={{ margin: 0 }}>
+                                  도서는 운영기간 매주 금요일, 주 1회 발송되며,<br/>
+                                  택배 배송 특성상 지역에 따라 수령까지 3~5일 정도 소요될 수 있습니다.
+                                </p>
+                              </div>
+
+                              {isEditable && (
+                                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                                  <Link href={{ pathname: '/books', query: { subOrderId: order.id, editOrderId: bo.id } }} style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, background: '#fff', color: 'var(--text)', border: '1px solid #cbd5e1', textDecoration: 'none' }}>
+                                    선택 변경
+                                  </Link>
+                                  <button
+                                    onClick={() => handleCancelBookOrder(bo.id)}
+                                    disabled={cancelingBookOrderId === bo.id}
+                                    style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, background: '#fff', color: '#ef4444', border: '1px solid #fca5a5', cursor: 'pointer' }}
+                                  >
+                                    {cancelingBookOrderId === bo.id ? '처리 중...' : '신청 취소'}
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>

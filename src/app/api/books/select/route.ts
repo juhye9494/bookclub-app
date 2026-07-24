@@ -68,13 +68,6 @@ export async function POST(req: Request) {
     }
 
     const cycle: any = orderData.cycles || {};
-    if (cycle.book_order_start_date) {
-      const orderStart = new Date(cycle.book_order_start_date);
-      const now = new Date();
-      if (now < orderStart) {
-        return NextResponse.json({ error: '아직 도서 신청 기간이 아닙니다. (' + orderStart.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' }) + ' 부터 신청 가능)' }, { status: 400 });
-      }
-    }
 
     // 2. 선택한 도서가 해당 기수에 속하는지 확인
     const { data: booksData, error: booksErr } = await supabaseAdmin
