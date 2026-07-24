@@ -121,7 +121,7 @@ export default function MyPage() {
       // 활동내역 가져오기
       const { data: memberParts, error: partsErr } = await supabase
         .from('group_participants')
-        .select('group_id, role, created_at')
+        .select('group_id, role, created_at, group_title')
         .eq('user_id', session.user.id)
         .eq('role', 'member')
         .order('created_at', { ascending: false });
@@ -135,9 +135,14 @@ export default function MyPage() {
 
       const joinedList: any[] = (memberParts || []).reduce((acc: any[], p) => {
         const group = joinedGroups?.find(g => g.id === p.group_id);
-        if (group) {
-          acc.push({ id: p.group_id + '-member', group_title: group.title, role: 'member', created_at: p.created_at });
-        }
+        acc.push({
+          id: p.group_id + '-member',
+          original_id: group ? p.group_id : null,
+          group_title: group ? group.title : p.group_title || '삭제된 독서모임',
+          is_deleted: !group,
+          role: 'member',
+          created_at: p.created_at
+        });
         return acc;
       }, []);
 
@@ -149,7 +154,12 @@ export default function MyPage() {
       if (createdErr) console.error('created fetch error:', createdErr);
 
       const createdList = (createdGroups || []).map(g => ({
-        id: g.id + '-leader', group_title: g.title, role: 'leader', created_at: g.created_at
+        id: g.id + '-leader',
+        original_id: g.id,
+        group_title: g.title,
+        is_deleted: false,
+        role: 'leader',
+        created_at: g.created_at
       }));
 
       const allGroupActivities = [...createdList, ...joinedList].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -158,14 +168,21 @@ export default function MyPage() {
 
       const { data: ep } = await supabase.from('event_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
 
-      // 존재하는 이벤트만 필터링 (DB 기준)
-      const { data: existingEvents } = await supabase.from('events').select('id');
+      const { data: existingEvents } = await supabase.from('events').select('id, title');
       const existingEventIds = new Set((existingEvents || []).map((e: any) => e.id));
+      const existingEventMap = new Map((existingEvents || []).map((e: any) => [e.id, e.title]));
       if (ep) {
         // 같은 이벤트 중복 제거 (최신 1건만 유지)
         const uniqueMap = new Map();
-        ep.filter((p: any) => existingEventIds.has(p.event_id)).forEach((p: any) => {
-          if (!uniqueMap.has(p.event_id)) uniqueMap.set(p.event_id, p);
+        ep.forEach((p: any) => {
+          if (!uniqueMap.has(p.event_id)) {
+            uniqueMap.set(p.event_id, {
+              ...p,
+              original_id: existingEventIds.has(p.event_id) ? p.event_id : null,
+              display_title: existingEventIds.has(p.event_id) ? (existingEventMap.get(p.event_id) || p.event_title || '이벤트') : (p.event_title || '삭제된 이벤트'),
+              is_deleted: !existingEventIds.has(p.event_id)
+            });
+          }
         });
         setEventParticipations(Array.from(uniqueMap.values()));
       }
@@ -509,8 +526,15 @@ export default function MyPage() {
                           <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-mid)', whiteSpace: 'nowrap' }}>{new Date(gp.created_at).toLocaleDateString('ko-KR')}</td>
                           <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 600 }}>
                             {gp.role === 'leader' ? (
-                              <span><span style={{ color: 'var(--accent)', fontWeight: 700 }}>[개설]</span> {gp.group_title}</span>
-                            ) : gp.group_title}
+                              <span style={{ color: 'var(--accent)', fontWeight: 700, marginRight: '4px' }}>[개설]</span>
+                            ) : null}
+                            {gp.is_deleted || !gp.original_id ? (
+                              <span style={{ color: '#9ca3af' }}>{gp.group_title} <span style={{ fontSize: '0.75rem', fontWeight: 400 }}>(종료되었거나 삭제된 항목)</span></span>
+                            ) : (
+                              <Link href={`/groups?id=${encodeURIComponent(String(gp.original_id))}`} style={{ color: 'inherit', textDecoration: 'none' }} className="activity-link">
+                                {gp.group_title}
+                              </Link>
+                            )}
                           </td>
                           <td style={{ padding: '14px 16px' }}>
                             <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, whiteSpace: 'nowrap', background: gp.role === 'leader' ? '#dbeafe' : '#d1fae5', color: gp.role === 'leader' ? '#2563eb' : '#059669' }}>
@@ -545,7 +569,15 @@ export default function MyPage() {
                       {eventParticipations.map((ep) => (
                         <tr key={ep.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                           <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-mid)', whiteSpace: 'nowrap' }}>{new Date(ep.created_at).toLocaleDateString('ko-KR')}</td>
-                          <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 600 }}>{ep.event_title}</td>
+                          <td style={{ padding: '14px 16px', fontSize: '0.85rem', fontWeight: 600 }}>
+                            {ep.is_deleted || !ep.original_id ? (
+                              <span style={{ color: '#9ca3af' }}>{ep.display_title} <span style={{ fontSize: '0.75rem', fontWeight: 400 }}>(종료되었거나 삭제된 항목)</span></span>
+                            ) : (
+                              <Link href={`/events?id=${encodeURIComponent(String(ep.original_id))}`} style={{ color: 'inherit', textDecoration: 'none' }} className="activity-link">
+                                {ep.display_title}
+                              </Link>
+                            )}
+                          </td>
                           <td style={{ padding: '14px 16px' }}>
                             <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, whiteSpace: 'nowrap', background: '#d1fae5', color: '#059669' }}>신청완료</span>
                           </td>

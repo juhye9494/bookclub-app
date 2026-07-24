@@ -1,9 +1,30 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { isAdmin } from '@/utils/admin';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import './groups.css';
+
+function GroupQueryHandler({ groups, onSelect }: { groups: any[], onSelect: (g: any) => void }) {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
+  const handledIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!id || groups.length === 0) return;
+    if (handledIdRef.current === id) return;
+
+    handledIdRef.current = id;
+
+    const target = groups.find(g => String(g.id) === id);
+    if (target) {
+      onSelect(target);
+    }
+  }, [id, groups, onSelect]);
+
+  return null;
+}
 
 const INITIAL_GROUPS = [
   {
@@ -45,6 +66,7 @@ const INITIAL_GROUPS = [
 ];
 
 export default function GroupsPage() {
+  const router = useRouter();
   const [groups, setGroups] = useState<any[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [pendingCreateGroup, setPendingCreateGroup] = useState(false);
@@ -91,7 +113,13 @@ export default function GroupsPage() {
   
   // Selected group for detail view modal
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
-  const closeDetail = () => setSelectedGroup(null);
+  const closeDetail = () => {
+    setSelectedGroup(null);
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('id')) {
+      router.replace('/groups', { scroll: false });
+    }
+  };
   
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
@@ -375,6 +403,10 @@ export default function GroupsPage() {
   return (
     <div style={{ background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--sans)', color: 'var(--text)', paddingTop: '64px' }}>
       
+      <Suspense fallback={null}>
+        <GroupQueryHandler groups={groups} onSelect={setSelectedGroup} />
+      </Suspense>
+
       {/* Styles */}
       <style>{`
         .group-banner {

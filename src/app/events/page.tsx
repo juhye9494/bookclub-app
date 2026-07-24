@@ -1,6 +1,27 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+function EventQueryHandler({ events, onSelect }: { events: any[], onSelect: (e: any) => void }) {
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
+  const handledIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!id || events.length === 0) return;
+    if (handledIdRef.current === id) return;
+
+    handledIdRef.current = id;
+
+    const target = events.find(e => String(e.id) === id);
+    if (target) {
+      onSelect(target);
+    }
+  }, [id, events, onSelect]);
+
+  return null;
+}
 
 const MOCK_EVENTS = [
   {
@@ -39,10 +60,18 @@ const MOCK_EVENTS = [
 ];
 
 export default function EventsPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('전체');
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const closeDetail = () => {
+    setSelectedEvent(null);
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('id')) {
+      router.replace('/events', { scroll: false });
+    }
+  };
   const [user, setUser] = useState<any>(null);
   const [applying, setApplying] = useState(false);
   const [appliedEventIds, setAppliedEventIds] = useState<Set<string>>(new Set());
@@ -153,6 +182,10 @@ export default function EventsPage() {
   return (
     <div style={{ background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--sans)', color: 'var(--text)', paddingTop: '64px' }}>
       
+      <Suspense fallback={null}>
+        <EventQueryHandler events={events} onSelect={setSelectedEvent} />
+      </Suspense>
+
       {/* Dynamic Embedded Styles for Premium Animations & Micro interactions */}
       <style>{`
         .category-tab {
@@ -316,7 +349,7 @@ export default function EventsPage() {
         <div 
           className="modal-overlay open" 
           style={{ zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-          onClick={(e) => { if (e.target === e.currentTarget) setSelectedEvent(null); }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeDetail(); }}
         >
           <div 
             className="modal-inner"
@@ -334,7 +367,7 @@ export default function EventsPage() {
           >
             {/* Close Button */}
             <button 
-              onClick={() => setSelectedEvent(null)}
+              onClick={() => closeDetail()}
               style={{ position: 'absolute', top: '16px', right: '20px', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
             >
               ✕
@@ -418,7 +451,7 @@ export default function EventsPage() {
               {/* Sticky Apply Button Bar */}
               <div style={{ padding: '24px 36px', borderTop: '1px solid var(--border)', background: '#fff', display: 'flex', gap: '12px' }}>
                 <button 
-                  onClick={() => setSelectedEvent(null)}
+                  onClick={() => closeDetail()}
                   style={{ flex: 1, padding: '14px 20px', border: '1px solid var(--border)', background: '#fff', color: 'var(--text)', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
                 >
                   닫기
