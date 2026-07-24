@@ -2,6 +2,28 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
+const formatDatetimeLocalKst = (isoString?: string | null) => {
+  if (!isoString) return '';
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+  }).formatToParts(new Date(isoString));
+  const getPart = (type: string) => parts.find(part => part.type === type)?.value || '';
+  return `${getPart('year')}-${getPart('month')}-${getPart('day')}T${getPart('hour')}:${getPart('minute')}`;
+};
+
+const toKstIso = (value?: string | null) => {
+  if (!value) return null;
+  const normalized = value.length === 16 ? `${value}:00` : value;
+  return new Date(`${normalized}+09:00`).toISOString();
+};
+
 export default function CyclesManager() {
   const [cycles, setCycles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,12 +58,12 @@ export default function CyclesManager() {
       setEditingCycle(cycle);
       setFormData({
         id: cycle.id, name: cycle.name, status: cycle.status, max_book_count: cycle.max_book_count,
-        subscription_start_date: cycle.subscription_start_date.slice(0, 16),
-        subscription_end_date: cycle.subscription_end_date.slice(0, 16),
-        book_order_start_date: cycle.book_order_start_date.slice(0, 16),
-        book_order_end_date: cycle.book_order_end_date.slice(0, 16),
-        shipping_start_date: cycle.shipping_start_date.slice(0, 16),
-        operation_end_date: cycle.operation_end_date.slice(0, 16),
+        subscription_start_date: formatDatetimeLocalKst(cycle.subscription_start_date),
+        subscription_end_date: formatDatetimeLocalKst(cycle.subscription_end_date),
+        book_order_start_date: formatDatetimeLocalKst(cycle.book_order_start_date),
+        book_order_end_date: formatDatetimeLocalKst(cycle.book_order_end_date),
+        shipping_start_date: formatDatetimeLocalKst(cycle.shipping_start_date),
+        operation_end_date: formatDatetimeLocalKst(cycle.operation_end_date),
         activity_start_date: cycle.activity_start_date || '',
         recruitment_start_date: cycle.recruitment_start_date || '',
         recruitment_end_date: cycle.recruitment_end_date || ''
@@ -64,12 +86,12 @@ export default function CyclesManager() {
       const { data: { session } } = await supabase.auth.getSession();
       const payload = {
         ...formData,
-        subscription_start_date: new Date(formData.subscription_start_date).toISOString(),
-        subscription_end_date: new Date(formData.subscription_end_date).toISOString(),
-        book_order_start_date: new Date(formData.book_order_start_date).toISOString(),
-        book_order_end_date: new Date(formData.book_order_end_date).toISOString(),
-        shipping_start_date: new Date(formData.shipping_start_date).toISOString(),
-        operation_end_date: new Date(formData.operation_end_date).toISOString(),
+        subscription_start_date: toKstIso(formData.subscription_start_date),
+        subscription_end_date: toKstIso(formData.subscription_end_date),
+        book_order_start_date: toKstIso(formData.book_order_start_date),
+        book_order_end_date: toKstIso(formData.book_order_end_date),
+        shipping_start_date: toKstIso(formData.shipping_start_date),
+        operation_end_date: toKstIso(formData.operation_end_date),
         activity_start_date: formData.activity_start_date || null,
         recruitment_start_date: formData.recruitment_start_date || null,
         recruitment_end_date: formData.recruitment_end_date || null,
