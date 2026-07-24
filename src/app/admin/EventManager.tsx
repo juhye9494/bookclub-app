@@ -155,8 +155,18 @@ export default function EventManager() {
     if (data) {
       const grouped: Record<string, any[]> = {};
       data.forEach(p => {
+        // 실제 컬럼이 추가될 경우를 대비한 방어적 필터링 (취소 상태 제외)
+        if (p.status === '취소' || p.status === 'CANCELLED' || p.is_cancelled === true) return;
+        
         if (!grouped[p.event_id]) grouped[p.event_id] = [];
-        grouped[p.event_id].push(p);
+        
+        // 동일 회원의 유효 신청 1건만 유지 (가장 최근 신청 기준 중복 방지)
+        const uniqueKey = p.user_id || p.user_email;
+        const isDuplicate = grouped[p.event_id].some(existing => (existing.user_id || existing.user_email) === uniqueKey);
+        
+        if (!isDuplicate) {
+          grouped[p.event_id].push(p);
+        }
       });
       setParticipants(grouped);
     }
