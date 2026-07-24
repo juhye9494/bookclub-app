@@ -231,6 +231,14 @@ function BooksContent() {
     setLoadingBooks(false);
   };
 
+  const removeSelectedBook = (bookId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.delete(bookId);
+      return next;
+    });
+  };
+
   const toggleBook = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     
@@ -520,25 +528,62 @@ function BooksContent() {
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
           <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ef4444' }}>도서 신청 기간이 종료되었습니다.</span>
         </div>
-      ) : (
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderTop: '1px solid #e5e7eb', padding: '16px 5vw', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 50, boxShadow: '0 -4px 12px rgba(0,0,0,0.05)' }}>
-          <div>
-            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>선택한 도서</span>
-            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent)', marginLeft: '8px' }}>{selectedIds.size}</span>
-            <span style={{ color: '#6b7280' }}> / {maxSelectAllowed}권</span>
+      ) : selectedIds.size > 0 ? (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid #e5e7eb', padding: '16px 5vw', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 50, boxShadow: '0 -4px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1, minWidth: 0 }}>
+            <div style={{ flexShrink: 0 }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>선택한 도서</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent)', marginLeft: '8px' }}>{selectedIds.size}</span>
+              <span style={{ color: '#6b7280' }}> / {maxSelectAllowed}권</span>
+            </div>
+            
+            <div style={{ width: '1px', height: '32px', background: '#e5e7eb', flexShrink: 0 }} />
+            
+            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px', flex: 1 }}>
+              {Array.from(selectedIds).map(id => {
+                const b = books.find(x => x.id === id);
+                if (!b) return null;
+                return (
+                  <div key={id} style={{ position: 'relative', flexShrink: 0, width: '40px', height: '58px', borderRadius: '4px', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
+                    <img src={b.img} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeSelectedBook(id);
+                      }}
+                      style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', background: '#333', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button 
+              onClick={() => {
+                if (window.confirm('선택한 도서를 모두 취소하시겠습니까?')) {
+                  setSelectedIds(new Set());
+                }
+              }}
+              style={{ flexShrink: 0, padding: '8px 16px', fontSize: '0.85rem', color: '#6b7280', background: 'transparent', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer' }}
+            >
+              전체 선택 취소
+            </button>
           </div>
-          <button 
-            onClick={() => {
-              if (selectedIds.size > 0) setIsSubmitOpen(true);
-              else alert('도서를 1권 이상 선택해주세요.');
-            }}
-            disabled={selectedIds.size === 0}
-            style={{ padding: '12px 32px', background: selectedIds.size > 0 ? 'var(--accent)' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 700, cursor: selectedIds.size > 0 ? 'pointer' : 'not-allowed' }}
-          >
-            선택 완료
-          </button>
+          <div style={{ marginLeft: '24px', flexShrink: 0 }}>
+            <button 
+              onClick={() => {
+                if (selectedIds.size > 0) setIsSubmitOpen(true);
+              }}
+              disabled={submitting || selectedIds.size === 0}
+              style={{ padding: '12px 32px', background: selectedIds.size > 0 ? 'var(--accent)' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 700, cursor: (selectedIds.size > 0 && !submitting) ? 'pointer' : 'not-allowed' }}
+            >
+              {submitting ? '신청 중...' : '신청하기'}
+            </button>
+          </div>
         </div>
-      )}
+      ) : null}
 
       {isSubmitOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>

@@ -115,7 +115,7 @@ BEGIN
   VALUES (p_subscription_order_id, v_order.user_id, v_cycle.id, '주문접수')
   RETURNING id INTO v_new_order_id;
 
-  INSERT INTO public.book_order_items (book_order_id, book_id, title_snapshot, quantity)
+  INSERT INTO public.book_order_items (book_order_id, book_id, book_title_snapshot, quantity)
   SELECT v_new_order_id, id, title, 1
   FROM public.books
   WHERE id = ANY(SELECT trim(b) FROM unnest(p_book_ids) b)

@@ -127,7 +127,7 @@ BEGIN
   -- 7. Replace items
   DELETE FROM public.book_order_items WHERE book_order_id = p_book_order_id;
 
-  INSERT INTO public.book_order_items (book_order_id, book_id, title_snapshot, quantity)
+  INSERT INTO public.book_order_items (book_order_id, book_id, book_title_snapshot, quantity)
   SELECT p_book_order_id, id, title, 1
   FROM public.books
   WHERE id = ANY(SELECT trim(b) FROM unnest(p_book_ids) b)

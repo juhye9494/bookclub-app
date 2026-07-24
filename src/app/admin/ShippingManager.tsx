@@ -76,7 +76,7 @@ export default function ShippingManager() {
         user_name: bo.subscription_order?.user_name || '',
         user_phone: bo.subscription_order?.user_phone || '',
         user_address: bo.subscription_order?.user_address || '',
-        book_order_items: (bo.book_order_items || []).map((item: any) => ({ title: item.title_snapshot, cover: '' })),
+        book_order_items: (bo.book_order_items || []).map((item: any) => ({ title: item.book_title_snapshot, cover: '' })),
         total_amount: bo.subscription_order?.total_amount || 45000,
         order_status: bo.order_status || '주문접수',
         tracking_number: bo.tracking_number || '',

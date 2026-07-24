@@ -248,7 +248,7 @@ export default function MyPage() {
           const bookOrderIds = bookOrderRows.map(bo => bo.id);
           const { data: itemsData, error: itemsErr } = await supabase
             .from('book_order_items')
-            .select('id, book_order_id, book_id, title_snapshot, quantity, created_at')
+            .select('id, book_order_id, book_id, book_title_snapshot, quantity, created_at')
             .in('book_order_id', bookOrderIds);
             
           if (itemsErr) {
@@ -665,7 +665,7 @@ export default function MyPage() {
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {(bo.book_order_items || []).map((item: any) => {
-                                  const displayTitle = item.book?.title || item.title_snapshot || '도서명 없음';
+                                  const displayTitle = item.book?.title || item.book_title_snapshot || '도서명 없음';
                                   return (
                                   <div key={item.id} style={{ display: 'flex', gap: '16px', alignItems: 'center', background: '#fff', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                                     {item.book?.cover_url ? (

@@ -104,7 +104,7 @@ export async function POST(req: Request) {
 
     if (rpcError) {
       console.error('update_book_order RPC Error:', rpcError);
-      return NextResponse.json({ error: '도서 변경에 실패했습니다. 유효하지 않은 도서 또는 수량 초과일 수 있습니다.' }, { status: 400 });
+      return NextResponse.json({ error: '도서 신청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
