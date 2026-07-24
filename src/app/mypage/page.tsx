@@ -699,80 +699,349 @@ export default function MyPage() {
                         <>
                           <div style={{ marginBottom: '20px' }}>
                             <h4 style={{ fontSize: '0.9rem', marginBottom: '16px', color: 'var(--text)', fontWeight: 700 }}>도서 주문 현황 (현재 선택: {activeBooksCount}/{maxCount}권)</h4>
-                      {order.bookOrdersError ? (
-                        <p style={{ fontSize: '0.85rem', color: '#ef4444' }}>도서 주문 내역을 불러오지 못했습니다.</p>
-                      ) : (!order.book_orders || order.book_orders.length === 0) ? (
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>아직 신청한 도서 주문이 없습니다.</p>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                          {order.book_orders.map((bo: any) => {
-                            const isEditable = bo.order_status === '주문접수';
-                            const displayStatus = bo.order_status === '주문접수' ? '주문 접수'
-                              : bo.order_status === '배송준비중' ? '배송 준비중'
-                              : bo.order_status === '배송중' ? '배송중'
-                              : bo.order_status === '배송완료' ? '배송완료'
-                              : bo.order_status === '주문취소' ? '주문취소'
-                              : bo.order_status;
-                            return (
-                            <div key={bo.id} style={{ padding: '20px', borderRadius: '16px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                  주문접수일: {new Date(bo.created_at).toLocaleDateString('ko-KR')}
-                                </span>
-                                <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600, background: bo.order_status === '주문취소' ? '#fef2f2' : '#e0e7ff', color: bo.order_status === '주문취소' ? '#ef4444' : '#4338ca' }}>
-                                  발송 상태: {displayStatus}
-                                </span>
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {(bo.book_order_items || []).map((item: any) => {
-                                  const displayTitle = item.book?.title || item.book_title_snapshot || '도서명 없음';
-                                  return (
-                                  <div key={item.id} style={{ display: 'flex', gap: '16px', alignItems: 'center', background: '#fff', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                    {item.book?.cover_url ? (
-                                      <img src={item.book.cover_url} alt={displayTitle} style={{ width: '48px', height: '68px', objectFit: 'cover', borderRadius: '4px' }} />
-                                    ) : (
-                                      <div style={{ width: '48px', height: '68px', background: '#e2e8f0', borderRadius: '4px' }}></div>
-                                    )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                      <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{displayTitle}</span>
-                                      {item.book?.author && <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{item.book.author}</span>}
-                                    </div>
-                                  </div>
-                                  );
-                                })}
-                              </div>
-                              
-                              <div style={{ marginTop: '16px', fontSize: '0.82rem', color: '#475569', lineHeight: 1.6 }}>
-                                <p style={{ margin: '0 0 12px 0', color: 'var(--text)' }}>
-                                  <strong>도서 신청이 완료되었습니다.</strong><br/>
-                                  배송은 {order.cycle?.shipping_start_date ? new Date(order.cycle.shipping_start_date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : '지정된 날짜'}부터 순차적으로 시작됩니다.
-                                </p>
-                                <p style={{ margin: '0 0 8px 0', color: '#b45309', fontWeight: 600 }}>배송 준비중일 경우 취소 및 변경이 불가능합니다.</p>
-                                <p style={{ margin: 0 }}>
-                                  도서는 운영기간 매주 금요일, 주 1회 발송되며,<br/>
-                                  택배 배송 특성상 지역에 따라 수령까지 3~5일 정도 소요될 수 있습니다.
-                                </p>
-                              </div>
+                      {(() => {
+  const activeBookOrders = (order.book_orders || []).filter(
+    (bo: any) => bo.order_status !== '주문취소'
+  );
 
-                              {isEditable && (
-                                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                                  <Link href={{ pathname: '/books', query: { subOrderId: order.id, editOrderId: bo.id } }} style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, background: '#fff', color: 'var(--text)', border: '1px solid #cbd5e1', textDecoration: 'none' }}>
-                                    선택 변경
-                                  </Link>
-                                  <button
-                                    onClick={() => handleCancelBookOrder(bo.id)}
-                                    disabled={cancelingBookOrderId === bo.id}
-                                    style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, background: '#fff', color: '#ef4444', border: '1px solid #fca5a5', cursor: 'pointer' }}
-                                  >
-                                    {cancelingBookOrderId === bo.id ? '처리 중...' : '신청 취소'}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                            );
-                          })}
-                        </div>
+  const shippingStartLabel =
+    formatKoreanDate(order.cycle?.shipping_start_date) || '지정된 날짜';
+
+  if (order.bookOrdersError) {
+    return (
+      <p style={{ fontSize: '0.85rem', color: '#ef4444' }}>
+        도서 주문 내역을 불러오지 못했습니다.
+      </p>
+    );
+  }
+
+  if (activeBookOrders.length === 0) {
+    return (
+      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+        아직 신청한 도서 주문이 없습니다.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+        }}
+      >
+        {activeBookOrders.map((bo: any) => {
+          const isEditable = bo.order_status === '주문접수';
+
+          const displayStatus =
+            bo.order_status === '주문접수'
+              ? '주문 접수'
+              : bo.order_status === '배송준비중'
+                ? '배송 준비중'
+                : bo.order_status === '배송중'
+                  ? '배송중'
+                  : bo.order_status === '배송완료'
+                    ? '배송완료'
+                    : bo.order_status;
+
+          const shippingName =
+            bo.shipping_name || order.user_name || '';
+
+          const shippingPhone =
+            bo.shipping_phone || order.user_phone || '';
+
+          const shippingAddress =
+            bo.shipping_address || order.user_address || '';
+
+          return (
+            <div
+              key={bo.id}
+              style={{
+                padding: '20px',
+                borderRadius: '16px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '16px',
+                  alignItems: 'center',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '0.8rem',
+                    color: '#64748b',
+                  }}
+                >
+                  주문접수일{' '}
+                  {new Date(bo.created_at).toLocaleDateString('ko-KR')}
+                </span>
+
+                <span
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    background: '#e0e7ff',
+                    color: '#4338ca',
+                  }}
+                >
+                  발송 상태: {displayStatus}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                {(bo.book_order_items || []).map((item: any) => {
+                  const displayTitle =
+                    item.book?.title ||
+                    item.book_title_snapshot ||
+                    '도서명 없음';
+
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        display: 'flex',
+                        gap: '16px',
+                        alignItems: 'center',
+                        background: '#fff',
+                        padding: '12px',
+                        borderRadius: '12px',
+                        border: '1px solid #e2e8f0',
+                      }}
+                    >
+                      {item.book?.cover_url ? (
+                        <img
+                          src={item.book.cover_url}
+                          alt={displayTitle}
+                          style={{
+                            width: '48px',
+                            height: '68px',
+                            objectFit: 'cover',
+                            borderRadius: '4px',
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '48px',
+                            height: '68px',
+                            background: '#e2e8f0',
+                            borderRadius: '4px',
+                          }}
+                        />
                       )}
+
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {displayTitle}
+                        </span>
+
+                        {item.book?.author && (
+                          <span
+                            style={{
+                              fontSize: '0.8rem',
+                              color: '#64748b',
+                            }}
+                          >
+                            {item.book.author}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div
+                style={{
+                  marginTop: '16px',
+                  fontSize: '0.82rem',
+                  color: '#475569',
+                  lineHeight: 1.6,
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    color: 'var(--text)',
+                  }}
+                >
+                  <strong>도서 신청이 완료되었습니다.</strong>
+                  <br />
+                  배송은 {shippingStartLabel}부터 순차적으로 시작됩니다.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  background: '#fff',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0',
+                  marginTop: '16px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    color: '#475569',
+                    marginBottom: '4px',
+                  }}
+                >
+                  배송지 정보
+                </div>
+
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    color: 'var(--text)',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <strong>{shippingName}</strong>
+                  {shippingPhone && ` (${shippingPhone})`}
+                  <br />
+                  {shippingAddress}
+                </div>
+              </div>
+
+              {isEditable && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    marginTop: '16px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <Link
+                    href={{
+                      pathname: '/books',
+                      query: {
+                        subOrderId: order.id,
+                        editOrderId: bo.id,
+                      },
+                    }}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      background: '#fff',
+                      color: 'var(--text)',
+                      border: '1px solid #cbd5e1',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    선택 변경
+                  </Link>
+
+                  <button
+                    onClick={() => handleCancelBookOrder(bo.id)}
+                    disabled={cancelingBookOrderId === bo.id}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      background: '#fff',
+                      color: '#ef4444',
+                      border: '1px solid #fca5a5',
+                      cursor:
+                        cancelingBookOrderId === bo.id
+                          ? 'not-allowed'
+                          : 'pointer',
+                    }}
+                  >
+                    {cancelingBookOrderId === bo.id
+                      ? '처리 중..'
+                      : '신청 취소'}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setEditingShippingOrderId(bo.id);
+                      setEditShippingName(shippingName);
+                      setEditShippingPhone(shippingPhone);
+                      setEditShippingAddress(shippingAddress);
+                    }}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      background: '#fff',
+                      color: 'var(--text)',
+                      border: '1px solid #cbd5e1',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    배송지 변경
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div
+        style={{
+          padding: '16px',
+          background: '#fef3c7',
+          borderRadius: '12px',
+          border: '1px solid #fde68a',
+          marginTop: '20px',
+          fontSize: '0.85rem',
+          color: '#92400e',
+          lineHeight: 1.6,
+        }}
+      >
+        <p
+          style={{
+            margin: '0 0 8px 0',
+            fontWeight: 600,
+          }}
+        >
+          배송 준비중일 경우 취소 및 변경이 불가능합니다.
+        </p>
+
+        <p style={{ margin: 0 }}>
+          도서는 운영기간 매주 금요일, 주 1회 발송되며,
+          <br />
+          택배 배송 특성상 지역에 따라 수령까지 3~5일 정도
+          소요될 수 있습니다.
+        </p>
+      </div>
+    </>
+  );
+})()}
                     </div>
                         </>
                       )}
