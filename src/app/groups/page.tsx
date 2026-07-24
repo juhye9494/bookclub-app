@@ -70,7 +70,7 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<any[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [pendingCreateGroup, setPendingCreateGroup] = useState(false);
-  const [currentTab, setCurrentTab] = useState<'전체' | '모집중'>('모집중');
+  const [currentTab, setCurrentTab] = useState<'전체' | '모집중'>('전체');
   const [isRequestAuthorOpen, setIsRequestAuthorOpen] = useState(false);
   const [myMemberships, setMyMemberships] = useState<Set<string>>(new Set());
   const [myCreatedGroups, setMyCreatedGroups] = useState<Set<string>>(new Set());
