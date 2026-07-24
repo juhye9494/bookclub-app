@@ -41,6 +41,11 @@ export default function MembersManager() {
   const [selectedCycleId, setSelectedCycleId] = useState<string>('all');
   const [selectedMember, setSelectedMember] = useState<Profile | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filter, selectedCycleId]);
 
   useEffect(() => {
     loadData();
@@ -92,6 +97,27 @@ export default function MembersManager() {
 
     return matchSearch && matchFilter;
   });
+
+  const itemsPerPage = 20;
+  const totalPages = Math.max(1, Math.ceil(filteredProfiles.length / itemsPerPage));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const pagedProfiles = filteredProfiles.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (safePage <= 3) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (safePage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', safePage - 1, safePage, safePage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const handleStatusChange = async (bookOrderId: string, newStatus: string, cycleId: string) => {
     if (!confirm(`상태를 '${newStatus}'(으)로 변경하시겠습니까?`)) return;
@@ -167,7 +193,7 @@ export default function MembersManager() {
               </tr>
             </thead>
             <tbody>
-              {filteredProfiles.map(p => (
+              {pagedProfiles.map(p => (
                 <tr key={p.id} onClick={() => setSelectedMember(p)} style={{ cursor: 'pointer', background: selectedMember?.id === p.id ? '#f3f4f6' : 'transparent' }}>
                   <td style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
                     <div style={{ fontWeight: 600 }}>{p.name || '이름없음'}</div>
@@ -184,9 +210,53 @@ export default function MembersManager() {
                   </td>
                 </tr>
               ))}
-              {filteredProfiles.length === 0 && <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>검색 결과가 없습니다.</td></tr>}
+              {pagedProfiles.length === 0 && <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>검색 결과가 없습니다.</td></tr>}
             </tbody>
           </table>
+          
+          {/* 회원관리 페이지네이션 UI */}
+          {filteredProfiles.length > 0 && (
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', borderTop: '1px solid #e5e7eb', background: '#f9fafb' }}>
+              <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                {(safePage - 1) * itemsPerPage + 1}–{Math.min(safePage * itemsPerPage, filteredProfiles.length)} / 총 {filteredProfiles.length}명
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  disabled={safePage === 1}
+                  onClick={() => setCurrentPage(safePage - 1)}
+                  style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #d1d5db', background: '#fff', cursor: safePage === 1 ? 'not-allowed' : 'pointer', opacity: safePage === 1 ? 0.5 : 1 }}
+                >
+                  이전
+                </button>
+                {getPageNumbers().map((pageNum, idx) => (
+                  <button
+                    key={idx}
+                    disabled={pageNum === '...'}
+                    onClick={() => typeof pageNum === 'number' && setCurrentPage(pageNum)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      border: '1px solid #d1d5db',
+                      background: pageNum === safePage ? '#111827' : '#fff',
+                      color: pageNum === safePage ? '#fff' : '#374151',
+                      fontWeight: pageNum === safePage ? 700 : 400,
+                      cursor: pageNum === '...' ? 'default' : 'pointer',
+                      minWidth: '36px'
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+                <button
+                  disabled={safePage === totalPages}
+                  onClick={() => setCurrentPage(safePage + 1)}
+                  style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #d1d5db', background: '#fff', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', opacity: safePage === totalPages ? 0.5 : 1 }}
+                >
+                  다음
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {selectedMember && (
@@ -222,10 +292,15 @@ export default function MembersManager() {
 
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>도서 주문 및 배송 상태</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {getBookOrdersForMember(selectedMember.id).length === 0 ? (
-                <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>해당 기수의 도서 주문 내역이 없습니다.</div>
-              ) : (
-                getBookOrdersForMember(selectedMember.id).map(bo => {
+              {(() => {
+                const memberBookOrders = getBookOrdersForMember(selectedMember.id);
+                const activeBookOrders = memberBookOrders.filter((bo: any) => bo.order_status !== '주문취소');
+
+                if (activeBookOrders.length === 0) {
+                  return <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>활성 도서 주문이 없습니다.</div>;
+                }
+
+                return activeBookOrders.map(bo => {
                   const cycle = cycles.find(c => c.id === bo.cycle_id);
                   const canShip = cycle && new Date() >= new Date(cycle.shipping_start_date);
                   
@@ -253,15 +328,15 @@ export default function MembersManager() {
                       </div>
                       <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '4px', fontSize: '0.9rem' }}>
                         <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                          {(bo.book_order_items || []).map((item, idx) => (
+                          {(bo.book_order_items || []).map((item: any, idx: number) => (
                             <li key={idx} style={{ marginBottom: '4px' }}>{item.book_title_snapshot}</li>
                           ))}
                         </ul>
                       </div>
                     </div>
                   );
-                })
-              )}
+                });
+              })()}
             </div>
           </div>
         )}

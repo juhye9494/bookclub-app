@@ -49,7 +49,6 @@ export async function GET(req: Request) {
         )
       `)
       .eq('subscription_order.payment_status', 'DONE')
-      .neq('order_status', '주문취소')
       .order('created_at', { ascending: false });
 
     if (error) {
