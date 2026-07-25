@@ -771,49 +771,7 @@ export default function GroupsPage() {
         {selectedGroup.time && <div style={{ gridColumn: '1 / -1' }}>🕒 <strong style={{color: '#475569'}}>시간:</strong> {selectedGroup.time}</div>}
       </div>
       
-      {/* 상세 참가 버튼 */}
-      <div style={{ marginBottom: '24px' }}>
-        {(() => {
-          const isApplied = user && myMemberships.has(selectedGroup.id);
-          const isClosed = selectedGroup.membersCount >= selectedGroup.maxMembers || selectedGroup.status === '모집마감';
 
-          if (isJoining) {
-            return (
-              <button disabled style={{ width: '100%', padding: '14px 24px', background: '#e5e7eb', color: '#9ca3af', fontWeight: 700, borderRadius: '8px', cursor: 'not-allowed', border: 'none', fontSize: '1rem' }}>
-                처리 중...
-              </button>
-            );
-          }
-
-          if (isClosed) {
-            return (
-              <button disabled style={{ width: '100%', padding: '14px 24px', background: '#e5e7eb', color: '#9ca3af', fontWeight: 700, borderRadius: '8px', cursor: 'not-allowed', border: 'none', fontSize: '1rem' }}>
-                모집 마감
-              </button>
-            );
-          }
-
-          if (isApplied) {
-            return (
-              <button 
-                onClick={() => handleJoin(selectedGroup.id)}
-                style={{ width: '100%', padding: '14px 24px', background: '#f87171', color: 'white', fontWeight: 700, borderRadius: '8px', cursor: 'pointer', border: 'none', fontSize: '1rem' }}
-              >
-                참가 신청 취소
-              </button>
-            );
-          }
-
-          return (
-            <button 
-              onClick={() => handleJoin(selectedGroup.id)}
-              style={{ width: '100%', padding: '14px 24px', background: 'var(--accent)', color: 'white', fontWeight: 700, borderRadius: '8px', cursor: 'pointer', border: 'none', fontSize: '1rem' }}
-            >
-              독서모임 참가 신청
-            </button>
-          );
-        })()}
-      </div>
 
       {/* 방장 소개 */}
       <div style={{ marginBottom: '24px' }}>
@@ -898,6 +856,51 @@ export default function GroupsPage() {
               style={{ width: '100%', padding: '14px 24px', background: isOpeningChat ? '#e5e7eb' : '#fee500', color: isOpeningChat ? '#9ca3af' : '#191919', fontWeight: 700, borderRadius: '8px', cursor: isOpeningChat ? 'not-allowed' : 'pointer', border: 'none', fontSize: '1rem' }}
             >
               {isOpeningChat ? '오픈채팅방 여는 중...' : '💬 오픈채팅방 참여하기'}
+            </button>
+          );
+        })()}
+      </div>
+
+      {/* 상세 참가 버튼 (오픈채팅방 아래로 이동 및 디자인 통일) */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+        {(() => {
+          const isApplied = user && myMemberships.has(selectedGroup.id);
+          const isClosed = selectedGroup.membersCount >= selectedGroup.maxMembers || selectedGroup.status === '모집마감';
+
+          if (isJoining) {
+            return (
+              <button disabled className="group-main-action-btn" style={{ background: '#f3f4f6', color: '#9ca3af', borderColor: '#e5e7eb' }}>
+                처리 중...
+              </button>
+            );
+          }
+
+          if (isClosed) {
+            return (
+              <button disabled className="group-main-action-btn" style={{ background: '#f3f4f6', color: '#9ca3af', borderColor: '#e5e7eb' }}>
+                모집 마감
+              </button>
+            );
+          }
+
+          if (isApplied) {
+            return (
+              <button 
+                onClick={() => handleJoin(selectedGroup.id)}
+                className="group-main-action-btn"
+                style={{ borderColor: '#ef4444', color: '#ef4444' }}
+              >
+                참가 신청 취소
+              </button>
+            );
+          }
+
+          return (
+            <button 
+              onClick={() => handleJoin(selectedGroup.id)}
+              className="group-main-action-btn"
+            >
+              독서모임 참가 신청
             </button>
           );
         })()}
