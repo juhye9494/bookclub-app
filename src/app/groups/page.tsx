@@ -102,6 +102,7 @@ export default function GroupsPage() {
   const [newTime, setNewTime] = useState('');
   const [newIntro, setNewIntro] = useState('');
   const [newOpenChatUrl, setNewOpenChatUrl] = useState('');
+  const [isOpeningChat, setIsOpeningChat] = useState(false);
 
   const [authorName, setAuthorName] = useState('');
   const [authorBook, setAuthorBook] = useState('');
@@ -160,7 +161,7 @@ export default function GroupsPage() {
   const fetchGroups = async () => {
     const { data, error } = await supabase
       .from('groups')
-      .select('*')
+      .select('id, title, desc, book, leader, maxMembers, membersCount, tags, perks, place, time, status, created_at, creator_id, intro')
       .order('created_at', { ascending: false })
       .order('id', { ascending: false });
 
@@ -299,6 +300,24 @@ export default function GroupsPage() {
     setIsCreateOpen(true);
   };
 
+  const saveOpenChatUrl = async (groupId: string, openChatUrl: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error('AUTH_REQUIRED');
+    }
+    const response = await fetch(`/api/groups/${encodeURIComponent(groupId)}/open-chat`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ open_chat_url: openChatUrl })
+    });
+    if (!response.ok) {
+      throw new Error(`OPEN_CHAT_SAVE_FAILED_${response.status}`);
+    }
+  };
+
   const handleCreateGroup = async () => {
     if (!user) {
       window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
@@ -344,8 +363,9 @@ export default function GroupsPage() {
     }
 
     if (finalChatUrl) {
-      const { error: chatUrlError } = await supabase.from('groups').update({ open_chat_url: finalChatUrl }).eq('id', groupId);
-      if (chatUrlError) {
+      try {
+        await saveOpenChatUrl(groupId, finalChatUrl);
+      } catch (err) {
         alert('독서모임은 생성되었지만 오픈채팅방 링크 저장에 실패했습니다.');
         return;
       }
@@ -381,12 +401,19 @@ export default function GroupsPage() {
     }
 
     const updatedFields = {
-      title: newTitle, desc: newDesc, book: newBook, leader: newLeader, maxMembers: parseInt(newMax) || 8, tags: newTags.split(',').map((t: string) => t.trim()).filter(Boolean), place: newPlace, time: newTime, intro: newIntro, open_chat_url: finalChatUrl
+      title: newTitle, desc: newDesc, book: newBook, leader: newLeader, maxMembers: parseInt(newMax) || 8, tags: newTags.split(',').map((t: string) => t.trim()).filter(Boolean), place: newPlace, time: newTime, intro: newIntro
     };
 
     const { error: updateError } = await supabase.from('groups').update(updatedFields).eq('id', editingGroup.id);
     if (updateError) {
       alert('독서모임 수정 중 오류가 발생했습니다.');
+      return;
+    }
+
+    try {
+      await saveOpenChatUrl(editingGroup.id, newOpenChatUrl.trim());
+    } catch (err) {
+      alert('모임 정보는 수정되었지만 오픈채팅방 링크 저장에 실패했습니다.');
       return;
     }
 
@@ -397,7 +424,7 @@ export default function GroupsPage() {
     alert('독서모임 정보가 수정되었습니다.');
   };
 
-  const openEditGroup = (group: any) => {
+  const openEditGroup = async (group: any) => {
     setEditingGroup(group);
     setNewTitle(group.title);
     setNewDesc(group.desc);
@@ -408,8 +435,30 @@ export default function GroupsPage() {
     setNewPlace(group.place || '');
     setNewTime(group.time || '');
     setNewIntro(group.intro || '');
-    setNewOpenChatUrl(group.open_chat_url || '');
-    setIsCreateOpen(true);
+    setNewOpenChatUrl('');
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/groups/${group.id}/open-chat`, {
+        headers: { ...(session?.access_token && { 'Authorization': `Bearer ${session.access_token}` }) }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNewOpenChatUrl(data.url || '');
+        setIsCreateOpen(true);
+      } else if (res.status === 404) {
+        setNewOpenChatUrl('');
+        setIsCreateOpen(true);
+      } else if (res.status === 401) {
+        alert('로그인이 필요합니다.');
+      } else if (res.status === 403) {
+        alert('권한이 없습니다.');
+      } else {
+        alert('오픈채팅방 링크를 불러오는 중 오류가 발생했습니다.');
+      }
+    } catch (err) {
+      alert('오픈채팅방 링크를 불러오는 중 오류가 발생했습니다.');
+    }
   };
 
   const handleDeleteGroup = async (groupId: string) => {
@@ -738,27 +787,70 @@ export default function GroupsPage() {
       </div>
 
       {/* 오픈채팅방 참여하기 */}
-      {normalizeOpenChatUrl(selectedGroup.open_chat_url) && (
-        <div style={{ marginBottom: '24px' }}>
-          <a
-            href={normalizeOpenChatUrl(selectedGroup.open_chat_url) as string}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-block',
-              padding: '14px 24px',
-              background: '#fee500',
-              color: '#191919',
-              fontWeight: 700,
-              borderRadius: '8px',
-              textDecoration: 'none',
-              fontSize: '1rem'
-            }}
-          >
-            💬 오픈채팅방 참여하기
-          </a>
-        </div>
-      )}
+      <div style={{ marginBottom: '24px' }}>
+        {(() => {
+          const isApplied = user && myMemberships.has(selectedGroup.id);
+          const isClosed = selectedGroup.membersCount >= selectedGroup.maxMembers || selectedGroup.status === '모집마감';
+
+          if (isClosed) {
+            return (
+              <button type="button" disabled style={{ width: '100%', padding: '14px 24px', background: '#e5e7eb', color: '#9ca3af', fontWeight: 700, borderRadius: '8px', cursor: 'not-allowed', border: 'none', fontSize: '1rem' }}>
+                💬 모집이 마감되었습니다
+              </button>
+            );
+          }
+
+          if (!isApplied) {
+            return (
+              <button type="button" disabled style={{ width: '100%', padding: '14px 24px', background: '#e5e7eb', color: '#9ca3af', fontWeight: 700, borderRadius: '8px', cursor: 'not-allowed', border: 'none', fontSize: '1rem' }}>
+                💬 참가 신청 후 입장 가능
+              </button>
+            );
+          }
+
+          return (
+            <button 
+              type="button" 
+              disabled={isOpeningChat}
+              onClick={async () => {
+                const popup = window.open('', '_blank');
+                if (!popup) {
+                  alert('팝업이 차단되었습니다. 브라우저에서 팝업을 허용해 주세요.');
+                  return;
+                }
+                
+                setIsOpeningChat(true);
+                try {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  const res = await fetch(`/api/groups/${selectedGroup.id}/open-chat`, {
+                    headers: { ...(session?.access_token && { 'Authorization': `Bearer ${session.access_token}` }) }
+                  });
+                  if (!res.ok) {
+                    popup.close();
+                    if (res.status === 404) {
+                      alert('등록된 오픈채팅방 링크가 없습니다.');
+                    } else {
+                      alert('독서모임 참가 신청 후 이용하시거나 모집이 마감되어 오픈채팅방에 입장할 수 없습니다.');
+                    }
+                    return;
+                  }
+                  const data = await res.json();
+                  popup.opener = null;
+                  popup.location.href = data.url;
+                } catch (err) {
+                  popup.close();
+                  alert('오픈채팅방을 여는 중 오류가 발생했습니다.');
+                } finally {
+                  setIsOpeningChat(false);
+                }
+              }}
+              style={{ width: '100%', padding: '14px 24px', background: isOpeningChat ? '#e5e7eb' : '#fee500', color: isOpeningChat ? '#9ca3af' : '#191919', fontWeight: 700, borderRadius: '8px', cursor: isOpeningChat ? 'not-allowed' : 'pointer', border: 'none', fontSize: '1rem' }}
+            >
+              {isOpeningChat ? '오픈채팅방 여는 중...' : '💬 오픈채팅방 참여하기'}
+            </button>
+          );
+        })()}
+      </div>
     </div>
   </div>
 )}
