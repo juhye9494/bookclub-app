@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { useMemberAccess } from '@/hooks/useMemberAccess';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function EventQueryHandler({ events, onSelect }: { events: any[], onSelect: (e: any) => void }) {
@@ -73,6 +74,7 @@ export default function EventsPage() {
     }
   };
   const [user, setUser] = useState<any>(null);
+  const { access, loading: accessLoading } = useMemberAccess(user);
   const [applying, setApplying] = useState(false);
   const [appliedEventIds, setAppliedEventIds] = useState<Set<string>>(new Set());
 
@@ -103,38 +105,48 @@ export default function EventsPage() {
       window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
       return;
     }
-    if (!selectedEvent) return;
+    
+    if (!appliedEventIds.has(selectedEvent.id)) {
+      if (accessLoading) return;
+      if (!access?.canAccessMemberFeatures) {
+        alert('구독 회원만 이용할 수 있는 기능입니다.');
+        return;
+      }
+    }
+
     setApplying(true);
     try {
-      if (appliedEventIds.has(selectedEvent.id)) {
-        // 신청 취소 — 해당 이벤트의 모든 레코드 삭제
-        await supabase.from('event_participants').delete().eq('event_id', selectedEvent.id).eq('user_id', user.id);
-        const newSet = new Set(appliedEventIds);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const method = appliedEventIds.has(selectedEvent.id) ? 'DELETE' : 'POST';
+      const res = await fetch(`/api/events/${selectedEvent.id}/application`, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      const resData = await res.json();
+      
+      if (!res.ok) {
+        alert(method === 'DELETE' ? '취소 중 오류가 발생했습니다: ' + (resData.error || '') : '신청 중 오류가 발생했습니다: ' + (resData.error || ''));
+        return;
+      }
+
+      const newSet = new Set(appliedEventIds);
+      if (method === 'DELETE') {
         newSet.delete(selectedEvent.id);
-        setAppliedEventIds(newSet);
         alert('이벤트 신청이 취소되었습니다.');
       } else {
-        // 신청 전 DB 중복 체크 — 이미 있으면 삭제 후 재삽입
-        const { data: existing } = await supabase.from('event_participants').select('id').eq('event_id', selectedEvent.id).eq('user_id', user.id);
-        if (existing && existing.length > 0) {
-          await supabase.from('event_participants').delete().eq('event_id', selectedEvent.id).eq('user_id', user.id);
-        }
-        await supabase.from('event_participants').insert([{
-          event_id: selectedEvent.id,
-          user_id: user.id,
-          user_email: user.email,
-          user_name: user.user_metadata?.name || user.email,
-          event_title: selectedEvent.title,
-        }]);
-        const newSet = new Set(appliedEventIds);
         newSet.add(selectedEvent.id);
-        setAppliedEventIds(newSet);
-        alert('이벤트 참여가 성공적으로 접수되었습니다.\n자세한 진행 사항은 마이페이지 <활동내역>에서 확인 가능합니다.');
+        alert('이벤트 참여 신청이 완료되었습니다! 마이페이지에서 확인 가능합니다.');
       }
-    } catch (err) {
-      alert('신청 중 오류가 발생했습니다.');
+      setAppliedEventIds(newSet);
+    } catch (err: any) {
+      alert('오류가 발생했습니다: ' + err.message);
+    } finally {
+      setApplying(false);
     }
-    setApplying(false);
   };
 
   useEffect(() => {

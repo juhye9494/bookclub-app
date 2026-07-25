@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { useMemberAccess } from '@/hooks/useMemberAccess';
 import { isAdmin } from '@/utils/admin';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -110,6 +111,7 @@ export default function GroupsPage() {
   const [authorReason, setAuthorReason] = useState('');
 
   const [user, setUser] = useState<any>(null);
+  const { access, loading: accessLoading } = useMemberAccess(user);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -231,61 +233,41 @@ export default function GroupsPage() {
       return;
     }
 
+    if (!myMemberships.has(groupId)) {
+      if (accessLoading) return;
+      if (!access?.canAccessMemberFeatures) {
+        alert('구독 회원만 이용할 수 있는 기능입니다.');
+        return;
+      }
+    }
+
     setIsJoining(true);
     try {
-      if (myMemberships.has(groupId)) {
-        // --- 1. Leave (참가 취소) ---
-        const { data: deletedRows, error: deleteError } = await supabase
-          .from('group_participants')
-          .delete()
-          .eq('group_id', groupId)
-          .eq('user_id', user.id)
-          .eq('role', 'member')
-          .select('id');
-
-        if (deleteError || !deletedRows || deletedRows.length !== 1) {
-          alert('참가 취소할 내역을 찾지 못했거나 오류가 발생했습니다.');
-          return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      
+      const method = myMemberships.has(groupId) ? 'DELETE' : 'POST';
+      const res = await fetch(`/api/groups/${groupId}/membership`, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
         }
-
-        // 성공 시: DB에서 groups 및 내 참가 내역 재조회
+      });
+      const resData = await res.json();
+      
+      if (!res.ok) {
+        alert(method === 'DELETE' ? '참가 취소 중 오류가 발생했습니다: ' + (resData.error || '') : '참가 신청 실패: ' + (resData.error || ''));
         await fetchGroups();
-
-        const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
-        if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
-        
-        alert('독서모임 탈퇴가 완료되었습니다.');
-
-      } else {
-        // --- 2. Join (참가 신청) ---
-        if (targetGroup.membersCount >= targetGroup.maxMembers || targetGroup.status === '모집마감') {
-          alert('이미 정원이 초과되었거나 모집이 마감되어 참가 신청할 수 없습니다.');
-          return;
-        }
-
-        const { error: insertError } = await supabase.from('group_participants').insert([{
-          group_id: groupId,
-          user_id: user.id,
-          user_email: user.email,
-          user_name: user.user_metadata?.name || user.email,
-          role: 'member',
-          group_title: targetGroup.title,
-        }]);
-
-        if (insertError) {
-          alert('참가 신청 실패: 정원이 이미 마감되었거나 일시적 오류입니다.\n(' + insertError.message + ')');
-          await fetchGroups();
-          return;
-        }
-
-        // 성공 시: DB 재조회
-        await fetchGroups();
-
-        const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
-        if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
-        
-        alert('독서모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
+        return;
       }
+
+      await fetchGroups();
+      const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
+      if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
+      
+      alert(method === 'DELETE' ? '독서모임 탈퇴가 완료되었습니다.' : '독서모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
+    } catch (err: any) {
+      alert('오류가 발생했습니다: ' + err.message);
     } finally {
       setIsJoining(false);
     }
@@ -330,6 +312,10 @@ export default function GroupsPage() {
       window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
       return;
     }
+    if (accessLoading || !access?.canAccessMemberFeatures) {
+      alert('구독 회원만 이용할 수 있는 기능입니다.');
+      return;
+    }
     if (!newTitle || !newDesc || !newBook || !newLeader) {
       alert('모든 필수 정보를 입력해 주세요.');
       return;
@@ -348,24 +334,33 @@ export default function GroupsPage() {
     const maxMembersNum = parseInt(newMax) || 8;
     const parsedTags = newTags.split(',').map((t: string) => t.trim()).filter(Boolean);
 
-    // RPC 호출 (이메일, 이름은 파라미터에서 제외)
-    const { error: rpcError } = await supabase.rpc('create_group_with_leader', {
-      p_id: groupId,
-      p_title: newTitle,
-      p_desc: newDesc,
-      p_book: newBook,
-      p_leader: newLeader,
-      p_max_members: maxMembersNum,
-      p_tags: parsedTags,
-      p_perks: ['커피값 지원 신청가능'],
-      p_place: newPlace || null,
-      p_time: newTime || null,
-      p_intro: newIntro || null
-    });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
-    if (rpcError) {
-      console.error('Group create error:', rpcError);
-      alert('독서모임 생성 중 오류가 발생했습니다: ' + rpcError.message);
+    const res = await fetch('/api/groups', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        p_id: groupId,
+        p_title: newTitle,
+        p_desc: newDesc,
+        p_book: newBook,
+        p_leader: newLeader,
+        p_max_members: maxMembersNum,
+        p_tags: parsedTags,
+        p_perks: ['커피값 지원 신청가능'],
+        p_place: newPlace || null,
+        p_time: newTime || null,
+        p_intro: newIntro || null
+      })
+    });
+    
+    if (!res.ok) {
+      const errData = await res.json();
+      alert('독서모임 생성 중 오류가 발생했습니다: ' + (errData.error || ''));
       return;
     }
 
@@ -378,9 +373,7 @@ export default function GroupsPage() {
       }
     }
 
-    // 성공 시 DB에서 다시 긁어와 전체 동기화
     await fetchGroups();
-
     const { data: createdGroups } = await supabase.from('groups').select('id').eq('creator_id', user.id);
     if (createdGroups) setMyCreatedGroups(new Set(createdGroups.map(g => g.id)));
 
