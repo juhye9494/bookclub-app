@@ -89,7 +89,7 @@ export default function ShippingManager() {
         user_name: bo.shipping_name || bo.subscription_order?.user_name || '',
         user_phone: bo.shipping_phone || bo.subscription_order?.user_phone || '',
         user_address: bo.shipping_address || bo.subscription_order?.user_address || '',
-        book_order_items: (bo.book_order_items || []).map((item: any) => ({ title: item.book_title_snapshot, cover: '' })),
+        book_order_items: Array.isArray(bo.book_order_items) ? bo.book_order_items : [],
         total_amount: bo.subscription_order?.total_amount || 45000,
         order_status: bo.order_status || '주문접수',
         tracking_number: bo.tracking_number || '',
@@ -286,7 +286,7 @@ export default function ShippingManager() {
     const headerRow = headers.map(escapeCsvValue).join(',');
 
     const rows = target.map(order => {
-      const books = order.book_order_items || [];
+      const books = Array.isArray(order.book_order_items) ? order.book_order_items : [];
       const book1 = books[0];
       const book2 = books[1];
       const book3 = books[2];
