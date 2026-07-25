@@ -32,12 +32,7 @@ export async function GET(req: Request) {
       .from('book_orders')
       .select(`
         *,
-        book_order_items (
-          id,
-          book_id,
-          book_title_snapshot,
-          quantity
-        ),
+
         subscription_order:orders!book_orders_subscription_order_id_fkey!inner (
           user_email,
           user_name,
@@ -56,14 +51,44 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: '목록 조회 실패' }, { status: 500 });
     }
 
-    const bookIds = Array.from(
-      new Set(
-        (data || [])
-          .flatMap((order: any) => order.book_order_items || [])
-          .map((item: any) => item.book_id)
-          .filter(Boolean)
-      )
-    );
+    const orderIds = (data || []).map((order: any) => order.id).filter(Boolean);
+
+    let itemsByOrderId: Record<string, any[]> = {};
+    let bookIds: string[] = [];
+
+    if (orderIds.length > 0) {
+      const { data: orderItems, error: itemsError } = await supabaseAdmin
+        .from('book_order_items')
+        .select(`
+          id,
+          book_order_id,
+          book_id,
+          book_title_snapshot,
+          quantity
+        `)
+        .in('book_order_id', orderIds);
+
+      if (itemsError) {
+        console.error('Failed to fetch book order items:', itemsError.code);
+        return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
+      }
+
+      for (const item of orderItems || []) {
+        const orderId = item.book_order_id;
+        if (!itemsByOrderId[orderId]) {
+          itemsByOrderId[orderId] = [];
+        }
+        itemsByOrderId[orderId].push(item);
+      }
+
+      bookIds = Array.from(
+        new Set(
+          (orderItems || [])
+            .map((item: any) => item.book_id)
+            .filter(Boolean)
+        )
+      );
+    }
 
     let isbnMap: Record<string, string> = {};
 
@@ -91,7 +116,7 @@ export async function GET(req: Request) {
 
     const enrichedOrders = (data || []).map((order: any) => ({
       ...order,
-      book_order_items: (order.book_order_items || []).map((item: any) => ({
+      book_order_items: (itemsByOrderId[order.id] || []).map((item: any) => ({
         ...item,
         isbn: item.book_id ? isbnMap[item.book_id] || '' : '',
       })),
