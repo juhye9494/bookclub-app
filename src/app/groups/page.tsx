@@ -253,7 +253,13 @@ export default function GroupsPage() {
 
     if (!myMemberships.has(groupId)) {
       if (accessLoading) return;
-      if (access?.accessState === 'beforeBookOrderPeriod') {
+
+      if (!access) {
+        alert('권한 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+
+      if (access.accessState === 'beforeBookOrderPeriod') {
         const formattedDate = formatKoreanDate(access.bookOrderStartDate);
         if (!formattedDate) {
           alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
@@ -262,15 +268,15 @@ export default function GroupsPage() {
         }
         return;
       }
-      if (access?.accessState === 'afterBookOrderPeriod') {
+      if (access.accessState === 'afterBookOrderPeriod') {
         alert('이번 기수의 독서모임 개설 및 참여 기간이 종료되었습니다.');
         return;
       }
-      if (access?.accessState === 'cycleScheduleMissing') {
+      if (access.accessState === 'cycleScheduleMissing') {
         alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
         return;
       }
-      if (!access?.canAccessMemberFeatures) {
+      if (access.accessState === 'subscriptionRequired') {
         alert('구독 회원만 이용할 수 있는 기능입니다.');
         return;
       }
@@ -323,7 +329,12 @@ export default function GroupsPage() {
       return;
     }
 
-    if (access?.accessState === 'beforeBookOrderPeriod') {
+    if (!access) {
+      alert('권한 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    if (access.accessState === 'beforeBookOrderPeriod') {
       const formattedDate = formatKoreanDate(access.bookOrderStartDate);
       if (!formattedDate) {
         alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
@@ -332,15 +343,15 @@ export default function GroupsPage() {
       }
       return;
     }
-    if (access?.accessState === 'afterBookOrderPeriod') {
+    if (access.accessState === 'afterBookOrderPeriod') {
       alert('이번 기수의 독서모임 개설 및 참여 기간이 종료되었습니다.');
       return;
     }
-    if (access?.accessState === 'cycleScheduleMissing') {
+    if (access.accessState === 'cycleScheduleMissing') {
       alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
       return;
     }
-    if (!access?.canAccessMemberFeatures) {
+    if (access.accessState === 'subscriptionRequired') {
       alert('구독 회원만 이용할 수 있는 기능입니다.');
       return;
     }
