@@ -124,11 +124,15 @@ export default function GroupsPage() {
   }, []);
 
   useEffect(() => {
-    if (user && pendingCreateGroup) {
-      setIsCreateOpen(true);
+    if (user && pendingCreateGroup && !accessLoading) {
+      if (access?.canAccessMemberFeatures) {
+        setIsCreateOpen(true);
+      } else {
+        alert('구독 회원만 이용할 수 있는 기능입니다.');
+      }
       setPendingCreateGroup(false);
     }
-  }, [user, pendingCreateGroup]);
+  }, [user, pendingCreateGroup, accessLoading, access]);
   
   // Selected group for detail view modal
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
@@ -283,6 +287,16 @@ export default function GroupsPage() {
       );
       return;
     }
+    
+    if (accessLoading) {
+      return;
+    }
+
+    if (!access?.canAccessMemberFeatures) {
+      alert('구독 회원만 이용할 수 있는 기능입니다.');
+      return;
+    }
+
     setEditingGroup(null);
     setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
     setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro(''); setNewOpenChatUrl('');
@@ -633,8 +647,10 @@ export default function GroupsPage() {
             <button 
               className="groups-create-submit-btn"
               onClick={handleOpenCreateGroup}
+              aria-disabled={user && !accessLoading && !access?.canAccessMemberFeatures ? true : undefined}
+              style={user && !accessLoading && !access?.canAccessMemberFeatures ? { background: '#9ca3af', borderColor: '#9ca3af', color: '#fff' } : {}}
             >
-              ＋ 독서모임 만들기
+              {accessLoading ? '권한 확인 중...' : '＋ 독서모임 만들기'}
             </button>
           </div>
         </div>
