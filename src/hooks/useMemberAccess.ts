@@ -4,7 +4,11 @@ import { supabase } from '@/lib/supabaseClient';
 export interface MemberAccess {
   isAdmin: boolean;
   hasValidSubscription: boolean;
+  isWithinBookOrderPeriod: boolean;
   canAccessMemberFeatures: boolean;
+  accessState: 'allowed' | 'subscriptionRequired' | 'beforeBookOrderPeriod' | 'afterBookOrderPeriod' | 'cycleScheduleMissing';
+  bookOrderStartDate?: string;
+  bookOrderEndDate?: string;
 }
 
 export function useMemberAccess(user: any) {
@@ -20,8 +24,8 @@ export function useMemberAccess(user: any) {
 
     let isMounted = true;
     
-    async function fetchAccess() {
-      setLoading(true);
+    async function fetchAccess(showLoading = true) {
+      if (showLoading) setLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) {
@@ -51,8 +55,15 @@ export function useMemberAccess(user: any) {
 
     fetchAccess();
 
+    const handleFocus = () => {
+      fetchAccess(false);
+    };
+
+    window.addEventListener('focus', handleFocus);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('focus', handleFocus);
     };
   }, [user]);
 

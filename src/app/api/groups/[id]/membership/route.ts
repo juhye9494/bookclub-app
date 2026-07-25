@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuthenticatedUser } from '@/lib/server/auth';
-import { checkMemberAccess } from '@/lib/server/memberAccess';
+import { checkMemberAccess, getMemberAccessErrorResponse } from '@/lib/server/memberAccess';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
@@ -10,7 +10,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     
     const accessInfo = await checkMemberAccess(user.id, user.email || '');
     if (!accessInfo.canAccessMemberFeatures) {
-      return NextResponse.json({ error: 'Subscription required' }, { status: 403 });
+      return getMemberAccessErrorResponse(accessInfo);
     }
 
     const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('name').eq('id', user.id).maybeSingle();

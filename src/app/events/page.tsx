@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useMemberAccess } from '@/hooks/useMemberAccess';
+import { formatKoreanDate } from '@/utils/dateFormatter';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function EventQueryHandler({ events, onSelect }: { events: any[], onSelect: (e: any) => void }) {
@@ -480,10 +481,10 @@ export default function EventsPage() {
                   ) : (
                     <button 
                       onClick={handleEventApply}
-                      disabled={applying}
-                      style={{ flex: 2, padding: '14px 20px', border: 'none', background: 'var(--accent)', color: '#fff', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 600, cursor: applying ? 'not-allowed' : 'pointer', transition: 'all 0.2s', opacity: applying ? 0.7 : 1 }}
+                      disabled={applying || accessLoading}
+                      style={{ flex: 2, padding: '14px 20px', border: 'none', background: 'var(--accent)', color: '#fff', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 600, cursor: (applying || accessLoading) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', opacity: (applying || accessLoading) ? 0.7 : 1 }}
                     >
-                      {applying ? '신청 중...' : '이벤트 참여 신청하기'}
+                      {applying ? '신청 중...' : accessLoading ? '권한 확인 중...' : '이벤트 참여 신청하기'}
                     </button>
                   )
                 ) : (

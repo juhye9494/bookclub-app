@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuthenticatedUser } from '@/lib/server/auth';
-import { checkMemberAccess } from '@/lib/server/memberAccess';
+import { checkMemberAccess, getMemberAccessErrorResponse } from '@/lib/server/memberAccess';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: Request) {
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const user = await requireAuthenticatedUser(req);
     const accessInfo = await checkMemberAccess(user.id, user.email || '');
     if (!accessInfo.canAccessMemberFeatures) {
-      return NextResponse.json({ error: 'Subscription required' }, { status: 403 });
+      return getMemberAccessErrorResponse(accessInfo);
     }
 
     const body = await req.json();

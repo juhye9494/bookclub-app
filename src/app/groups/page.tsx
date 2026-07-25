@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useMemberAccess } from '@/hooks/useMemberAccess';
 import { isAdmin } from '@/utils/admin';
+import { formatKoreanDate } from '@/utils/dateFormatter';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import './groups.css';
@@ -128,7 +129,20 @@ export default function GroupsPage() {
       if (access?.canAccessMemberFeatures) {
         setIsCreateOpen(true);
       } else {
-        alert('구독 회원만 이용할 수 있는 기능입니다.');
+        if (access?.accessState === 'beforeBookOrderPeriod') {
+          const formattedDate = formatKoreanDate(access.bookOrderStartDate);
+          if (!formattedDate) {
+            alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
+          } else {
+            alert(`독서모임 개설 및 참여는 도서 주문 기간부터 가능합니다.\n이용 시작일: ${formattedDate}`);
+          }
+        } else if (access?.accessState === 'afterBookOrderPeriod') {
+          alert('이번 기수의 독서모임 개설 및 참여 기간이 종료되었습니다.');
+        } else if (access?.accessState === 'cycleScheduleMissing') {
+          alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
+        } else {
+          alert('구독 회원만 이용할 수 있는 기능입니다.');
+        }
       }
       setPendingCreateGroup(false);
     }
@@ -239,6 +253,23 @@ export default function GroupsPage() {
 
     if (!myMemberships.has(groupId)) {
       if (accessLoading) return;
+      if (access?.accessState === 'beforeBookOrderPeriod') {
+        const formattedDate = formatKoreanDate(access.bookOrderStartDate);
+        if (!formattedDate) {
+          alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
+        } else {
+          alert(`독서모임 개설 및 참여는 도서 주문 기간부터 가능합니다.\n이용 시작일: ${formattedDate}`);
+        }
+        return;
+      }
+      if (access?.accessState === 'afterBookOrderPeriod') {
+        alert('이번 기수의 독서모임 개설 및 참여 기간이 종료되었습니다.');
+        return;
+      }
+      if (access?.accessState === 'cycleScheduleMissing') {
+        alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
+        return;
+      }
       if (!access?.canAccessMemberFeatures) {
         alert('구독 회원만 이용할 수 있는 기능입니다.');
         return;
@@ -292,6 +323,23 @@ export default function GroupsPage() {
       return;
     }
 
+    if (access?.accessState === 'beforeBookOrderPeriod') {
+      const formattedDate = formatKoreanDate(access.bookOrderStartDate);
+      if (!formattedDate) {
+        alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
+      } else {
+        alert(`독서모임 개설 및 참여는 도서 주문 기간부터 가능합니다.\n이용 시작일: ${formattedDate}`);
+      }
+      return;
+    }
+    if (access?.accessState === 'afterBookOrderPeriod') {
+      alert('이번 기수의 독서모임 개설 및 참여 기간이 종료되었습니다.');
+      return;
+    }
+    if (access?.accessState === 'cycleScheduleMissing') {
+      alert('이용 기간이 아직 설정되지 않았습니다.\n관리자에게 문의해주세요.');
+      return;
+    }
     if (!access?.canAccessMemberFeatures) {
       alert('구독 회원만 이용할 수 있는 기능입니다.');
       return;
@@ -647,6 +695,7 @@ export default function GroupsPage() {
             <button 
               className="groups-create-submit-btn"
               onClick={handleOpenCreateGroup}
+              disabled={accessLoading}
               aria-disabled={user && !accessLoading && !access?.canAccessMemberFeatures ? true : undefined}
               style={user && !accessLoading && !access?.canAccessMemberFeatures ? { background: '#9ca3af', borderColor: '#9ca3af', color: '#fff' } : {}}
             >
@@ -719,10 +768,10 @@ export default function GroupsPage() {
                   ) : (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleJoin(group.id); }}
-                      disabled={isFull}
+                      disabled={isFull || accessLoading}
                       className="group-main-action-btn"
                     >
-                      {isFull ? '정원 마감' : '독서모임 참가 신청'}
+                      {accessLoading ? '권한 확인 중...' : isFull ? '정원 마감' : '독서모임 참가 신청'}
                     </button>
                   )}
                   {isAdmin(user?.email) && (
@@ -908,8 +957,9 @@ export default function GroupsPage() {
             <button 
               onClick={() => handleJoin(selectedGroup.id)}
               className="group-main-action-btn"
+              disabled={accessLoading}
             >
-              독서모임 참가 신청
+              {accessLoading ? '권한 확인 중...' : '독서모임 참가 신청'}
             </button>
           );
         })()}
