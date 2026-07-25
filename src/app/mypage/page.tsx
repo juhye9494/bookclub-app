@@ -45,7 +45,11 @@ export default function MyPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || '결제 취소 중 오류가 발생했습니다.');
+        if (data.referenceId) {
+          alert(`${data.error || '결제 취소 중 오류가 발생했습니다.'}\n문의번호: ${data.referenceId}`);
+        } else {
+          alert(data.error || '결제 취소 중 오류가 발생했습니다.');
+        }
       } else {
         alert('구독 결제가 취소되었습니다.');
         setOrders(orders.map(o => o.id === orderId ? { ...o, payment_status: 'CANCELLED' } : o));

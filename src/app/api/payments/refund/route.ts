@@ -36,6 +36,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { orderId } = body;
+    const referenceId = crypto.randomUUID();
 
     if (!orderId) {
       return NextResponse.json({ error: '주문 정보가 누락되었습니다.' }, { status: 400 });
@@ -179,8 +180,84 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: '결제 취소 상태 확인에 실패했습니다. 고객센터에 문의해주세요.' }, { status: 500 });
         }
       } else {
-        console.error('[TOSS_CANCEL_ERROR] Toss 결제 취소 실패. code:', cancelData.code, 'HTTP status:', cancelRes.status, 'OrderId:', orderId);
-        return NextResponse.json({ error: '결제 취소에 실패했습니다. 잠시 후 다시 시도하거나 1:1 문의를 이용해주세요.', code: cancelData.code }, { status: cancelRes.status });
+        const paymentKeySuffix =
+          typeof paymentKey === 'string' && paymentKey.length >= 6
+            ? paymentKey.slice(-6)
+            : 'N/A';
+
+        console.error('[TOSS_CANCEL_ERROR]', {
+          referenceId,
+          internalOrderId: order.id,
+          paymentOrderId: order.payment_order_id,
+          paymentKeySuffix,
+          tossHttpStatus: cancelRes.status,
+          tossErrorCode:
+            typeof cancelData?.code === 'string'
+              ? cancelData.code
+              : 'UNKNOWN',
+          tossErrorMessage:
+            typeof cancelData?.message === 'string'
+              ? cancelData.message
+              : 'UNKNOWN',
+        });
+
+        if (paymentKey) {
+          try {
+            const paymentLookupRes = await fetch(`https://api.tosspayments.com/v1/payments/${paymentKey}`, {
+              method: 'GET',
+              headers: { Authorization: `Basic ${encryptedSecretKey}` }
+            });
+
+            let paymentData: any = null;
+
+            try {
+              paymentData = await paymentLookupRes.json();
+            } catch {
+              paymentData = null;
+            }
+
+            if (paymentLookupRes.ok) {
+              console.error('[TOSS_PAYMENT_STATE]', {
+                referenceId,
+                lookupHttpStatus: paymentLookupRes.status,
+                method: paymentData?.method ?? null,
+                status: paymentData?.status ?? null,
+                totalAmount: paymentData?.totalAmount ?? null,
+                balanceAmount: paymentData?.balanceAmount ?? null,
+                cancelCount: Array.isArray(paymentData?.cancels)
+                  ? paymentData.cancels.length
+                  : 0,
+                latestCancelStatus:
+                  Array.isArray(paymentData?.cancels) &&
+                  paymentData.cancels.length > 0
+                    ? paymentData.cancels[paymentData.cancels.length - 1]?.cancelStatus ?? null
+                    : null,
+              });
+            } else {
+              console.error('[TOSS_PAYMENT_LOOKUP_ERROR]', {
+                referenceId,
+                lookupHttpStatus: paymentLookupRes.status,
+                lookupErrorCode:
+                  typeof paymentData?.code === 'string'
+                    ? paymentData.code
+                    : 'UNKNOWN',
+              });
+            }
+          } catch (lookupError) {
+            console.error('[TOSS_PAYMENT_LOOKUP_EXCEPTION]', {
+              referenceId,
+              message:
+                lookupError instanceof Error
+                  ? lookupError.message
+                  : 'UNKNOWN',
+            });
+          }
+        }
+
+        return NextResponse.json({ 
+          error: '결제 취소에 실패했습니다. 잠시 후 다시 시도하거나 1:1 문의를 이용해주세요.',
+          referenceId 
+        }, { status: cancelRes.status });
       }
     } else {
       // 5-1. Toss 전액 취소 결과를 실제 응답값으로 검증
