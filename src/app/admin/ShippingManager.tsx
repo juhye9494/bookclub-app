@@ -179,7 +179,8 @@ export default function ShippingManager() {
   };
 
   // 체크박스 토글
-  const handleCheck = (e: React.MouseEvent, index: number, orderId: string, isCancelled: boolean) => {
+  const handleCheck = (e: any, index: number, orderId: string, isCancelled: boolean) => {
+    if (e.stopPropagation) e.stopPropagation();
     if (isCancelled) return;
     
     setCheckedIds(prev => {
@@ -411,7 +412,18 @@ export default function ShippingManager() {
               <th style={{...thStyle, width: '40px', textAlign: 'center'}}>
                 <input 
                   type="checkbox" 
-                  checked={pagedOrders.filter(o => o.order_status !== '주문취소').length > 0 && pagedOrders.filter(o => o.order_status !== '주문취소').every(o => checkedIds.has(o.id))}
+                  checked={(() => {
+                    const selectable = pagedOrders.filter(o => o.order_status !== '주문취소');
+                    return selectable.length > 0 && selectable.every(o => checkedIds.has(o.id));
+                  })()}
+                  ref={el => {
+                    if (el) {
+                      const selectable = pagedOrders.filter(o => o.order_status !== '주문취소');
+                      const allSelected = selectable.length > 0 && selectable.every(o => checkedIds.has(o.id));
+                      const someSelected = selectable.some(o => checkedIds.has(o.id)) && !allSelected;
+                      el.indeterminate = someSelected;
+                    }
+                  }}
                   onChange={toggleAll}
                 />
               </th>
@@ -439,8 +451,8 @@ export default function ShippingManager() {
                       type="checkbox" 
                       disabled={isCancelled}
                       checked={checkedIds.has(order.id)}
-                      onChange={(e) => e.preventDefault()}
-                      onClick={(e) => handleCheck(e, index, order.id, isCancelled)}
+                      onChange={(e) => handleCheck(e.nativeEvent, index, order.id, isCancelled)}
+                      onClick={(e) => e.stopPropagation()}
                     />
                   </td>
                   <td style={{ ...tdStyle, whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
