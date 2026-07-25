@@ -103,6 +103,7 @@ export default function GroupsPage() {
   const [newIntro, setNewIntro] = useState('');
   const [newOpenChatUrl, setNewOpenChatUrl] = useState('');
   const [isOpeningChat, setIsOpeningChat] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
 
   const [authorName, setAuthorName] = useState('');
   const [authorBook, setAuthorBook] = useState('');
@@ -217,6 +218,7 @@ export default function GroupsPage() {
   }, [user]); // user가 바뀔 때(로그인/로그아웃) 다시 불러옵니다.
 
   const handleJoin = async (groupId: string) => {
+    if (isJoining) return;
     if (!user) {
       window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
       return;
@@ -229,58 +231,63 @@ export default function GroupsPage() {
       return;
     }
 
-    if (myMemberships.has(groupId)) {
-      // --- 1. Leave (참가 취소) ---
-      const { data: deletedRows, error: deleteError } = await supabase
-        .from('group_participants')
-        .delete()
-        .eq('group_id', groupId)
-        .eq('user_id', user.id)
-        .eq('role', 'member')
-        .select('id');
+    setIsJoining(true);
+    try {
+      if (myMemberships.has(groupId)) {
+        // --- 1. Leave (참가 취소) ---
+        const { data: deletedRows, error: deleteError } = await supabase
+          .from('group_participants')
+          .delete()
+          .eq('group_id', groupId)
+          .eq('user_id', user.id)
+          .eq('role', 'member')
+          .select('id');
 
-      if (deleteError || !deletedRows || deletedRows.length !== 1) {
-        alert('참가 취소할 내역을 찾지 못했거나 오류가 발생했습니다.');
-        return;
-      }
+        if (deleteError || !deletedRows || deletedRows.length !== 1) {
+          alert('참가 취소할 내역을 찾지 못했거나 오류가 발생했습니다.');
+          return;
+        }
 
-      // 성공 시: DB에서 groups 및 내 참가 내역 재조회
-      await fetchGroups();
-
-      const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
-      if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
-      
-      alert('독서모임 탈퇴가 완료되었습니다.');
-
-    } else {
-      // --- 2. Join (참가 신청) ---
-      if (targetGroup.membersCount >= targetGroup.maxMembers || targetGroup.status === '모집마감') {
-        alert('이미 정원이 초과되었거나 모집이 마감되어 참가 신청할 수 없습니다.');
-        return;
-      }
-
-      const { error: insertError } = await supabase.from('group_participants').insert([{
-        group_id: groupId,
-        user_id: user.id,
-        user_email: user.email,
-        user_name: user.user_metadata?.name || user.email,
-        role: 'member',
-        group_title: targetGroup.title,
-      }]);
-
-      if (insertError) {
-        alert('참가 신청 실패: 정원이 이미 마감되었거나 일시적 오류입니다.\n(' + insertError.message + ')');
+        // 성공 시: DB에서 groups 및 내 참가 내역 재조회
         await fetchGroups();
-        return;
+
+        const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
+        if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
+        
+        alert('독서모임 탈퇴가 완료되었습니다.');
+
+      } else {
+        // --- 2. Join (참가 신청) ---
+        if (targetGroup.membersCount >= targetGroup.maxMembers || targetGroup.status === '모집마감') {
+          alert('이미 정원이 초과되었거나 모집이 마감되어 참가 신청할 수 없습니다.');
+          return;
+        }
+
+        const { error: insertError } = await supabase.from('group_participants').insert([{
+          group_id: groupId,
+          user_id: user.id,
+          user_email: user.email,
+          user_name: user.user_metadata?.name || user.email,
+          role: 'member',
+          group_title: targetGroup.title,
+        }]);
+
+        if (insertError) {
+          alert('참가 신청 실패: 정원이 이미 마감되었거나 일시적 오류입니다.\n(' + insertError.message + ')');
+          await fetchGroups();
+          return;
+        }
+
+        // 성공 시: DB 재조회
+        await fetchGroups();
+
+        const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
+        if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
+        
+        alert('독서모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
       }
-
-      // 성공 시: DB 재조회
-      await fetchGroups();
-
-      const { data: myParts } = await supabase.from('group_participants').select('group_id').eq('user_id', user.id).eq('role', 'member');
-      if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
-      
-      alert('독서모임 참가 신청이 완료되었습니다! 마이페이지에서 접수 내역을 확인하실 수 있습니다.');
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -764,6 +771,50 @@ export default function GroupsPage() {
         {selectedGroup.time && <div style={{ gridColumn: '1 / -1' }}>🕒 <strong style={{color: '#475569'}}>시간:</strong> {selectedGroup.time}</div>}
       </div>
       
+      {/* 상세 참가 버튼 */}
+      <div style={{ marginBottom: '24px' }}>
+        {(() => {
+          const isApplied = user && myMemberships.has(selectedGroup.id);
+          const isClosed = selectedGroup.membersCount >= selectedGroup.maxMembers || selectedGroup.status === '모집마감';
+
+          if (isJoining) {
+            return (
+              <button disabled style={{ width: '100%', padding: '14px 24px', background: '#e5e7eb', color: '#9ca3af', fontWeight: 700, borderRadius: '8px', cursor: 'not-allowed', border: 'none', fontSize: '1rem' }}>
+                처리 중...
+              </button>
+            );
+          }
+
+          if (isClosed) {
+            return (
+              <button disabled style={{ width: '100%', padding: '14px 24px', background: '#e5e7eb', color: '#9ca3af', fontWeight: 700, borderRadius: '8px', cursor: 'not-allowed', border: 'none', fontSize: '1rem' }}>
+                모집 마감
+              </button>
+            );
+          }
+
+          if (isApplied) {
+            return (
+              <button 
+                onClick={() => handleJoin(selectedGroup.id)}
+                style={{ width: '100%', padding: '14px 24px', background: '#f87171', color: 'white', fontWeight: 700, borderRadius: '8px', cursor: 'pointer', border: 'none', fontSize: '1rem' }}
+              >
+                참가 신청 취소
+              </button>
+            );
+          }
+
+          return (
+            <button 
+              onClick={() => handleJoin(selectedGroup.id)}
+              style={{ width: '100%', padding: '14px 24px', background: 'var(--accent)', color: 'white', fontWeight: 700, borderRadius: '8px', cursor: 'pointer', border: 'none', fontSize: '1rem' }}
+            >
+              독서모임 참가 신청
+            </button>
+          );
+        })()}
+      </div>
+
       {/* 방장 소개 */}
       <div style={{ marginBottom: '24px' }}>
         <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text)' }}>👤 방장 소개</h4>
@@ -803,7 +854,7 @@ export default function GroupsPage() {
           if (!isApplied) {
             return (
               <button type="button" disabled style={{ width: '100%', padding: '14px 24px', background: '#e5e7eb', color: '#9ca3af', fontWeight: 700, borderRadius: '8px', cursor: 'not-allowed', border: 'none', fontSize: '1rem' }}>
-                💬 참가 신청 후 입장 가능
+                💬 참가 신청 후 오픈채팅방 입장 가능
               </button>
             );
           }
