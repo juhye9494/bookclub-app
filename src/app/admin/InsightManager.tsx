@@ -10,6 +10,7 @@ export default function InsightManager() {
   const [editing, setEditing] = useState<any | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadData = async (page: number) => {
     setLoading(true);
@@ -33,30 +34,103 @@ export default function InsightManager() {
   useEffect(() => { loadData(currentPage); }, [currentPage]);
 
   const handleDelete = async (id: string) => {
+    if (isSaving) return;
     if (!confirm('이 글을 삭제하시겠습니까?')) return;
-    await supabase.from('insights').delete().eq('id', id);
-    
-    // Check if current page is empty
-    if (posts.length === 1 && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    } else {
-      await loadData(currentPage);
+    setIsSaving(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('로그인 세션이 만료되었습니다.\n다시 로그인해주세요.');
+        return;
+      }
+
+      const res = await fetch(`/api/admin/insights/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      if (res.status === 401) {
+        alert('로그인 세션이 만료되었습니다.\n다시 로그인해주세요.');
+        return;
+      }
+      if (res.status === 403) {
+        alert('관리자 권한이 없습니다.');
+        return;
+      }
+      if (res.status === 404) {
+        alert('이미 삭제되었거나 존재하지 않는 글입니다.');
+        await loadData(currentPage);
+        return;
+      }
+      if (!res.ok) {
+        alert('삭제 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.');
+        return;
+      }
+
+      // Check if current page is empty
+      if (posts.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      } else {
+        await loadData(currentPage);
+      }
+    } catch (err) {
+      alert('삭제 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSave = async (post: any) => {
-    if (isCreating) {
-      const newPost = { ...post, id: 'insight-' + Date.now() };
-      const { error } = await supabase.from('insights').insert(newPost);
-      if (error) { alert('저장 실패: ' + error.message); return; }
-      setCurrentPage(1);
-    } else {
-      const { error } = await supabase.from('insights').update(post).eq('id', post.id);
-      if (error) { alert('수정 실패: ' + error.message); return; }
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('로그인 세션이 만료되었습니다.\n다시 로그인해주세요.');
+        return;
+      }
+
+      const method = isCreating ? 'POST' : 'PUT';
+      const url = isCreating ? '/api/admin/insights' : `/api/admin/insights/${post.id}`;
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify(post)
+      });
+
+      if (res.status === 401) {
+        alert('로그인 세션이 만료되었습니다.\n다시 로그인해주세요.');
+        return;
+      }
+      if (res.status === 403) {
+        alert('관리자 권한이 없습니다.');
+        return;
+      }
+      if (res.status === 400) {
+        alert('입력 내용을 확인해주세요.');
+        return;
+      }
+      if (!res.ok) {
+        alert('저장 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.');
+        return;
+      }
+
+      if (isCreating) {
+        setCurrentPage(1);
+      }
+      setEditing(null);
+      setIsCreating(false);
+      await loadData(isCreating ? 1 : currentPage);
+    } catch (err) {
+      alert('저장 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsSaving(false);
     }
-    setEditing(null);
-    setIsCreating(false);
-    await loadData(isCreating ? 1 : currentPage);
   };
 
   if (loading && posts.length === 0) return <div style={{ padding: '40px', textAlign: 'center' }}>인사이트 데이터 불러오는 중...</div>;
@@ -83,6 +157,7 @@ export default function InsightManager() {
           post={editing}
           onSave={handleSave}
           onCancel={() => { setEditing(null); setIsCreating(false); }}
+          isSaving={isSaving}
         />
       )}
 
@@ -108,8 +183,8 @@ export default function InsightManager() {
 
               {/* Actions */}
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setEditing(post)} style={{ padding: '6px 12px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>편집</button>
-                <button onClick={() => handleDelete(post.id)} style={{ padding: '6px 12px', background: '#fff', color: '#c0392b', border: '1px solid #f5c6cb', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
+                <button onClick={() => setEditing(post)} disabled={isSaving} style={{ padding: '6px 12px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: isSaving ? 'not-allowed' : 'pointer', fontSize: '0.8rem', opacity: isSaving ? 0.6 : 1 }}>편집</button>
+                <button onClick={() => handleDelete(post.id)} disabled={isSaving} style={{ padding: '6px 12px', background: '#fff', color: '#c0392b', border: '1px solid #f5c6cb', borderRadius: '4px', cursor: isSaving ? 'not-allowed' : 'pointer', fontSize: '0.8rem', opacity: isSaving ? 0.6 : 1 }}>{isSaving && (editing?.id === post.id || !editing) ? '삭제 중...' : '삭제'}</button>
               </div>
             </div>
           )
@@ -124,9 +199,9 @@ export default function InsightManager() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
-          <button 
-            disabled={currentPage === 1} 
-            onClick={() => setCurrentPage(currentPage - 1)} 
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
             style={{ background: 'transparent', border: 'none', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#cfc8b8' : '#1a1815', fontSize: '0.9rem' }}
           >
             ‹ 이전
@@ -134,18 +209,18 @@ export default function InsightManager() {
           {[...Array(totalPages)].map((_, idx) => {
             const page = idx + 1;
             return (
-              <button 
-                key={page} 
-                onClick={() => setCurrentPage(page)} 
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
                 style={{ background: currentPage === page ? '#1a1815' : 'transparent', color: currentPage === page ? '#fff' : '#1a1815', border: 'none', borderRadius: '4px', padding: '4px 12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: currentPage === page ? 700 : 400 }}
               >
                 {page}
               </button>
             );
           })}
-          <button 
-            disabled={currentPage === totalPages} 
-            onClick={() => setCurrentPage(currentPage + 1)} 
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
             style={{ background: 'transparent', border: 'none', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#cfc8b8' : '#1a1815', fontSize: '0.9rem' }}
           >
             다음 ›
@@ -156,7 +231,7 @@ export default function InsightManager() {
   );
 }
 
-function InsightEditForm({ post, onSave, onCancel }: { post: any, onSave: (p: any) => void, onCancel: () => void }) {
+function InsightEditForm({ post, onSave, onCancel, isSaving }: { post: any, onSave: (p: any) => void, onCancel: () => void, isSaving: boolean }) {
   const [form, setForm] = useState({ ...post });
 
   const handleChange = (e: any) => {
@@ -252,8 +327,8 @@ function InsightEditForm({ post, onSave, onCancel }: { post: any, onSave: (p: an
       </div>
 
       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-        <button onClick={onCancel} style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: 'pointer' }}>취소</button>
-        <button onClick={handleSubmit} style={{ padding: '8px 16px', background: '#1a1815', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>저장</button>
+        <button onClick={onCancel} disabled={isSaving} style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cfc8b8', borderRadius: '4px', cursor: isSaving ? 'not-allowed' : 'pointer' }}>취소</button>
+        <button onClick={handleSubmit} disabled={isSaving} style={{ padding: '8px 16px', background: '#1a1815', color: '#fff', border: 'none', borderRadius: '4px', cursor: isSaving ? 'not-allowed' : 'pointer', fontWeight: 600 }}>{isSaving ? (post.id ? '수정 중...' : '저장 중...') : '저장'}</button>
       </div>
     </div>
   );
