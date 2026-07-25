@@ -6,6 +6,20 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import './groups.css';
 
+const normalizeOpenChatUrl = (value?: string | null) => {
+  const trimmed = value?.trim() || '';
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== 'https:' || url.hostname !== 'open.kakao.com') {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+};
+
 function GroupQueryHandler({ groups, onSelect }: { groups: any[], onSelect: (g: any) => void }) {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
@@ -87,6 +101,7 @@ export default function GroupsPage() {
   const [newPlace, setNewPlace] = useState('');
   const [newTime, setNewTime] = useState('');
   const [newIntro, setNewIntro] = useState('');
+  const [newOpenChatUrl, setNewOpenChatUrl] = useState('');
 
   const [authorName, setAuthorName] = useState('');
   const [authorBook, setAuthorBook] = useState('');
@@ -113,6 +128,13 @@ export default function GroupsPage() {
   
   // Selected group for detail view modal
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
+  const closeCreateModal = () => {
+    setEditingGroup(null);
+    setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
+    setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro(''); setNewOpenChatUrl('');
+    setIsCreateOpen(false);
+  };
+
   const closeDetail = () => {
     setSelectedGroup(null);
     const params = new URLSearchParams(window.location.search);
@@ -127,7 +149,7 @@ export default function GroupsPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsGuideOpen(false);
-        setIsCreateOpen(false);
+        closeCreateModal();
         closeDetail();
       }
     };
@@ -271,6 +293,9 @@ export default function GroupsPage() {
       );
       return;
     }
+    setEditingGroup(null);
+    setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
+    setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro(''); setNewOpenChatUrl('');
     setIsCreateOpen(true);
   };
 
@@ -282,6 +307,15 @@ export default function GroupsPage() {
     if (!newTitle || !newDesc || !newBook || !newLeader) {
       alert('모든 필수 정보를 입력해 주세요.');
       return;
+    }
+
+    let finalChatUrl: string | null = null;
+    if (newOpenChatUrl.trim()) {
+      finalChatUrl = normalizeOpenChatUrl(newOpenChatUrl);
+      if (!finalChatUrl) {
+        alert('올바른 카카오톡 오픈채팅방 링크를 입력해 주세요.');
+        return;
+      }
     }
 
     const groupId = 'group-' + Date.now();
@@ -309,6 +343,14 @@ export default function GroupsPage() {
       return;
     }
 
+    if (finalChatUrl) {
+      const { error: chatUrlError } = await supabase.from('groups').update({ open_chat_url: finalChatUrl }).eq('id', groupId);
+      if (chatUrlError) {
+        alert('독서모임은 생성되었지만 오픈채팅방 링크 저장에 실패했습니다.');
+        return;
+      }
+    }
+
     // 성공 시 DB에서 다시 긁어와 전체 동기화
     await fetchGroups();
 
@@ -319,7 +361,7 @@ export default function GroupsPage() {
     if (myParts) setMyMemberships(new Set(myParts.map(p => p.group_id)));
 
     setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
-    setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro('');
+    setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro(''); setNewOpenChatUrl('');
     setIsCreateOpen(false);
 
     alert('독서모임이 성공적으로 생성되었습니다!');
@@ -328,24 +370,30 @@ export default function GroupsPage() {
   const handleEditGroup = async () => {
     if (!editingGroup) return;
 
+    let finalChatUrl: string | null = null;
+    if (newOpenChatUrl.trim()) {
+      const url = newOpenChatUrl.trim();
+      if (!url.startsWith('https://open.kakao.com/')) {
+        alert('올바른 카카오톡 오픈채팅방 링크를 입력해 주세요.');
+        return;
+      }
+      finalChatUrl = url;
+    }
+
     const updatedFields = {
-      title: newTitle, desc: newDesc, book: newBook, leader: newLeader, maxMembers: parseInt(newMax) || 8, tags: newTags.split(',').map((t: string) => t.trim()).filter(Boolean), place: newPlace, time: newTime, intro: newIntro
+      title: newTitle, desc: newDesc, book: newBook, leader: newLeader, maxMembers: parseInt(newMax) || 8, tags: newTags.split(',').map((t: string) => t.trim()).filter(Boolean), place: newPlace, time: newTime, intro: newIntro, open_chat_url: finalChatUrl
     };
 
     const { error: updateError } = await supabase.from('groups').update(updatedFields).eq('id', editingGroup.id);
     if (updateError) {
-      console.error('Group update error:', updateError);
-      alert('독서모임 수정 중 오류가 발생했습니다: ' + updateError.message);
+      alert('독서모임 수정 중 오류가 발생했습니다.');
       return;
     }
 
     // 성공 시 DB에서 갱신
     await fetchGroups();
 
-    setEditingGroup(null);
-    setNewTitle(''); setNewDesc(''); setNewBook(''); setNewLeader('');
-    setNewMax('8'); setNewTags(''); setNewPlace(''); setNewTime(''); setNewIntro('');
-    setIsCreateOpen(false);
+    closeCreateModal();
     alert('독서모임 정보가 수정되었습니다.');
   };
 
@@ -360,6 +408,7 @@ export default function GroupsPage() {
     setNewPlace(group.place || '');
     setNewTime(group.time || '');
     setNewIntro(group.intro || '');
+    setNewOpenChatUrl(group.open_chat_url || '');
     setIsCreateOpen(true);
   };
 
@@ -666,9 +715,9 @@ export default function GroupsPage() {
         {selectedGroup.time && <div style={{ gridColumn: '1 / -1' }}>🕒 <strong style={{color: '#475569'}}>시간:</strong> {selectedGroup.time}</div>}
       </div>
       
-      {/* 모임 소개 */}
+      {/* 방장 소개 */}
       <div style={{ marginBottom: '24px' }}>
-        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text)' }}>📖 모임 소개</h4>
+        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text)' }}>👤 방장 소개</h4>
         <div style={{ 
           background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px',
           whiteSpace: 'pre-wrap', wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: 1.7, color: '#475569', fontSize: '0.95rem'
@@ -677,9 +726,9 @@ export default function GroupsPage() {
         </div>
       </div>
 
-      {/* 방장 소개 */}
+      {/* 모임 소개 */}
       <div style={{ marginBottom: '24px' }}>
-        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text)' }}>👤 방장 소개</h4>
+        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text)' }}>📖 모임 소개</h4>
         <div style={{ 
           background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '16px',
           whiteSpace: 'pre-wrap', wordBreak: 'keep-all', overflowWrap: 'break-word', lineHeight: 1.7, color: '#475569', fontSize: '0.95rem'
@@ -687,15 +736,38 @@ export default function GroupsPage() {
           {selectedGroup.intro ? selectedGroup.intro : <span style={{ color: '#94a3b8' }}>등록된 소개글이 없습니다.</span>}
         </div>
       </div>
+
+      {/* 오픈채팅방 참여하기 */}
+      {normalizeOpenChatUrl(selectedGroup.open_chat_url) && (
+        <div style={{ marginBottom: '24px' }}>
+          <a
+            href={normalizeOpenChatUrl(selectedGroup.open_chat_url) as string}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-block',
+              padding: '14px 24px',
+              background: '#fee500',
+              color: '#191919',
+              fontWeight: 700,
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '1rem'
+            }}
+          >
+            💬 오픈채팅방 참여하기
+          </a>
+        </div>
+      )}
     </div>
   </div>
 )}
 
       {/* CREATE GROUP MODAL */}
       {isCreateOpen && (
-        <div className="groups-modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setIsCreateOpen(false); }}>
+        <div className="groups-modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) closeCreateModal(); }}>
           <div className="groups-modal" style={{ width: 'min(520px, 92vw)' }}>
-            <button className="groups-detail-close" onClick={() => setIsCreateOpen(false)}>✕</button>
+            <button className="groups-detail-close" onClick={closeCreateModal}>✕</button>
             <h3>{editingGroup ? '독서모임 정보 수정' : '새 독서모임 개설 신청'}</h3>
             <p className="modal-sub">{editingGroup ? '독서모임 정보를 수정합니다.' : '한경 언더라인 회원들과 함께 나눌 새로운 공간을 만듭니다.'}</p>
 
@@ -705,8 +777,8 @@ export default function GroupsPage() {
             </div>
             
             <div className="groups-form-field">
-              <label>모임 소개 *</label>
-              <input type="text" placeholder="예: 매주 화요일 밤, 미래 기술 방향을 함께 토론합니다." value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
+              <label>방장 소개 *</label>
+              <input type="text" placeholder="방장님의 관심 분야나 모임 운영 경험을 간단히 소개해 주세요." value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
             </div>
 
             <div className="groups-form-field">
@@ -749,15 +821,15 @@ export default function GroupsPage() {
 
             {/* 소개글 작성 */}
             <div className="groups-form-field">
-              <label>방장 소개글</label>
+              <label>모임 소개글</label>
               <div style={{ background: '#f9fafb', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 16px', marginBottom: '8px', fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.7 }}>
                 <p style={{ fontWeight: 700, color: '#374151', marginBottom: '6px' }}>✍️ 작성 안내</p>
                 <p>1. 독서모임의 주제와 운영 방식, 활동 계획 등을 자유롭게 소개해 주세요.</p>
-                <p>2. 방장님께서는 회원 간 원활한 소통을 위해 카카오톡 오픈채팅방을 개설해 주세요. 개설한 오픈채팅방 URL은 소개글 하단에 기재해 주시고, 신청한 회원들과 자유롭게 소통해 주세요.</p>
+                <p>2. 방장님께서는 회원 간 원활한 소통을 위해 카카오톡 오픈채팅방을 개설해 주세요. 오픈채팅방 링크는 아래 전용 입력란에 입력해 주세요.</p>
                 <p>3. 원활한 모임 운영을 위해 광고성 게시물이나 영업 목적의 글은 별도 안내 없이 삭제될 수 있습니다.</p>
               </div>
               <textarea 
-                placeholder="독서모임을 소개하는 글을 작성해 주세요.
+                placeholder="독서모임의 주제, 운영 방식, 활동 계획 등을 자세히 소개해 주세요.
 
 ex.
 안녕하세요.
@@ -770,6 +842,18 @@ ex.
                 rows={8}
                 style={{ width: '100%', padding: '14px 16px', border: '1.5px solid var(--border)', borderRadius: '12px', outline: 'none', fontSize: '0.92rem', lineHeight: 1.7, resize: 'vertical', fontFamily: 'var(--sans)', boxSizing: 'border-box' }} 
               />
+            </div>
+
+            <div className="groups-form-field">
+              <label>오픈채팅방 링크</label>
+              <input 
+                type="url" 
+                placeholder="https://open.kakao.com/o/..." 
+                value={newOpenChatUrl} 
+                onChange={(e) => setNewOpenChatUrl(e.target.value)} 
+                style={{ width: '100%', padding: '14px 16px', border: '1.5px solid var(--border)', borderRadius: '12px', outline: 'none', fontSize: '0.92rem' }}
+              />
+              <p style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '6px' }}>독서모임 참여자들이 입장할 수 있는 카카오톡 오픈채팅방 링크를 입력해 주세요.</p>
             </div>
 
             <button type="submit" className="groups-create-submit-btn" onClick={editingGroup ? handleEditGroup : handleCreateGroup} style={{ marginTop: '16px' }}>{editingGroup ? '수정 완료' : '독서모임 방 만들기'}</button>

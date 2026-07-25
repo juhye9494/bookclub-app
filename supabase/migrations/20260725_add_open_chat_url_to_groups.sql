@@ -1,0 +1,1 @@
+ALTER TABLE public.groups ADD COLUMN IF NOT EXISTS open_chat_url text;
