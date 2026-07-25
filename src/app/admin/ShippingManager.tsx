@@ -460,13 +460,17 @@ export default function ShippingManager() {
                     {order.user_address || '-'}
                   </td>
                   <td style={{ ...tdStyle, minWidth: '160px' }}>
-                    {(order.book_order_items || []).map((b: any, idx: number) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: idx < (order.book_order_items?.length || 0) - 1 ? '4px' : 0, fontSize: '0.8rem' }}>
-                        {b.cover && <div style={{ width: '24px', height: '32px', borderRadius: '2px 4px 4px 2px', overflow: 'hidden', flexShrink: 0 }}><img src={b.cover} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /></div>}
-                        <span style={{ fontWeight: 500 }}>{b.title}</span>
+                    {Array.isArray(order.book_order_items) && order.book_order_items.length > 0 ? (
+                      <div>
+                        {order.book_order_items.map((item: any) => (
+                          <div key={item.id || item.book_id} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', fontSize: '0.8rem' }}>
+                            <span style={{ fontWeight: 500 }}>{item.book_title_snapshot || '-'}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    {(!order.book_order_items || order.book_order_items.length === 0) && <span style={{ color: '#d1d5db' }}>-</span>}
+                    ) : (
+                      <span style={{ color: '#d1d5db' }}>-</span>
+                    )}
                   </td>
                   
                   <td style={{ ...tdStyle }}>
