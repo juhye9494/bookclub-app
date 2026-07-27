@@ -133,7 +133,7 @@ export default function Home() {
           {/* HERO */}
           <section className="hero" style={{ paddingBottom: '40px', minHeight: 'auto' }}>
             <div className="hero-title-container">
-              <p className="hero-slogan">한 권의 책, 하나의 밑줄이<br className="mobile-br" /> 당신의 경험을 더 넓혀줍니다.</p>
+              <p className="hero-slogan">책 속에서 우연히 발견한 한 문장이<br className="hidden md:inline" /> 당신의 인생을 바꿔놓을 수도 있습니다.</p>
               <h1 className="hero-underline-title">
                 <span className="underline-draw"></span>
                 <span className="text-reveal-container">
@@ -144,9 +144,12 @@ export default function Home() {
               </h1>
             </div>
              <p className="hero-sub hero-sub-animate" style={{ maxWidth: '640px', marginTop: '40px', textAlign: 'center' }}>
-              하루 딱 30분, 3개월<br />
-              한경 언더라인에서만 만나볼 수 있는<br className="mobile-br" /> 다양한 혜택과 함께<br />
-              경제·경영·인문·예술을 넘나드는<br className="mobile-br" /> 즐거운 독서 경험을 시작해보세요.
+              하루 30분, 3개월 동안 꾸준히<br />
+              독서 루틴을 만들어 가는<br />
+              한경 독서클럽, 언더라인입니다.<br />
+              <br />
+              더 넓은 세상, 인생의 교양, 성장의 지혜를 찾는 모두를 위한 독서클럽,<br />
+              한경 언더라인에 오신 걸 환영합니다.
             </p>
 
             {/* CSS styles for Hero animation */}
