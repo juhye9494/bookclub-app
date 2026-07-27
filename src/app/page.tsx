@@ -6,17 +6,12 @@ import { supabase } from '@/lib/supabaseClient';
 
 
 
-const REVIEWS = [
-  { stars:'★★★★★', quote:'"책을 고르는 재미가 생겼어요."', author:'30대 직장인, 서울' },
-  { stars:'★★★★★', quote:'"한경이라 믿고 시작했는데, 기대 이상이에요."', author:'40대 자영업자, 부산' },
-  { stars:'★★★★★', quote:'"선물하기로도 딱이에요."', author:'50대 주부, 인천' },
-  { stars:'★★★★★', quote:'"하루 30분, 독서 습관이 자리잡혔어요."', author:'20대 대학생, 대전' },
-  { stars:'★★★★★', quote:'"저자 강연이 정말 알찼습니다."', author:'40대 회사원, 경기' },
-  { stars:'★★★★★', quote:'"매달 책을 받는 설렘이 있어요."', author:'30대 워킹맘, 서울' },
-  { stars:'★★★★★', quote:'"큐레이션의 폭이 넓어 좋아요."', author:'50대 임원, 서울' },
-  { stars:'★★★★★', quote:'"가족 모두가 함께 읽고 있어요."', author:'40대 학부모, 광주' },
-  { stars:'★★★★★', quote:'"한경의 신뢰감이 책에도 느껴져요."', author:'60대 은퇴자, 부산' },
-  { stars:'★★★★★', quote:'"독서 노트가 의외로 너무 좋아요."', author:'30대 디자이너, 서울' }
+const RECOMMENDATIONS = [
+  { body: <>쏟아지는 경제·재테크 이슈를<br className="hidden md:inline" /> 책으로 차분히 정리하고 싶어요.</>, target: '경제 흐름을 잡고 싶은 30대 직장인' },
+  { body: <>주식, 자기계발, 예술까지<br className="hidden md:inline" /> 필요한 분야를 골라 시야를 넓히고 싶어요.</>, target: '관심사를 넓히고 싶은 20대 대학생' },
+  { body: <>혼자서는 미루기 쉬운 독서를<br className="hidden md:inline" /> 다른 사람들과 꾸준히 이어가고 싶어요.</>, target: '함께 읽는 힘이 필요한 40대 직장인' },
+  { body: <>정해진 책보다 관심이 생긴 순간,<br className="hidden md:inline" /> 원하는 신간을 골라 읽고 싶어요.</>, target: '내 취향대로 고르고 싶은 30대 독서가' },
+  { body: <>하루 30분씩 읽으며<br className="hidden md:inline" /> 꾸준한 독서 습관을 만들고 싶어요.</>, target: '독서 루틴을 만들고 싶은 20대 사회초년생' }
 ];
 
 const formatCycleDate = (value?: string | null, includeYear = false) => {
@@ -391,20 +386,19 @@ export default function Home() {
         </div>
       </section>
 
-      {/* REVIEWS */}
+      {/* RECOMMENDATIONS */}
       <section className="review-section">
         <div className="review-inner">
           <div className="review-header reveal">
-            <p className="section-label">고객 후기</p>
-            <h2 className="section-title">회원들이 직접<br />전하는 이야기</h2>
+            <p className="section-label">한경 언더라인</p>
+            <h2 className="section-title">이런 분들에게<br />추천해요</h2>
           </div>
           <div className="review-marquee reveal">
             <div className="marquee-track">
-              {[...REVIEWS, ...REVIEWS].map((r, i) => (
+              {[...RECOMMENDATIONS, ...RECOMMENDATIONS].map((r, i) => (
                 <div key={i} className="review-card mini">
-                  <p className="review-stars">{r.stars}</p>
-                  <p className="review-quote">{r.quote}</p>
-                  <p className="review-author">{r.author}</p>
+                  <p className="review-quote">{r.body}</p>
+                  <p className="review-author">{r.target}</p>
                 </div>
               ))}
             </div>
