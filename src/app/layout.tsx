@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'CGKqg4Og2n8AvASQxo5bcv7xvUyfuNaTccwSWEFXjxM',
+    other: {
+      'naver-site-verification': '4160529c62decad6dd483c7c0cdd2824bb0bb066',
+    },
   },
   openGraph: {
     title: "한경 언더라인 | 경제·경영·인문·예술 독서클럽",
