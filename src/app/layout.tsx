@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://underline.hankyung.com"),
   title: {
-    default: "한경 언더라인 | 경제·경영 독서클럽",
+    default: "한경 언더라인 | 경제·경영·인문·예술 독서클럽",
     template: "%s | 한경 언더라인"
   },
   description: "경제·경영·인문·예술 분야의 엄선된 도서와 북토크, 독서모임, 플러스 인사이트를 만나는 한경 언더라인 독서클럽입니다.",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     google: 'CGKqg4Og2n8AvASQxo5bcv7xvUyfuNaTccwSWEFXjxM',
   },
   openGraph: {
-    title: "한경 언더라인 | 경제·경영 독서클럽",
+    title: "한경 언더라인 | 경제·경영·인문·예술 독서클럽",
     description: "경제·경영·인문·예술 분야의 엄선된 도서와 북토크, 독서모임, 플러스 인사이트를 만나는 한경 언더라인 독서클럽입니다.",
     url: "/",
     siteName: "한경 언더라인",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "한경 언더라인 | 경제·경영 독서클럽",
+    title: "한경 언더라인 | 경제·경영·인문·예술 독서클럽",
     description: "경제·경영·인문·예술 분야의 엄선된 도서와 북토크, 독서모임, 플러스 인사이트를 만나는 한경 언더라인 독서클럽입니다.",
     images: ['/twitter-image.png'],
   },
