@@ -104,7 +104,7 @@ export default function Home() {
           setBooks(formatted);
         }
       } else {
-        setCycleLabel('준비된 시즌이 없습니다.');
+        setCycleLabel('준비된 기수가 없습니다.');
       }
       setLoadingBooks(false);
     }
@@ -367,7 +367,7 @@ export default function Home() {
               <div className="step-circle">01</div>
               <p className="step-num">STEP 1</p>
               <h4 className="step-title">북클럽 가입</h4>
-              <p className="step-desc">시즌별 가입 진행</p>
+              <p className="step-desc">기수별 가입 진행</p>
             </div>
             <div className="flow-step reveal" style={{ transitionDelay: '0.15s' }}>
               <div className="step-circle">02</div>
@@ -462,7 +462,7 @@ export default function Home() {
               ⓘ 유의사항
             </p>
             <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.85, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <p>※ 한경 언더라인 독서클럽은 3개월 단위의 시즌제 멤버십 서비스로 운영됩니다.</p>
+              <p>※ 한경 언더라인 독서클럽은 3개월 단위의 기수제 멤버십 서비스로 운영됩니다.</p>
               <p>※ 구독 문의 : 전화 02-360-4555 (운영시간 10:00 ~ 16:00, 주말·공휴일·점심시간 제외) 또는 하단 1:1 문의</p>
               
               <p style={{ marginTop: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '14px' }}>

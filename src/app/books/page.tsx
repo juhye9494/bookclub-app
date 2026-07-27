@@ -153,7 +153,7 @@ function BooksContent() {
       }
 
       if (!cycle) {
-        setCycleLabel('준비된 시즌이 없습니다.');
+        setCycleLabel('준비된 기수가 없습니다.');
         setLoadingBooks(false);
         return;
       }
@@ -439,7 +439,7 @@ function BooksContent() {
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '48px 5vw 80px' }}>
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <p style={{ fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.14em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '12px' }}>BOOK CURATION</p>
-            <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 700, lineHeight: 1.3, marginBottom: '16px' }}>이번 시즌 도서를<br className="mobile-br" /> 골라보세요</h1>
+            <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 700, lineHeight: 1.3, marginBottom: '16px' }}>이번 기수 도서를<br className="mobile-br" /> 골라보세요</h1>
             <p style={{ fontSize: '0.95rem', color: 'var(--text-mid)', lineHeight: 1.7, marginBottom: '0' }}>총 4권의 도서를 자유롭게 선택하실 수 있습니다.</p>
           </div>
 
