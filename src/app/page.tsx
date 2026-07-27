@@ -310,7 +310,7 @@ export default function Home() {
       <section className="service-section">
         <div className="service-inner">
           <div className="service-header reveal">
-            <p className="section-label">가입 혜택</p>
+            <p className="section-label">언더라인 회원이 되면</p>
             <h2 className="section-title">다양한 혜택으로<br />책 읽는 즐거움이 커집니다.</h2>
           </div>
           <div className="service-cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
@@ -321,22 +321,22 @@ export default function Home() {
               <p className="card-desc">30분을 기록할 수 있는 모래시계와 독서노트, 엽서 세트를 드립니다.<br />(가입 시, 최초 1회 무료 배송)</p>
             </div>
             <div className="service-card reveal" style={{ transitionDelay: '0.2s' }}>
-              <div className="card-icon"><img src="/uploads/benefit_booktalk.png" alt="북토크" /></div>
-              <p className="card-tag">시즌 대표 도서</p>
-              <h3 className="card-title">무료 북토크 초대</h3>
-              <p className="card-desc">월 1회 진행되는 오프라인 저자 북토크에 회원 우선 혜택으로 무료 초청해 드립니다.</p>
+              <div className="card-icon"><img src="/uploads/books-4-update.jpg" alt="도서" /></div>
+              <p className="card-tag">경제부터 인문, 예술까지</p>
+              <h3 className="card-title">도서 4권 제공</h3>
+              <p className="card-desc">신간부터 스테디셀러까지, 전체 도서 목록 중 4권을 선택해 받아보실 수 있습니다. 신간은 매달 업데이트합니다.</p>
             </div>
             <div className="service-card reveal" style={{ transitionDelay: '0.3s' }}>
-              <div className="card-icon"><img src="/uploads/books-4-update.jpg" alt="도서" /></div>
-              <p className="card-tag">엄선된 큐레이션</p>
-              <h3 className="card-title">도서 4권 제공</h3>
-              <p className="card-desc">3개월간 엄선된 큐레이션 도서 중 원하는 4권을 선택하여 배송받으실 수 있습니다.</p>
+              <div className="card-icon"><img src="/uploads/benefit_booktalk.png" alt="북토크" /></div>
+              <p className="card-tag">저자와의 만남</p>
+              <h3 className="card-title">북토크 무료 초대</h3>
+              <p className="card-desc">수시로 진행하는 오프라인 저자 북토크에 클럽 회원님 중 선착순 무료 참석 기회가 주어집니다.</p>
             </div>
             <div className="service-card reveal" style={{ transitionDelay: '0.4s' }}>
               <div className="card-icon"><img src="/uploads/benefit_arte.jpg" alt="아르떼/필" /></div>
-              <p className="card-tag">품격 있는 문화 생활</p>
+              <p className="card-tag">한경 문화 행사 초대 이벤트</p>
               <h3 className="card-title">한경 아르떼/필 티켓</h3>
-              <p className="card-desc">아르떼 전시회 및 한경필하모닉오케스트라 공연 티켓을 추첨을 통해 무료로 증정해 드립니다.</p>
+              <p className="card-desc">한경아르떼 전시회 및 한경아르떼필 오케스트라 연주회 티켓 증정 등 다양한 이벤트 참여 기회를 제공합니다.</p>
             </div>
           </div>
         </div>
