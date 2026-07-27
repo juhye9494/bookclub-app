@@ -28,7 +28,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+
+    let query = supabaseAdmin
       .from('book_orders')
       .select(`
         *,
@@ -45,6 +48,12 @@ export async function GET(req: Request) {
       `)
       .eq('subscription_order.payment_status', 'DONE')
       .order('created_at', { ascending: false });
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Failed to fetch book orders:', error.code);

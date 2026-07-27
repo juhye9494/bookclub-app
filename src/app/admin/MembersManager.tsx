@@ -63,15 +63,36 @@ export default function MembersManager() {
     const cyclesList = cyclesData.cycles || [];
     setCycles(cyclesList);
 
-    const [profilesRes, ordersRes, bookOrdersRes] = await Promise.all([
+    const [profilesRes, ordersRes] = await Promise.all([
       supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('orders').select('*').order('created_at', { ascending: false }),
-      supabase.from('book_orders').select('*, book_order_items(*)').order('created_at', { ascending: false })
+      supabase.from('orders').select('*').order('created_at', { ascending: false })
     ]);
     if (profilesRes.data) setProfiles(profilesRes.data);
     if (ordersRes.data) setOrders(ordersRes.data);
-    if (bookOrdersRes.data) setBookOrders(bookOrdersRes.data);
     setLoading(false);
+  }
+
+  useEffect(() => {
+    if (selectedMember) {
+      loadBookOrdersForMember(selectedMember.id);
+    } else {
+      setBookOrders([]);
+    }
+  }, [selectedMember]);
+
+  async function loadBookOrdersForMember(userId: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const res = await fetch(`/api/admin/book-orders?userId=${userId}`, {
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBookOrders(data.orders || []);
+      }
+    } catch (err) {
+      console.error('Failed to load book orders via API:', err);
+    }
   }
 
   function getOrdersForMember(userId: string) {
@@ -294,7 +315,10 @@ export default function MembersManager() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {(() => {
                 const memberBookOrders = getBookOrdersForMember(selectedMember.id);
-                const activeBookOrders = memberBookOrders.filter((bo: any) => bo.order_status !== '주문취소');
+                const ACTIVE_BOOK_ORDER_STATUSES = ['주문접수', '배송준비중', '배송중'];
+                const activeBookOrders = memberBookOrders.filter((bo: any) =>
+                  ACTIVE_BOOK_ORDER_STATUSES.includes(bo.order_status)
+                );
 
                 if (activeBookOrders.length === 0) {
                   return <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>활성 도서 주문이 없습니다.</div>;
