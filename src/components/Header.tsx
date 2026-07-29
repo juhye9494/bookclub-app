@@ -260,7 +260,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
       </div>
 
       {/* LOGIN MODAL */}
-      <div className={`modal-overlay ${isLoginOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsLoginOpen(false); }}>
+      <div className={`modal-overlay ${isLoginOpen ? 'open' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) setIsLoginOpen(false); }}>
         <div className="modal">
           <button className="modal-close" onClick={() => setIsLoginOpen(false)}>✕</button>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '24px' }} /></div>
@@ -311,7 +311,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
       </div>
 
       {/* PASSWORD RESET MODAL */}
-      <div className={`modal-overlay ${isResetMode ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setIsResetMode(false); }}>
+      <div className={`modal-overlay ${isResetMode ? 'open' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) setIsResetMode(false); }}>
         <div className="modal">
           <button className="modal-close" onClick={() => setIsResetMode(false)}>✕</button>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '24px' }} /></div>
@@ -329,7 +329,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
       </div>
 
       {/* EMAIL VERIFICATION MODAL */}
-      <div className={`modal-overlay ${emailVerificationSent ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setEmailVerificationSent(false); }}>
+      <div className={`modal-overlay ${emailVerificationSent ? 'open' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) setEmailVerificationSent(false); }}>
         <div className="modal">
           <button className="modal-close" onClick={() => setEmailVerificationSent(false)}>✕</button>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}><img src="/uploads/underline_logo.svg" alt="한경 언더라인 독서클럽" style={{ height: '24px' }} /></div>
@@ -347,7 +347,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
 
       {/* POSTCODE MODAL */}
       {isPostcodeOpen && (
-        <div className="modal-overlay open" style={{ zIndex: 9999 }} onClick={(e) => { if (e.target === e.currentTarget) setIsPostcodeOpen(false); }}>
+        <div className="modal-overlay open" style={{ zIndex: 9999 }} onMouseDown={(e) => { if (e.target === e.currentTarget) setIsPostcodeOpen(false); }}>
           <div className="modal" style={{ padding: '24px', width: 'min(400px, 90vw)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ margin: 0, fontSize: '1.2rem' }}>주소 검색</h3>
