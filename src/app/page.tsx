@@ -337,7 +337,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 북클럽 소개 */}
+      {/* 독서클럽 소개 */}
       <section className="service-section" style={{ background: 'var(--bg)' }}>
         <div className="service-inner">
           <div className="service-header reveal">

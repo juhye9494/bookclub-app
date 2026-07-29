@@ -1010,11 +1010,9 @@ export default function GroupsPage() {
               <div className="groups-form-field">
                 <label>모집 정원 (명)</label>
                 <select value={newMax} onChange={(e) => setNewMax(e.target.value)} style={{ width: '100%', padding: '12px', border: '1.5px solid var(--border)', borderRadius: '12px', outline: 'none', background: '#fff', fontSize: '0.92rem' }}>
-                  <option value="4">4명</option>
-                  <option value="6">6명</option>
-                  <option value="8">8명 (기본)</option>
-                  <option value="10">10명</option>
-                  <option value="12">12명</option>
+                  {Array.from({length: 17}, (_, i) => i + 4).map(n => (
+                    <option key={n} value={n}>{n}명{n === 8 ? ' (기본)' : ''}</option>
+                  ))}
                 </select>
               </div>
             </div>

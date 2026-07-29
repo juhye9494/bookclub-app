@@ -26,8 +26,8 @@ export async function POST(req: Request) {
     }
     
     const maxMembers = Number(p_max_members);
-    if (!Number.isInteger(maxMembers) || maxMembers < 2 || maxMembers > 100) {
-      return NextResponse.json({ error: 'Invalid max_members, must be an integer between 2 and 100' }, { status: 400 });
+    if (!Number.isInteger(maxMembers) || maxMembers < 2 || maxMembers > 20) {
+      return NextResponse.json({ error: 'Invalid max_members, must be an integer between 2 and 20' }, { status: 400 });
     }
     
     if (p_tags) {
