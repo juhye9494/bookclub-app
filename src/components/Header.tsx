@@ -1,4 +1,5 @@
 "use client";
+import { getAuthErrorMessage } from "@/utils/authErrorMessage";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
@@ -57,7 +58,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
     if (isLoginMode) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        alert('로그인 실패: ' + error.message);
+        alert(getAuthErrorMessage(error));
         return;
       }
       alert('로그인 성공!');
@@ -83,7 +84,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
         }
       });
       if (error) {
-        alert('회원가입 실패: ' + error.message);
+        alert(getAuthErrorMessage(error));
         return;
       }
       if (data.user && !data.user.confirmed_at) {
@@ -114,7 +115,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
       redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`
     });
     if (error) {
-      alert('비밀번호 재설정 메일 발송 실패: ' + error.message);
+      alert(getAuthErrorMessage(error));
       return;
     }
     alert('비밀번호 재설정 링크가 이메일로 발송되었습니다.\\n이메일을 확인해주세요.');
@@ -129,7 +130,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
   const { error } = await supabase.auth.signOut();
   if (error) {
     console.error('Logout error:', error);
-    alert('로그아웃 실패: ' + error.message);
+    alert(getAuthErrorMessage(error));
     return;
   }
   // Clear user state immediately
@@ -154,7 +155,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
     });
     setChangingPw(false);
     if (error) {
-      alert('비밀번호 재설정 메일 발송 실패: ' + error.message);
+      alert(getAuthErrorMessage(error));
       return;
     }
     setPasswordResetSent(true);

@@ -1,4 +1,5 @@
 "use client";
+import { getAuthErrorMessage } from "@/utils/authErrorMessage";
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
@@ -525,7 +526,7 @@ export default function MyPage() {
       data: { name, phone, address: fullAddress }
     });
     setSaving(false);
-    if (error) { alert('프로필 수정 실패: ' + error.message); return; }
+    if (error) { alert(getAuthErrorMessage(error)); return; }
     alert('프로필이 수정되었습니다.');
   };
 
@@ -536,7 +537,7 @@ export default function MyPage() {
       redirectTo: window.location.origin + '/mypage?tab=profile',
     });
     setChangingPw(false);
-    if (error) { alert('비밀번호 재설정 메일 발송 실패: ' + error.message); return; }
+    if (error) { alert(getAuthErrorMessage(error)); return; }
     setPasswordResetSent(true);
     alert('✉️ 비밀번호 재설정 링크가 이메일로 발송되었습니다.\n이메일을 확인해주세요.');
   };

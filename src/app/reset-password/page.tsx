@@ -1,4 +1,5 @@
 "use client";
+import { getAuthErrorMessage } from "@/utils/authErrorMessage";
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
@@ -31,7 +32,7 @@ export default function ResetPasswordPage() {
     setLoading(false);
 
     if (error) {
-      alert('비밀번호 변경 실패: ' + error.message);
+      alert(getAuthErrorMessage(error));
       return;
     }
 
