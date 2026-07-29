@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -42,6 +42,10 @@ export default function MembersManager() {
   const [selectedMember, setSelectedMember] = useState<Profile | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [compAccessList, setCompAccessList] = useState<any[]>([]);
+  const [compCycleId, setCompCycleId] = useState('');
+  const [compGrantReason, setCompGrantReason] = useState('');
+  const [compLoading, setCompLoading] = useState(false);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -54,7 +58,7 @@ export default function MembersManager() {
   async function loadData() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     // Fetch cycles using admin API
     const cyclesRes = await fetch('/api/admin/cycles', {
       headers: { 'Authorization': `Bearer ${session?.access_token}` }
@@ -75,10 +79,27 @@ export default function MembersManager() {
   useEffect(() => {
     if (selectedMember) {
       loadBookOrdersForMember(selectedMember.id);
+      loadCompAccessForMember(selectedMember.id);
     } else {
       setBookOrders([]);
+      setCompAccessList([]);
     }
   }, [selectedMember]);
+
+  async function loadCompAccessForMember(userId: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const res = await fetch(`/api/admin/complimentary-member-access?userId=${userId}`, {
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCompAccessList(data.accessList || []);
+      }
+    } catch (err) {
+      console.error('Failed to load complimentary access:', err);
+    }
+  }
 
   async function loadBookOrdersForMember(userId: string) {
     const { data: { session } } = await supabase.auth.getSession();
@@ -98,7 +119,7 @@ export default function MembersManager() {
   function getOrdersForMember(userId: string) {
     return orders.filter(o => o.user_id === userId && o.payment_status === 'DONE' && (selectedCycleId === 'all' || o.cycle_id === selectedCycleId));
   }
-  
+
   function getBookOrdersForMember(userId: string) {
     return bookOrders.filter(bo => bo.user_id === userId && (selectedCycleId === 'all' || bo.cycle_id === selectedCycleId));
   }
@@ -108,7 +129,7 @@ export default function MembersManager() {
   }
 
   const filteredProfiles = profiles.filter(p => {
-    const matchSearch = !search || 
+    const matchSearch = !search ||
       (p.name || '').toLowerCase().includes(search.toLowerCase()) ||
       (p.email || '').toLowerCase().includes(search.toLowerCase()) ||
       (p.phone || '').includes(search);
@@ -167,15 +188,74 @@ export default function MembersManager() {
     setUpdatingId(null);
   };
 
+  const handleGrantCompAccess = async () => {
+    if (!selectedMember || !compCycleId) return;
+    setCompLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/complimentary-member-access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          userId: selectedMember.id,
+          cycleId: compCycleId,
+          grantReason: compGrantReason
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || '권한 부여 실패');
+      } else {
+        alert('무료 이용 권한이 부여되었습니다.');
+        setCompGrantReason('');
+        loadCompAccessForMember(selectedMember.id);
+      }
+    } catch (err) {
+      alert('오류가 발생했습니다.');
+    }
+    setCompLoading(false);
+  };
+
+  const handleRevokeCompAccess = async (accessId: string) => {
+    const reason = prompt('권한 회수 사유를 입력하세요 (선택사항)');
+    if (reason === null) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/complimentary-member-access', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          id: accessId,
+          revokeReason: reason
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || '권한 회수 실패');
+      } else {
+        alert('권한이 회수되었습니다.');
+        if (selectedMember) loadCompAccessForMember(selectedMember.id);
+      }
+    } catch (err) {
+      alert('오류가 발생했습니다.');
+    }
+  };
+
   if (loading) return <div>로딩 중...</div>;
 
   return (
     <div>
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center' }}>
-        <input 
-          type="text" 
-          placeholder="이름, 이메일, 전화번호 검색" 
-          value={search} 
+        <input
+          type="text"
+          placeholder="이름, 이메일, 전화번호 검색"
+          value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ padding: '12px', width: '300px', border: '1px solid #d1d5db', borderRadius: '8px' }}
         />
@@ -222,8 +302,8 @@ export default function MembersManager() {
                   </td>
                   <td style={{ padding: '16px', borderBottom: '1px solid #e5e7eb', fontSize: '0.9rem' }}>{p.phone || '-'}</td>
                   <td style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
-                    {isSubscribed(p.id) ? 
-                      <span style={{ background: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>구독중</span> : 
+                    {isSubscribed(p.id) ?
+                      <span style={{ background: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>구독중</span> :
                       <span style={{ background: '#f3f4f6', color: '#4b5563', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>미구독</span>}
                   </td>
                   <td style={{ padding: '16px', borderBottom: '1px solid #e5e7eb', fontSize: '0.9rem', color: '#6b7280' }}>
@@ -234,7 +314,7 @@ export default function MembersManager() {
               {pagedProfiles.length === 0 && <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>검색 결과가 없습니다.</td></tr>}
             </tbody>
           </table>
-          
+
           {/* 회원관리 페이지네이션 UI */}
           {filteredProfiles.length > 0 && (
             <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', borderTop: '1px solid #e5e7eb', background: '#f9fafb' }}>
@@ -286,12 +366,73 @@ export default function MembersManager() {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>회원 상세 정보</h2>
               <button onClick={() => setSelectedMember(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
             </div>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '12px', marginBottom: '32px', fontSize: '0.95rem' }}>
               <div style={{ color: '#6b7280' }}>이름</div><div>{selectedMember.name}</div>
               <div style={{ color: '#6b7280' }}>이메일</div><div>{selectedMember.email}</div>
               <div style={{ color: '#6b7280' }}>연락처</div><div>{selectedMember.phone}</div>
               <div style={{ color: '#6b7280' }}>배송지</div><div>{selectedMember.address || '미입력'}</div>
+            </div>
+
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>무료 회원 이용 권한</h3>
+            <div style={{ marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
+                <select value={compCycleId} onChange={e => setCompCycleId(e.target.value)} style={{ padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}>
+                  <option value="">기수 선택</option>
+                  {cycles.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <input
+                  type="text"
+                  placeholder="부여 사유 (선택)"
+                  value={compGrantReason}
+                  onChange={e => setCompGrantReason(e.target.value)}
+                  style={{ padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px', flex: 1 }}
+                />
+                <button
+                  onClick={handleGrantCompAccess}
+                  disabled={compLoading || !compCycleId || (compCycleId ? orders.some(o => o.user_id === selectedMember.id && o.cycle_id === compCycleId && o.payment_status === 'DONE') : false)}
+                  style={{ padding: '8px 16px', background: (compCycleId && orders.some(o => o.user_id === selectedMember.id && o.cycle_id === compCycleId && o.payment_status === 'DONE')) ? '#9ca3af' : 'var(--accent)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  권한 부여
+                </button>
+              </div>
+              {compCycleId && orders.some(o => o.user_id === selectedMember.id && o.cycle_id === compCycleId && o.payment_status === 'DONE') && (
+                <div style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '8px' }}>이미 유료 구독 중인 회원입니다.</div>
+              )}
+
+              {compAccessList.length === 0 ? (
+                <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>부여된 무료 권한이 없습니다.</div>
+              ) : (
+                compAccessList.map(acc => (
+                  <div key={acc.id} style={{ padding: '16px', background: acc.revoked_at ? '#f3f4f6' : (cycles.find(c => c.id === acc.cycle_id)?.status === 'closed' || new Date() > new Date(cycles.find(c => c.id === acc.cycle_id)?.book_order_end_date || new Date(0))) ? '#f9fafb' : '#eff6ff', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontWeight: 600 }}>{cycles.find(c => c.id === acc.cycle_id)?.name || acc.cycle_id}</span>
+                      {acc.revoked_at ? (
+                        <span style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: 600 }}>회수됨</span>
+                      ) : (
+                        (() => {
+                          const cycle = cycles.find(c => c.id === acc.cycle_id);
+                          const isExpired = !cycle || cycle.status === 'closed' || new Date() > new Date(cycle.book_order_end_date);
+                          if (isExpired) {
+                            return <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600 }}>만료됨</span>;
+                          }
+                          return (
+                            <button onClick={() => handleRevokeCompAccess(acc.id)} style={{ padding: '4px 8px', fontSize: '0.8rem', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>회수</button>
+                          );
+                        })()
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#4b5563' }}>
+                      부여일: {new Date(acc.granted_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} <br/>
+                      부여자 ID: {acc.granted_by} <br/>
+                      사유: {acc.grant_reason || '-'}
+                      {acc.revoked_at && (
+                        <><br/>회수일: {new Date(acc.revoked_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} <br/>회수 사유: {acc.revoke_reason || '-'}</>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid #e5e7eb' }}>구독 결제 내역 (DONE)</h3>
@@ -327,7 +468,7 @@ export default function MembersManager() {
                 return activeBookOrders.map(bo => {
                   const cycle = cycles.find(c => c.id === bo.cycle_id);
                   const canShip = cycle && new Date() >= new Date(cycle.shipping_start_date);
-                  
+
                   return (
                     <div key={bo.id} style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -336,8 +477,8 @@ export default function MembersManager() {
                           <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{new Date(bo.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</div>
                         </div>
                         <div>
-                          <select 
-                            value={bo.order_status} 
+                          <select
+                            value={bo.order_status}
                             onChange={(e) => handleStatusChange(bo.id, e.target.value, bo.cycle_id)}
                             disabled={updatingId === bo.id}
                             style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #d1d5db' }}

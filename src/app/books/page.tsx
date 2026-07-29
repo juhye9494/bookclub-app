@@ -22,6 +22,7 @@ function BooksContent() {
   const [subscriberLoading, setSubscriberLoading] = useState(true);
   const [subscriberError, setSubscriberError] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState(false);
+  const [isComplimentary, setIsComplimentary] = useState(false);
   const [isSelectionPeriod, setIsSelectionPeriod] = useState(false);
   const [isAfterEnd, setIsAfterEnd] = useState(false);
   const [hasSelectedBooks, setHasSelectedBooks] = useState(false);
@@ -138,6 +139,21 @@ function BooksContent() {
         }
       } else {
         setIsSubscriber(false);
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        try {
+          const res = await fetch('/api/me/member-access', {
+            headers: { Authorization: `Bearer ${session.access_token}` }
+          });
+          if (res.ok) {
+            const accessInfo = await res.json();
+            setIsComplimentary(accessInfo.accessType === 'complimentary');
+          }
+        } catch (err) {
+          console.error(err);
+        }
       }
 
       setSubscriberLoading(false);
@@ -515,6 +531,10 @@ function BooksContent() {
       ) : subscriberError ? (
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
           <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ef4444' }}>구독 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</span>
+        </div>
+      ) : isComplimentary && !isSubscriber ? (
+        <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>무료 초대 회원의 도서 선택은 별도로 안내해 드립니다.</span>
         </div>
       ) : !isSubscriber ? (
         <div style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'min(680px, calc(100% - 32px))', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '20px', padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>
