@@ -38,7 +38,6 @@ export default function Footer() {
         </div>
         <div className="footer-bottom">
           <p className="footer-legal">© (주)한경매거진앤북. All rights reserved.</p>
-          <Link href="/admin" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none', opacity: 0.6 }}>관리자</Link>
         </div>
       </footer>
 
