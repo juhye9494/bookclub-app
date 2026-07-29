@@ -341,7 +341,7 @@ export default function Home() {
       <section className="service-section" style={{ background: 'var(--bg)' }}>
         <div className="service-inner">
           <div className="service-header reveal">
-            <p className="section-label">북클럽 소개</p>
+            <p className="section-label">독서클럽 소개</p>
             <h2 className="section-title">하루 30분,<br />삶이 바뀌는 독서 루틴</h2>
             <p className="service-lead">한경 언더라인 독서클럽</p>
             <p className="section-desc">당신의 30분은 어디에 쓰이나요?<br />이 짧은 시간이 쌓이면 세상을 바라보는 생각과 시선,<br />그리고 삶이 달라집니다.<br /><br />'책'을 통해 나를 만들어가는 시간 —<br />오늘의 30분이 내일의 당신을 만듭니다.</p>
