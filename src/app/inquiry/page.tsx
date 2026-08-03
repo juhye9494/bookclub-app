@@ -30,22 +30,37 @@ function InquiryContent() {
   const [attachment, setAttachment] = useState<File | null>(null);
 
   useEffect(() => {
-    const loadProfile = async (userId: string) => {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('name, phone')
-        .eq('id', userId)
-        .single();
+    const loadProfile = async (token: string) => {
+      try {
+        const response = await fetch('/api/profile', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: 'no-store',
+        });
 
-      if (profileError) {
-        console.error('[Inquiry] Profile fetch failed');
+        if (!response.ok) {
+          if (response.status === 401) {
+            alert('로그인 정보가 만료되었습니다.');
+          } else if (response.status === 404) {
+            alert('프로필 정보 없음');
+          } else {
+            alert('회원정보 조회 실패');
+          }
+          setName('');
+          setPhone('');
+          return;
+        }
+
+        const profile = await response.json();
+        setName(profile.name || '');
+        setPhone(profile.phone || '');
+      } catch (err) {
+        alert('회원정보 조회 실패');
         setName('');
         setPhone('');
-        return;
       }
-
-      setName(profile?.name || '');
-      setPhone(profile?.phone || '');
     };
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -56,7 +71,7 @@ function InquiryContent() {
         return;
       }
       setUser(session.user);
-      await loadProfile(session.user.id);
+      await loadProfile(session.access_token);
       setLoading(false);
     });
 
@@ -66,7 +81,7 @@ function InquiryContent() {
         setUser(session.user);
         
         window.setTimeout(() => {
-          void loadProfile(session.user.id);
+          void loadProfile(session.access_token);
         }, 0);
       }
     });
