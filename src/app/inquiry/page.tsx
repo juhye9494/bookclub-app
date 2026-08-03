@@ -30,7 +30,25 @@ function InquiryContent() {
   const [attachment, setAttachment] = useState<File | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const loadProfile = async (userId: string) => {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('name, phone')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('[Inquiry] Profile fetch failed');
+        setName('');
+        setPhone('');
+        return;
+      }
+
+      setName(profile?.name || '');
+      setPhone(profile?.phone || '');
+    };
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         alert('로그인이 필요합니다.');
         window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
@@ -38,8 +56,7 @@ function InquiryContent() {
         return;
       }
       setUser(session.user);
-      setName(session.user.user_metadata?.name || '');
-      setPhone(session.user.user_metadata?.phone || '');
+      await loadProfile(session.user.id);
       setLoading(false);
     });
 
@@ -47,8 +64,10 @@ function InquiryContent() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setUser(session.user);
-        setName(session.user.user_metadata?.name || '');
-        setPhone(session.user.user_metadata?.phone || '');
+        
+        window.setTimeout(() => {
+          void loadProfile(session.user.id);
+        }, 0);
       }
     });
     return () => { subscription.unsubscribe(); };
