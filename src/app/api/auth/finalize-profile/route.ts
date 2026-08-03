@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import {
+  encryptProfilePii,
+  PiiCryptoError,
+} from '@/lib/server/piiCrypto';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -50,6 +54,24 @@ export async function POST(request: Request) {
     }
 
     // D. profiles 저장 (요청 이메일 대신 확인된 auth 이메일 사용)
+    let phoneEnc;
+    let addressEnc;
+    try {
+      phoneEnc = encryptProfilePii(trimmedPhone, {
+        profileId: authData.user.id,
+        field: 'phone',
+      });
+      addressEnc = trimmedAddress ? encryptProfilePii(trimmedAddress, {
+        profileId: authData.user.id,
+        field: 'address',
+      }) : null;
+    } catch (err: any) {
+      if (err instanceof PiiCryptoError) {
+        return NextResponse.json({ error: '프로필 정보를 안전하게 저장하지 못했습니다.' }, { status: 500 });
+      }
+      throw err;
+    }
+
     const { error: upsertError } = await supabaseAdmin
       .from('profiles')
       .upsert({
@@ -57,7 +79,10 @@ export async function POST(request: Request) {
         email: authData.user.email,
         name: trimmedName,
         phone: trimmedPhone,
-        address: trimmedAddress
+        phone_enc: phoneEnc,
+        address: trimmedAddress,
+        address_enc: addressEnc,
+        pii_key_version: 1,
       }, {
         onConflict: 'id'
       });
