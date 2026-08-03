@@ -6,6 +6,9 @@ import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import DaumPostcodeEmbed from 'react-daum-postcode';
 
+const AUTH_METADATA_CLEANUP_KEY = 'auth_metadata_cleanup_2026_08_v1';
+
+let authMetadataRefreshInProgress = false;
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -39,6 +42,37 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+
+      if (
+        session &&
+        localStorage.getItem(AUTH_METADATA_CLEANUP_KEY) !== 'done' &&
+        !authMetadataRefreshInProgress
+      ) {
+        authMetadataRefreshInProgress = true;
+
+        window.setTimeout(() => {
+          void (async () => {
+            try {
+              const {
+                data: refreshData,
+                error: refreshError,
+              } = await supabase.auth.refreshSession();
+
+              if (refreshError || !refreshData.session) {
+                console.warn('[Auth] One-time session refresh failed');
+                return;
+              }
+
+              setUser(refreshData.session.user);
+              localStorage.setItem(AUTH_METADATA_CLEANUP_KEY, 'done');
+            } catch {
+              console.warn('[Auth] One-time session refresh failed');
+            } finally {
+              authMetadataRefreshInProgress = false;
+            }
+          })();
+        }, 0);
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
