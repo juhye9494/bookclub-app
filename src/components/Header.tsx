@@ -71,20 +71,45 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
         alert('모든 정보를 입력해주세요.');
         return;
       }
+      const profileSetupToken = crypto.randomUUID();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name,
-            phone,
-            has_paid: false,
-            address: `[${zonecode}] ${address} ${detailAddress}`
+            profile_setup_token: profileSetupToken
           }
         }
       });
       if (error) {
         alert(getAuthErrorMessage(error));
+        return;
+      }
+      if (!data.user) {
+        alert('회원가입 정보를 확인하지 못했습니다. 다시 시도해주세요.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/auth/finalize-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: data.user.id,
+            profileSetupToken,
+            name,
+            phone,
+            address: `[${zonecode}] ${address} ${detailAddress}`.trim()
+          })
+        });
+        if (!res.ok) {
+          alert('회원가입 처리가 완전히 끝나지 않았습니다. 다시 시도해주세요.');
+          return;
+        }
+      } catch (e) {
+        console.error('Finalize profile error:', e);
+        alert('회원가입 처리가 완전히 끝나지 않았습니다. 다시 시도해주세요.');
         return;
       }
       if (data.user && !data.user.confirmed_at) {
