@@ -66,14 +66,36 @@ export default function PaymentPage() {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('name, phone')
-        .eq('id', user.id)
-        .single();
+      let profile;
+      try {
+        const profileRes = await fetch('/api/profile', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: 'no-store',
+        });
+        
+        if (!profileRes.ok) {
+          if (profileRes.status === 401) {
+            alert('로그인 정보가 만료되었습니다.');
+          } else if (profileRes.status === 404) {
+            alert('프로필 정보를 찾을 수 없습니다.');
+          } else {
+            alert('결제에 필요한 회원정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+          }
+          setLoading(false);
+          return;
+        }
+        
+        profile = await profileRes.json();
+      } catch (err) {
+        alert('결제에 필요한 회원정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+        setLoading(false);
+        return;
+      }
 
-      if (profileError || !profile?.name || !profile?.phone) {
-        if (profileError) console.error('Profile fetch error:', profileError);
+      if (!profile?.name || !profile?.phone) {
         alert('결제에 필요한 회원정보를 불러오지 못했습니다. 마이페이지에서 이름과 연락처를 확인해 주세요.');
         setLoading(false);
         return;
