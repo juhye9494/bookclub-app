@@ -111,13 +111,35 @@ export default function PlusInsightPage() {
   }, [currentPage]);
 
   useEffect(() => {
-    // 로그인 사용자 이름 자동 반영
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        setAuthorName(session.user.user_metadata?.name || '');
+    const loadSessionAndProfile = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        setUser(null);
+        setAuthorName('');
+        return;
       }
-    });
+
+      setUser(session.user);
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('[Insight] Profile fetch failed');
+        setAuthorName('');
+        return;
+      }
+
+      setAuthorName(profile?.name || '');
+    };
+
+    void loadSessionAndProfile();
 
     // Initial seeds for comments
     const initialComments: any = {
@@ -195,6 +217,7 @@ export default function PlusInsightPage() {
     const newCommentObj = {
       id: Date.now(),
       author: authorName,
+      user_id: user.id,
       content: newComment,
       date: new Date().toISOString().slice(0, 10)
     };
@@ -456,7 +479,7 @@ const handleDeleteComment = (postId: string, commentId: number) => {
                         <span style={{ fontWeight: 700, color: 'var(--text)' }}>{c.author}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ color: 'var(--text-muted)' }}>{c.date}</span>
-                          {(c.author === user?.user_metadata?.name || isAdmin(user?.email)) && (
+                          {(c.user_id === user?.id || isAdmin(user?.email)) && (
                             <button onClick={() => handleDeleteComment(selectedPost.id, c.id)}
                               style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>
                               삭제
