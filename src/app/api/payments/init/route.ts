@@ -21,13 +21,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const meta = user.user_metadata || {};
     const body = await req.json();
     const { cycle_id } = body;
-
-    if (!user.email || !meta.name || !meta.phone || !meta.address) {
-      return NextResponse.json({ error: '회원 이메일, 이름, 연락처, 주소 정보가 부족합니다. 마이페이지에서 수정해주세요.' }, { status: 400 });
-    }
 
     if (!cycle_id) {
       return NextResponse.json({ error: 'cycle_id is required' }, { status: 400 });
@@ -38,11 +33,35 @@ export async function POST(req: Request) {
 
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
-      console.error('[CRITICAL] SUPABASE_SERVICE_ROLE_KEY is not configured.');
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('name, phone, address')
+      .eq('id', user.id)
+      .single();
+
+    if (
+      profileError ||
+      !user.email ||
+      !profile?.name?.trim() ||
+      !profile?.phone?.trim() ||
+      !profile?.address?.trim()
+    ) {
+      if (profileError) {
+        console.error('[Payment Init] Profile fetch failed');
+      }
+
+      return NextResponse.json(
+        {
+          error: '회원 이메일, 이름, 연락처, 주소 정보가 부족합니다. 마이페이지에서 수정해주세요.'
+        },
+        { status: 400 }
+      );
+    }
 
     // 1. Verify cycle
     const { data: cycle, error: cycleErr } = await supabaseAdmin
@@ -103,9 +122,9 @@ export async function POST(req: Request) {
       .insert({
         user_id: user.id,
         user_email: user.email,
-          user_name: meta.name,
-          user_phone: meta.phone,
-          user_address: meta.address,
+        user_name: profile.name.trim(),
+        user_phone: profile.phone.trim(),
+        user_address: profile.address.trim(),
         is_test: process.env.VERCEL_ENV !== 'production',
         payment_order_id: orderId,
         payment_status: 'PENDING',
