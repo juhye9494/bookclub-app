@@ -66,6 +66,19 @@ export default function PaymentPage() {
         return;
       }
 
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('name, phone')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile?.name || !profile?.phone) {
+        if (profileError) console.error('Profile fetch error:', profileError);
+        alert('결제에 필요한 회원정보를 불러오지 못했습니다. 마이페이지에서 이름과 연락처를 확인해 주세요.');
+        setLoading(false);
+        return;
+      }
+
       const initRes = await fetch('/api/payments/init', {
         method: 'POST',
         headers: {
@@ -92,8 +105,8 @@ export default function PaymentPage() {
         successUrl: `${window.location.origin}/success`,
         failUrl: `${window.location.origin}/fail`,
         customerEmail: user.email || '',
-        customerName: user.user_metadata?.name || '구독자',
-        customerMobilePhone: (user.user_metadata?.phone || '').replace(/-/g, ''),
+        customerName: profile.name,
+        customerMobilePhone: (profile.phone || '').replace(/-/g, ''),
       });
     } catch (err: any) {
       if (err?.code === 'PAY_PROCESS_CANCELED' || err?.code === 'USER_CANCEL') {
