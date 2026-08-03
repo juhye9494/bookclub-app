@@ -70,20 +70,27 @@ export async function POST(request: Request) {
 
     // E. Auth 메타데이터 정리
     const currentMetadata = authData.user.user_metadata || {};
-    const safeMetadata = { ...currentMetadata };
     
-    delete safeMetadata.profile_setup_token;
-    delete safeMetadata.name;
-    delete safeMetadata.phone;
-    delete safeMetadata.address;
-    delete safeMetadata.has_paid;
+    const safeMetadata = {
+      ...currentMetadata,
+      profile_setup_token: null,
+      name: null,
+      phone: null,
+      address: null,
+      has_paid: null
+    };
 
-    const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+    const { data: updatedAuthData, error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
       user_metadata: safeMetadata
     });
 
     if (updateAuthError) {
       console.error('[Finalize Profile] Auth Metadata Cleanup Error');
+      return NextResponse.json({ error: 'Failed to complete profile setup' }, { status: 500 });
+    }
+
+    if (updatedAuthData.user.user_metadata?.profile_setup_token) {
+      console.error('[Finalize Profile] Setup Token Invalidation Failed');
       return NextResponse.json({ error: 'Failed to complete profile setup' }, { status: 500 });
     }
 
