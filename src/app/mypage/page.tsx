@@ -232,36 +232,50 @@ export default function MyPage() {
       }
       setUser(session.user);
 
-      // 프로필 정보 조회 (profiles 테이블)
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('name, phone, address')
-        .eq('id', session.user.id)
-        .single();
+      // 프로필 정보 조회 (API)
+      try {
+        const profileRes = await fetch('/api/profile', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          cache: 'no-store',
+        });
         
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        alert('프로필 정보를 불러오는데 실패했습니다.');
-      } else if (profile) {
-        setName(profile.name || '');
-        setPhone(profile.phone || '');
-        const fullAddress = profile.address || '';
-        // [우편번호] 주소 상세주소 형태 파싱
-        const zipMatch = fullAddress.match(/^\[(\d+)\]\s*/);
-        if (zipMatch) {
-          setZonecode(zipMatch[1]);
-          const rest = fullAddress.replace(zipMatch[0], '');
-          // 상세주소는 마지막 공백 기준으로 분리 시도
-          const lastSpaceIdx = rest.lastIndexOf(' ');
-          if (lastSpaceIdx > 10) {
-            setAddress(rest.substring(0, lastSpaceIdx));
-            setDetailAddress(rest.substring(lastSpaceIdx + 1));
+        if (!profileRes.ok) {
+          if (profileRes.status === 401) {
+            alert('로그인 정보가 만료되었습니다.');
+            router.push('/');
+            return;
+          } else if (profileRes.status === 404) {
+            alert('프로필 정보를 찾을 수 없습니다.');
           } else {
-            setAddress(rest);
+            alert('프로필 정보를 불러오는데 실패했습니다.');
           }
         } else {
-          setAddress(fullAddress);
+          const profile = await profileRes.json();
+          setName(profile.name || '');
+          setPhone(profile.phone || '');
+          const fullAddress = profile.address || '';
+          // [우편번호] 주소 상세주소 형태 파싱
+          const zipMatch = fullAddress.match(/^\[(\d+)\]\s*/);
+          if (zipMatch) {
+            setZonecode(zipMatch[1]);
+            const rest = fullAddress.replace(zipMatch[0], '');
+            // 상세주소는 마지막 공백 기준으로 분리 시도
+            const lastSpaceIdx = rest.lastIndexOf(' ');
+            if (lastSpaceIdx > 10) {
+              setAddress(rest.substring(0, lastSpaceIdx));
+              setDetailAddress(rest.substring(lastSpaceIdx + 1));
+            } else {
+              setAddress(rest);
+            }
+          } else {
+            setAddress(fullAddress);
+          }
         }
+      } catch (err) {
+        alert('프로필 정보를 불러오는데 실패했습니다.');
       }
 
       setOrdersLoading(true);
@@ -532,46 +546,68 @@ export default function MyPage() {
     if (!name || !phone) { alert('이름과 연락처를 입력해주세요.'); return; }
     setSaving(true);
     const fullAddress = zonecode ? `[${zonecode}] ${address} ${detailAddress}`.trim() : `${address} ${detailAddress}`.trim();
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({
-        name,
-        phone,
-        address: fullAddress
-      })
-      .eq('id', user.id)
-      .select('name, phone, address')
-      .single();
-
-    setSaving(false);
-
-    if (error) {
-      console.error('Profile update error:', error);
-      alert('프로필 수정에 실패했습니다.');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setSaving(false);
+      alert('로그인이 필요합니다.');
       return;
     }
 
-    if (data) {
-      setName(data.name || '');
-      setPhone(data.phone || '');
-      const updatedAddress = data.address || '';
-      const zipMatch = updatedAddress.match(/^\[(\d+)\]\s*/);
-      if (zipMatch) {
-        setZonecode(zipMatch[1]);
-        const rest = updatedAddress.replace(zipMatch[0], '');
-        const lastSpaceIdx = rest.lastIndexOf(' ');
-        if (lastSpaceIdx > 10) {
-          setAddress(rest.substring(0, lastSpaceIdx));
-          setDetailAddress(rest.substring(lastSpaceIdx + 1));
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          name,
+          phone,
+          address: fullAddress,
+        }),
+      });
+
+      setSaving(false);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          alert('로그인 정보가 만료되었습니다.');
+        } else if (res.status === 404) {
+          alert('프로필 정보를 찾을 수 없습니다.');
         } else {
-          setAddress(rest);
+          alert(errorData.error || '프로필 수정에 실패했습니다.');
+        }
+        return;
+      }
+
+      const data = await res.json();
+      if (data) {
+        setName(data.name || '');
+        setPhone(data.phone || '');
+        const updatedAddress = data.address || '';
+        const zipMatch = updatedAddress.match(/^\[(\d+)\]\s*/);
+        if (zipMatch) {
+          setZonecode(zipMatch[1]);
+          const rest = updatedAddress.replace(zipMatch[0], '');
+          const lastSpaceIdx = rest.lastIndexOf(' ');
+          if (lastSpaceIdx > 10) {
+            setAddress(rest.substring(0, lastSpaceIdx));
+            setDetailAddress(rest.substring(lastSpaceIdx + 1));
+          } else {
+            setAddress(rest);
+            setDetailAddress('');
+          }
+        } else {
+          setZonecode('');
+          setAddress(updatedAddress);
           setDetailAddress('');
         }
-      } else {
-        setZonecode('');
-        setAddress(updatedAddress);
-        setDetailAddress('');
       }
+    } catch (err) {
+      setSaving(false);
+      alert('프로필 수정 중 오류가 발생했습니다.');
+      return;
     }
 
     alert('프로필이 수정되었습니다.');
