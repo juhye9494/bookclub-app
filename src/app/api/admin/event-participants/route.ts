@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/utils/admin';
+import { decryptProfilePii } from '@/lib/server/piiCrypto';
 
 export async function GET(request: Request) {
   try {
@@ -45,11 +46,32 @@ export async function GET(request: Request) {
     if (userIds.length > 0) {
       const { data: profilesData, error: profilesError } = await supabaseAdmin
         .from('profiles')
-        .select('id, phone')
+        .select('id, phone, phone_enc, pii_key_version')
         .in('id', userIds);
 
-      if (!profilesError && profilesData) {
-        phoneMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p.phone]));
+      if (profilesError) {
+        return NextResponse.json({ error: '참가자 정보를 안전하게 불러오지 못했습니다.' }, { status: 500 });
+      }
+
+      if (profilesData) {
+        for (const p of profilesData) {
+          let finalPhone = p.phone || '';
+          
+          if (p.phone_enc) {
+            if (p.pii_key_version !== 1) {
+              return NextResponse.json({ error: '참가자 정보를 안전하게 불러오지 못했습니다.' }, { status: 500 });
+            }
+            try {
+              finalPhone = await decryptProfilePii(p.phone_enc, {
+                profileId: p.id,
+                field: 'phone'
+              });
+            } catch {
+              return NextResponse.json({ error: '참가자 정보를 안전하게 불러오지 못했습니다.' }, { status: 500 });
+            }
+          }
+          phoneMap[p.id] = finalPhone;
+        }
       }
     }
 
@@ -58,8 +80,15 @@ export async function GET(request: Request) {
       user_phone: p.user_id ? phoneMap[p.user_id] || '' : ''
     }));
 
-    return NextResponse.json({ data: enrichedParticipants });
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { data: enrichedParticipants },
+      {
+        headers: {
+          'Cache-Control': 'private, no-store, max-age=0',
+        },
+      }
+    );
+  } catch {
+    return NextResponse.json({ error: '참가자 정보를 안전하게 불러오지 못했습니다.' }, { status: 500 });
   }
 }
