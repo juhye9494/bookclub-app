@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -59,21 +59,49 @@ export default function MembersManager() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
 
-    // Fetch cycles using admin API
-    const cyclesRes = await fetch('/api/admin/cycles', {
-      headers: { 'Authorization': `Bearer ${session?.access_token}` }
-    });
-    const cyclesData = await cyclesRes.json();
-    const cyclesList = cyclesData.cycles || [];
-    setCycles(cyclesList);
+    if (!session?.access_token) {
+      alert('로그인이 필요합니다.');
+      setLoading(false);
+      return;
+    }
 
-    const [profilesRes, ordersRes] = await Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('orders').select('*').order('created_at', { ascending: false })
-    ]);
-    if (profilesRes.data) setProfiles(profilesRes.data);
-    if (ordersRes.data) setOrders(ordersRes.data);
-    setLoading(false);
+    try {
+      // Fetch cycles using admin API
+      const cyclesRes = await fetch('/api/admin/cycles', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const cyclesData = await cyclesRes.json();
+      const cyclesList = cyclesData.cycles || [];
+      setCycles(cyclesList);
+
+      const [profilesRes, ordersRes] = await Promise.all([
+        fetch('/api/admin/profiles', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          cache: 'no-store',
+        }),
+        supabase.from('orders').select('*').order('created_at', { ascending: false })
+      ]);
+
+      const profilesPayload = await profilesRes.json();
+      if (!profilesRes.ok) {
+        if (profilesRes.status === 401) alert('로그인이 필요합니다.');
+        else if (profilesRes.status === 403) alert('관리자 권한이 필요합니다.');
+        else alert('회원정보를 불러오지 못했습니다.');
+        setProfiles([]);
+      } else {
+        setProfiles(Array.isArray(profilesPayload.profiles) ? profilesPayload.profiles : []);
+      }
+
+      if (ordersRes.data) setOrders(ordersRes.data);
+    } catch {
+      alert('회원정보를 불러오지 못했습니다.');
+      setProfiles([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
