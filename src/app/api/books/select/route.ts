@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
+import { decryptOrderPii } from '@/lib/server/orderPiiCrypto';
 
 export async function POST(req: Request) {
   try {
@@ -14,7 +16,6 @@ export async function POST(req: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!serviceRoleKey) {
-      console.error('[CRITICAL] SUPABASE_SERVICE_ROLE_KEY is not configured.');
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
     
@@ -44,27 +45,51 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '중복된 도서가 포함되어 있습니다.' }, { status: 400 });
     }
 
-    // 1. 주문 소유권 및 결제 완료 상태 검증
+    // 1. 주문 소유권, 결제 상태 검사 및 암호화된 배송정보 조회
     const { data: orderData, error: orderErr } = await supabaseAdmin
       .from('orders')
-      .select('user_id, payment_status, cycle_id, cycles(book_order_start_date)')
+      .select('id, user_id, payment_order_id, payment_status, user_name_enc, user_phone_enc, user_address_enc, pii_key_version, cycle_id, cycles(book_order_start_date)')
       .eq('id', subOrderId)
+      .eq('user_id', user.id)
       .single();
 
     if (orderErr || !orderData) {
       return NextResponse.json({ error: '주문 정보를 찾을 수 없습니다.' }, { status: 400 });
     }
 
-    if (orderData.user_id !== user.id) {
-      return NextResponse.json({ error: '본인의 주문내역이 아닙니다.' }, { status: 403 });
-    }
-
     if (orderData.payment_status !== 'DONE') {
-      return NextResponse.json({ error: '결제가 완료된 주문(DONE)만 도서를 신청할 수 있습니다.' }, { status: 403 });
+      return NextResponse.json({ error: '결제가 완료된 주문(DONE)에서만 신청할 수 있습니다.' }, { status: 403 });
     }
 
     if (!orderData.cycle_id) {
       return NextResponse.json({ error: '주문에 연결된 기수(Cycle)가 없습니다.' }, { status: 400 });
+    }
+    
+    if (orderData.pii_key_version !== 1) {
+      return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    }
+    
+    const paymentOrderId = orderData.payment_order_id;
+    if (typeof paymentOrderId !== 'string' || paymentOrderId.trim() === '') {
+      return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    }
+
+    let shippingName, shippingPhone, shippingAddress;
+    try {
+      if (!orderData.user_name_enc || !orderData.user_phone_enc || !orderData.user_address_enc) {
+        throw new Error('Missing encrypted PII');
+      }
+
+      shippingName = decryptOrderPii(orderData.user_name_enc, { field: 'user_name', paymentOrderId });
+      shippingPhone = decryptOrderPii(orderData.user_phone_enc, { field: 'user_phone', paymentOrderId });
+      shippingAddress = decryptOrderPii(orderData.user_address_enc, { field: 'user_address', paymentOrderId });
+      
+      if (!shippingName || !shippingPhone || !shippingAddress) {
+         throw new Error('Empty decrypted PII');
+      }
+    } catch (err) {
+      console.error('place_book_order_v2 failed', { code: 'DECRYPTION_FAILED' });
+      return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
     }
 
     const cycle: any = orderData.cycles || {};
@@ -85,20 +110,27 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. RPC 호출 (세부 제약은 DB 내부에서 처리)
-    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('place_book_order', {
+    const bookOrderId = crypto.randomUUID();
+
+    // 3. RPC 호출
+    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('place_book_order_v2', {
+      p_book_order_id: bookOrderId,
       p_subscription_order_id: subOrderId,
-      p_book_ids: bookIds
+      p_user_id: user.id,
+      p_book_ids: bookIds,
+      p_shipping_name: shippingName,
+      p_shipping_phone: shippingPhone,
+      p_shipping_address: shippingAddress
     });
 
     if (rpcError) {
-      console.error('place_book_order RPC Error:', rpcError);
-      return NextResponse.json({ error: '도서 신청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' }, { status: 400 });
+      console.error('place_book_order_v2 failed', { code: rpcError.code ?? 'UNKNOWN' });
+      return NextResponse.json({ error: '도서 신청 중 오류가 발생했습니다. 다시 시도해주세요.' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, newOrderId: rpcData });
+    return NextResponse.json({ success: true, newOrderId: bookOrderId });
   } catch (err: any) {
-    console.error('Book Select API Error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('place_book_order_v2 failed', { code: 'UNEXPECTED_ERROR' });
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
