@@ -211,7 +211,7 @@ export async function POST(req: Request) {
       .single();
 
     if (insertError || !createdOrder) {
-      console.error('Failed to insert order:', insertError);
+      console.error('Failed to insert order:', insertError?.code ?? 'UNKNOWN');
       return NextResponse.json({ error: '주문 생성에 실패했습니다.' }, { status: 500 });
     }
 
