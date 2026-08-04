@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { decryptProfilePii } from '@/lib/server/piiCrypto';
+import { encryptInquiryPii } from '@/lib/server/inquiryPiiCrypto';
 import crypto from 'crypto';
 
 export async function POST(req: Request) {
@@ -71,6 +72,35 @@ export async function POST(req: Request) {
       }
     }
 
+    const userName = profile.name && profile.name.trim() !== '' ? profile.name : (user.email || '이름 없음');
+    const userEmail = user.email || '이메일 없음';
+    const userPhone = phone && phone.trim() !== '' ? phone : '전화번호 없음';
+
+    const inquiryId = crypto.randomUUID();
+
+    let encryptedName;
+    let encryptedEmail;
+    let encryptedPhone;
+
+    try {
+      encryptedName = encryptInquiryPii('user_name', inquiryId, userName);
+      encryptedEmail = encryptInquiryPii('user_email', inquiryId, userEmail);
+      encryptedPhone = encryptInquiryPii('user_phone', inquiryId, userPhone);
+    } catch (err) {
+      console.error('inquiry creation failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    }
+
+    const keyVersion = encryptedName.keyVersion;
+    if (
+      !Number.isInteger(keyVersion) || keyVersion <= 0 ||
+      encryptedEmail.keyVersion !== keyVersion ||
+      encryptedPhone.keyVersion !== keyVersion
+    ) {
+      console.error('inquiry creation failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    }
+
     let attachmentUrl = '';
     if (attachment) {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -105,10 +135,15 @@ export async function POST(req: Request) {
     const { data: insertData, error: insertError } = await supabaseAdmin
       .from('inquiries')
       .insert([{
+        id: inquiryId,
         user_id: user.id,
-        user_email: user.email,
-        user_name: profile.name || '',
-        user_phone: phone,
+        user_name: userName,
+        user_email: userEmail,
+        user_phone: userPhone,
+        user_name_enc: encryptedName.encryptedValue,
+        user_email_enc: encryptedEmail.encryptedValue,
+        user_phone_enc: encryptedPhone.encryptedValue,
+        pii_key_version: keyVersion,
         category,
         title,
         content,
