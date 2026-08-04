@@ -79,7 +79,7 @@ function InquiryContent() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setUser(session.user);
-        
+
         window.setTimeout(() => {
           void loadProfile(session.access_token);
         }, 0);
@@ -97,56 +97,41 @@ function InquiryContent() {
 
     setSubmitting(true);
 
-    let attachmentUrl = '';
-    if (attachment) {
-      const fileExt = attachment.name.split('.').pop();
-      const filePath = `${user.id}_${Date.now()}.${fileExt}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('inquiry-attachments')
-        .upload(filePath, attachment, { upsert: true });
-      if (uploadError) {
-        console.error('[문의 첨부] 업로드 실패:', uploadError.message);
-        alert('이미지 업로드에 실패했습니다: ' + uploadError.message);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('로그인이 필요합니다.');
         setSubmitting(false);
         return;
       }
-      // DB에는 파일 경로를 저장 (signed URL은 조회 시 생성)
-      attachmentUrl = filePath;
-      console.log('[문의 첨부] 업로드 성공, 저장 경로:', filePath);
-    }
 
-    try {
-      const { data: insertData, error } = await supabase.from('inquiries').insert([{
-        user_id: user.id,
-        user_email: user.email,
-        user_name: name,
-        user_phone: phone,
-        category,
-        title,
-        content,
-        attachment_url: attachmentUrl,
-        status: '접수완료',
-        admin_reply: '',
-      }]).select();
+      const formData = new FormData();
+      formData.append('category', category);
+      formData.append('title', title);
+      formData.append('content', content);
+      if (attachment) {
+        formData.append('attachment', attachment);
+      }
+
+      const response = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: formData,
+        cache: 'no-store',
+      });
 
       setSubmitting(false);
 
-      if (error) {
-        console.error('문의 insert 에러:', error);
-        alert('문의 접수 실패: ' + error.message);
-        return;
-      }
-
-      if (!insertData || insertData.length === 0) {
-        console.error('문의 insert 실패: 데이터가 반환되지 않음 (RLS 정책 확인 필요)');
-        alert('문의 접수에 실패했습니다. 관리자에게 문의해주세요.');
+      if (!response.ok) {
+        alert('문의 접수 중 오류가 발생했습니다.');
         return;
       }
 
       setSubmitted(true);
     } catch (err: any) {
       setSubmitting(false);
-      console.error('문의 접수 예외:', err);
       alert('문의 접수 중 오류가 발생했습니다.');
     }
   };
@@ -200,7 +185,7 @@ function InquiryContent() {
         </p>
 
         <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--border)', padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          
+
           {/* 문의 유형 */}
           <div>
             <label style={labelStyle}>문의 유형 <span style={{ color: 'var(--accent)' }}>*</span></label>
