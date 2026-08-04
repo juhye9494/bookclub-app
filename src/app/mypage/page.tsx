@@ -30,7 +30,7 @@ export default function MyPage() {
   const [isCancelProcessing, setIsCancelProcessing] = useState(false);
   const [ordersFetchError, setOrdersFetchError] = useState(false);
   const [ordersLoading, setOrdersLoading] = useState(true);
-  
+
   const handleCancelOrder = async (orderId: string) => {
     setIsCancelProcessing(true);
     try {
@@ -68,7 +68,6 @@ export default function MyPage() {
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [expandedInquiry, setExpandedInquiry] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
-  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   // Profile edit state
   const [name, setName] = useState('');
@@ -108,7 +107,7 @@ export default function MyPage() {
 
   const handleSaveShipping = async () => {
     if(!editingShippingOrderId) return;
-    
+
     const finalAddressParts = [];
     if (editShippingPostcode) finalAddressParts.push(`[${editShippingPostcode}]`);
     if (editShippingBaseAddress) finalAddressParts.push(editShippingBaseAddress);
@@ -134,7 +133,7 @@ export default function MyPage() {
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || "배송지 변경에 실패했습니다.");
       alert("배송지가 변경되었습니다.");
-      
+
       setOrders(prev =>
         prev.map(order => ({
           ...order,
@@ -150,7 +149,7 @@ export default function MyPage() {
           ),
         }))
       );
-      
+
       setEditingShippingOrderId(null);
       setEditShippingName('');
       setEditShippingPhone('');
@@ -241,7 +240,7 @@ export default function MyPage() {
           },
           cache: 'no-store',
         });
-        
+
         if (!profileRes.ok) {
           if (profileRes.status === 401) {
             alert('로그인 정보가 만료되었습니다.');
@@ -306,10 +305,10 @@ export default function MyPage() {
       } else if (doneOrders) {
         setOrdersFetchError(false);
         const orderIds = doneOrders.map(o => o.id);
-        
+
         const cycleIds = Array.from(new Set(doneOrders.map(o => o.cycle_id).filter(Boolean)));
         let cycleRows: any[] | null = null;
-        
+
         if (cycleIds.length > 0) {
           const { data: cData, error: cErr } = await supabase
             .from('cycles')
@@ -327,16 +326,16 @@ export default function MyPage() {
               max_book_count
             `)
             .in('id', cycleIds);
-          
+
           if (cErr) {
             console.error('cycles fetch error:', cErr);
           } else {
             cycleRows = cData;
           }
         }
-        
+
         const cyclesById = new Map((cycleRows || []).map(c => [String(c.id), c]));
-        
+
         let bookOrderRows: any[] | null = null;
         let bookItemRows: any[] | null = null;
         let bookRows: any[] | null = null;
@@ -353,7 +352,7 @@ export default function MyPage() {
               },
               cache: 'no-store'
             });
-            
+
             if (!boRes.ok) {
               console.error('mypage book order request failed');
               bookOrdersError = true;
@@ -375,7 +374,7 @@ export default function MyPage() {
               .from('books')
               .select('id, title, author, cover_url')
               .in('id', uniqueBookIds);
-              
+
             if (bErr) {
               console.error('books fetch error:', bErr);
               booksError = bErr;
@@ -414,7 +413,7 @@ export default function MyPage() {
           bookOrdersError: !!bookOrdersError || !!bookItemsError,
           book_orders: hydratedBookOrders ? hydratedBookOrders.filter((bo: any) => bo.subscription_order_id === o.id) : []
         }));
-        
+
         setOrders(combined);
         setOrdersLoading(false);
       } else {
@@ -468,7 +467,7 @@ export default function MyPage() {
       }));
 
       const allGroupActivities = [...createdList, ...joinedList].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      
+
       setGroupParticipations(allGroupActivities);
 
       const { data: ep } = await supabase.from('event_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
@@ -492,37 +491,19 @@ export default function MyPage() {
         setEventParticipations(Array.from(uniqueMap.values()));
       }
 
-      const { data: inq } = await supabase.from('inquiries').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
-      if (inq) {
-        setInquiries(inq);
-        // Resolve signed URLs for attachments
-        const urls: Record<string, string> = {};
-        for (const item of inq) {
-          if (!item.attachment_url) continue;
-          let filePath = item.attachment_url;
-          if (filePath.startsWith('http')) {
-            const marker = '/object/public/inquiry-attachments/';
-            const idx = filePath.indexOf(marker);
-            if (idx !== -1) { filePath = filePath.substring(idx + marker.length); }
-            else {
-              const sMarker = '/object/sign/inquiry-attachments/';
-              const sIdx = filePath.indexOf(sMarker);
-              if (sIdx !== -1) { filePath = filePath.substring(sIdx + sMarker.length).split('?')[0]; }
-              else continue;
-            }
-          }
-          const { data: signedData, error: signedErr } = await supabase.storage
-            .from('inquiry-attachments')
-            .createSignedUrl(filePath, 3600);
-          if (signedErr) {
-            console.warn(`[문의 ${item.id}] signed URL 실패:`, signedErr.message);
-            const { data: pubData } = supabase.storage.from('inquiry-attachments').getPublicUrl(filePath);
-            if (pubData?.publicUrl) urls[item.id] = pubData.publicUrl;
-          } else if (signedData?.signedUrl) {
-            urls[item.id] = signedData.signedUrl;
+      try {
+        const inqRes = await fetch('/api/mypage/inquiries', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: 'no-store'
+        });
+        if (inqRes.ok) {
+          const inqResult = await inqRes.json();
+          if (inqResult.data) {
+            setInquiries(inqResult.data);
           }
         }
-        setSignedUrls(urls);
+      } catch (err) {
+        console.error('mypage inquiries fetch error:', err);
       }
 
       setLoading(false);
@@ -615,19 +596,19 @@ export default function MyPage() {
 
   const getStatusDisplay = (order: any, isOrderAllowed: boolean) => {
     const ps = order.payment_status || 'PENDING';
-    
+
     if (ps === 'PENDING') return { label: '결제 미완료', bg: '#fef3c7', color: '#d97706' };
     if (ps === 'CANCELLED') return { label: '취소', bg: '#fee2e2', color: '#dc2626' };
     if (ps === 'FAILED') return { label: '결제실패', bg: '#fee2e2', color: '#dc2626' };
-    
+
     const cycle = order.cycle || {};
     const maxCount = cycle.max_book_count || 4;
     const activeBooksCount = (order.book_orders || [])
       .filter((bo: any) => bo.order_status !== '주문취소')
       .reduce((sum: number, bo: any) => sum + (bo.book_order_items?.length || 0), 0);
-      
+
     if (activeBooksCount >= maxCount) return { label: '도서 선택 완료 (구독됨)', bg: '#ecfdf5', color: '#059669' };
-    
+
     if (!isOrderAllowed) return { label: '도서 신청 대기', bg: '#f3f4f6', color: '#6b7280' };
     return { label: `도서 선택 대기 (${activeBooksCount}/${maxCount})`, bg: '#eef5ff', color: '#3b82f6' };
   };
@@ -698,7 +679,7 @@ export default function MyPage() {
                   const hasActiveBookOrders = (order.book_orders || []).some(
                     (bo: any) => bo.order_status !== '주문취소'
                   );
-                  
+
                   const now = new Date();
                   const orderEnd = cycle.book_order_end_date ? new Date(cycle.book_order_end_date) : new Date('2099-12-31');
                   const subEnd = cycle.subscription_end_date ? new Date(cycle.subscription_end_date) : new Date('2099-12-31');
@@ -708,7 +689,7 @@ export default function MyPage() {
                     ? `${cycleDisplayName} 구독권`
                     : '구독권';
                   const statusUI = getStatusDisplay(order, isOrderAllowed);
-                  
+
                   const isRefundable = isDone && !!order.cycle_id && now <= subEnd && cycle.status !== 'closed';
 
                   if (isCancelled) {
@@ -827,7 +808,7 @@ export default function MyPage() {
                         )}
                       </div>
                       </div>
-                      
+
                       {isDone && (
                         <>
                           <div style={{ marginBottom: '20px' }}>
@@ -1310,7 +1291,7 @@ export default function MyPage() {
             {/* 기본 정보 */}
             <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '16px', padding: '28px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '24px', color: 'var(--text)' }}>기본 정보</h3>
-              
+
               <div style={{ marginBottom: '16px' }}>
                 <label style={labelStyle}>이메일</label>
                 <input value={user?.email || ''} disabled style={{ ...inputStyle, background: '#f5f5f5', color: '#999' }} />
@@ -1427,15 +1408,15 @@ export default function MyPage() {
                     {expandedInquiry === inq.id && (
                       <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--border)' }}>
                         <div style={{ padding: '16px 0', fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-mid)', whiteSpace: 'pre-wrap' }}>{inq.content}</div>
-                        {inq.attachment_url && signedUrls[inq.id] && (
+                        {inq.attachment_signed_url && (
                           <div style={{ marginTop: '8px', marginBottom: '8px' }}>
                             <p style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '6px' }}>📎 첨부 이미지</p>
                             <img
-                              src={signedUrls[inq.id]}
+                              src={inq.attachment_signed_url}
                               alt="첨부 이미지"
-                              onClick={() => setZoomedImage(signedUrls[inq.id])}
+                              onClick={() => setZoomedImage(inq.attachment_signed_url!)}
                               style={{ maxWidth: '200px', maxHeight: '160px', borderRadius: '8px', border: '1px solid var(--border)', objectFit: 'cover', cursor: 'pointer' }}
-                              onError={(e) => { console.warn(`[문의 ${inq.id}] 이미지 로드 실패:`, signedUrls[inq.id]); (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                              onError={(e) => { console.warn(`[문의 ${inq.id}] 이미지 로드 실패`); (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                             />
                           </div>
                         )}
@@ -1460,7 +1441,7 @@ export default function MyPage() {
         )}
       </main>
 
-      
+
       {editingShippingOrderId && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#fff', padding: '24px', borderRadius: '16px', width: '100%', maxWidth: '400px' }}>
@@ -1521,15 +1502,15 @@ export default function MyPage() {
               해당 기수의 도서 신청 권한도 사라집니다.
             </p>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button 
-                onClick={() => setCancelingOrderId(null)} 
+              <button
+                onClick={() => setCancelingOrderId(null)}
                 disabled={isCancelProcessing}
                 style={{ flex: 1, padding: '12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, cursor: isCancelProcessing ? 'not-allowed' : 'pointer' }}
               >
                 돌아가기
               </button>
-              <button 
-                onClick={() => handleCancelOrder(cancelingOrderId)} 
+              <button
+                onClick={() => handleCancelOrder(cancelingOrderId)}
                 disabled={isCancelProcessing}
                 style={{ flex: 1, padding: '12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, cursor: isCancelProcessing ? 'not-allowed' : 'pointer', opacity: isCancelProcessing ? 0.7 : 1 }}
               >
