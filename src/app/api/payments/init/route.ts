@@ -189,10 +189,6 @@ export async function POST(req: Request) {
       .from('orders')
       .insert({
         user_id: user.id,
-        user_email: user.email,
-        user_name: finalName,
-        user_phone: finalPhone,
-        user_address: finalAddress,
         user_name_enc: userNameEnc,
         user_email_enc: userEmailEnc,
         user_phone_enc: userPhoneEnc,
