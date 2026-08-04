@@ -25,6 +25,7 @@ function readOrderPii(
       : encryptedValue !== null && encryptedValue !== undefined;
 
   if (!hasEncryptedValue) {
+    // Only used if absolutely missing, but since all are encrypted, this should not trigger for new/migrated orders
     return typeof plaintextValue === 'string' ? plaintextValue : '';
   }
 
@@ -70,20 +71,28 @@ export async function GET(req: Request) {
     let query = supabaseAdmin
       .from('book_orders')
       .select(`
-        *,
-
+        id,
+        subscription_order_id,
+        user_id,
+        cycle_id,
+        order_status,
+        shipping_name,
+        shipping_phone,
+        shipping_address,
+        tracking_number,
+        created_at,
+        updated_at,
         subscription_order:orders!book_orders_subscription_order_id_fkey!inner (
-          user_email,
-          user_name,
-          user_phone,
-          user_address,
+          id,
+          user_id,
+          payment_order_id,
+          payment_status,
+          total_amount,
           user_name_enc,
           user_email_enc,
           user_phone_enc,
           user_address_enc,
-          total_amount,
-          payment_order_id,
-          payment_status
+          pii_key_version
         )
       `)
       .eq('subscription_order.payment_status', 'DONE')
@@ -162,7 +171,7 @@ export async function GET(req: Request) {
 
     const enrichedOrders = (data || []).map((order: any) => {
       const subscriptionOrder = order.subscription_order;
-      let safeSubscriptionOrder = subscriptionOrder;
+      let safeSubscriptionOrder = null;
 
       if (subscriptionOrder) {
         const paymentOrderId = subscriptionOrder.payment_order_id;
@@ -177,25 +186,25 @@ export async function GET(req: Request) {
         safeSubscriptionOrder = {
           user_email: readOrderPii(
             subscriptionOrder.user_email_enc,
-            subscriptionOrder.user_email,
+            null, // No fallback
             'user_email',
             paymentOrderId
           ),
           user_name: readOrderPii(
             subscriptionOrder.user_name_enc,
-            subscriptionOrder.user_name,
+            null,
             'user_name',
             paymentOrderId
           ),
           user_phone: readOrderPii(
             subscriptionOrder.user_phone_enc,
-            subscriptionOrder.user_phone,
+            null,
             'user_phone',
             paymentOrderId
           ),
           user_address: readOrderPii(
             subscriptionOrder.user_address_enc,
-            subscriptionOrder.user_address,
+            null,
             'user_address',
             paymentOrderId
           ),
@@ -206,7 +215,17 @@ export async function GET(req: Request) {
       }
 
       return {
-        ...order,
+        id: order.id,
+        subscription_order_id: order.subscription_order_id,
+        user_id: order.user_id,
+        cycle_id: order.cycle_id,
+        order_status: order.order_status,
+        shipping_name: order.shipping_name,
+        shipping_phone: order.shipping_phone,
+        shipping_address: order.shipping_address,
+        tracking_number: order.tracking_number,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
         subscription_order: safeSubscriptionOrder,
         book_order_items: (itemsByOrderId[order.id] || []).map((item: any) => ({
           ...item,
