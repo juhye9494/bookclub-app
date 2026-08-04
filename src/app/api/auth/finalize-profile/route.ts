@@ -78,9 +78,9 @@ export async function POST(request: Request) {
         id: authData.user.id,
         email: authData.user.email,
         name: trimmedName,
-        phone: trimmedPhone,
+        phone: null,
         phone_enc: phoneEnc,
-        address: trimmedAddress,
+        address: null,
         address_enc: addressEnc,
         pii_key_version: 1,
       }, {
