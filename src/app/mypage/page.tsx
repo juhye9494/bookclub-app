@@ -285,18 +285,12 @@ export default function MyPage() {
         .select(`
           id,
           user_id,
-          user_email,
           user_name,
           user_phone,
           user_address,
-          selected_books,
           total_amount,
           payment_order_id,
           payment_status,
-          order_status,
-          tracking_number,
-          is_test,
-          payment_key,
           cycle_id,
           created_at
         `)
