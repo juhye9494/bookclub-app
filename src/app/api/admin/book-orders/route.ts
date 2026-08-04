@@ -5,6 +5,7 @@ import {
   decryptOrderPii,
   isEncryptedOrderPii,
 } from '@/lib/server/orderPiiCrypto';
+import { decryptBookOrderPii } from '@/lib/server/bookOrderPiiCrypto';
 
 function jsonNoStore(body: unknown, init?: { status?: number }) {
   return NextResponse.json(body, {
@@ -37,6 +38,32 @@ function readOrderPii(
     field,
     paymentOrderId,
   });
+}
+
+function readBookOrderPii(
+  encryptedValue: unknown,
+  plaintextValue: unknown,
+  field: 'shipping_name' | 'shipping_phone' | 'shipping_address',
+  bookOrderId: string,
+  keyVersion: unknown
+): string {
+  const hasEncryptedValue =
+    typeof encryptedValue === 'string' &&
+    encryptedValue.trim().length > 0;
+
+  if (!hasEncryptedValue) {
+    return typeof plaintextValue === 'string' ? plaintextValue : '';
+  }
+
+  if (!Number.isInteger(keyVersion) || (keyVersion as number) <= 0) {
+    throw new Error('Missing or invalid pii_key_version');
+  }
+
+  const decrypted = decryptBookOrderPii(field, bookOrderId, encryptedValue as string, keyVersion as number);
+  if (decrypted.trim().length === 0) {
+    throw new Error('Invalid decrypted shipping PII');
+  }
+  return decrypted;
 }
 
 export async function GET(req: Request) {
@@ -79,6 +106,10 @@ export async function GET(req: Request) {
         shipping_name,
         shipping_phone,
         shipping_address,
+        shipping_name_enc,
+        shipping_phone_enc,
+        shipping_address_enc,
+        pii_key_version,
         tracking_number,
         created_at,
         updated_at,
@@ -170,6 +201,45 @@ export async function GET(req: Request) {
     }
 
     const enrichedOrders = (data || []).map((order: any) => {
+      const hasShippingEnc =
+        (typeof order.shipping_name_enc === 'string' && order.shipping_name_enc.trim().length > 0) ||
+        (typeof order.shipping_phone_enc === 'string' && order.shipping_phone_enc.trim().length > 0) ||
+        (typeof order.shipping_address_enc === 'string' && order.shipping_address_enc.trim().length > 0);
+
+      const hasShippingVersion = Number.isInteger(order.pii_key_version) && order.pii_key_version > 0;
+
+      if (hasShippingVersion && !hasShippingEnc) {
+        throw new Error('Incomplete book order encrypted data');
+      }
+
+      if (hasShippingEnc && !hasShippingVersion) {
+        throw new Error('Incomplete book order encrypted data');
+      }
+
+      const shippingName = readBookOrderPii(
+        order.shipping_name_enc,
+        order.shipping_name,
+        'shipping_name',
+        order.id,
+        order.pii_key_version
+      );
+
+      const shippingPhone = readBookOrderPii(
+        order.shipping_phone_enc,
+        order.shipping_phone,
+        'shipping_phone',
+        order.id,
+        order.pii_key_version
+      );
+
+      const shippingAddress = readBookOrderPii(
+        order.shipping_address_enc,
+        order.shipping_address,
+        'shipping_address',
+        order.id,
+        order.pii_key_version
+      );
+
       const subscriptionOrder = order.subscription_order;
       let safeSubscriptionOrder = null;
 
@@ -220,9 +290,9 @@ export async function GET(req: Request) {
         user_id: order.user_id,
         cycle_id: order.cycle_id,
         order_status: order.order_status,
-        shipping_name: order.shipping_name,
-        shipping_phone: order.shipping_phone,
-        shipping_address: order.shipping_address,
+        shipping_name: shippingName,
+        shipping_phone: shippingPhone,
+        shipping_address: shippingAddress,
         tracking_number: order.tracking_number,
         created_at: order.created_at,
         updated_at: order.updated_at,
@@ -236,6 +306,10 @@ export async function GET(req: Request) {
 
     return jsonNoStore({ orders: enrichedOrders });
   } catch (err: any) {
-    return jsonNoStore({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('admin book order shipping PII decryption failed');
+    return jsonNoStore(
+      { error: '도서 주문 정보를 불러오는 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
   }
 }
