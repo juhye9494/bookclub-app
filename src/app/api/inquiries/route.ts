@@ -137,9 +137,9 @@ export async function POST(req: Request) {
       .insert([{
         id: inquiryId,
         user_id: user.id,
-        user_name: userName,
-        user_email: userEmail,
-        user_phone: userPhone,
+        user_name: null,
+        user_email: null,
+        user_phone: null,
         user_name_enc: encryptedName.encryptedValue,
         user_email_enc: encryptedEmail.encryptedValue,
         user_phone_enc: encryptedPhone.encryptedValue,

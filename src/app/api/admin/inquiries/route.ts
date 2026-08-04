@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
     const { data: inquiries, error: dbError } = await supabaseAdmin
       .from('inquiries')
-      .select('id, user_id, user_email, user_name, user_phone, user_email_enc, user_name_enc, user_phone_enc, pii_key_version, category, title, content, attachment_url, status, admin_reply, created_at')
+      .select('id, user_id, user_email_enc, user_name_enc, user_phone_enc, pii_key_version, category, title, content, attachment_url, status, admin_reply, created_at')
       .order('created_at', { ascending: false });
 
     if (dbError) {
@@ -70,17 +70,14 @@ export async function GET(req: Request) {
         }
       }
 
-      let userName = inq.user_name;
-      let userEmail = inq.user_email;
-      let userPhone = inq.user_phone;
+      let userName;
+      let userEmail;
+      let userPhone;
 
-      const hasAnyEnc = inq.user_name_enc || inq.user_email_enc || inq.user_phone_enc;
       const hasAllEnc = inq.user_name_enc && inq.user_email_enc && inq.user_phone_enc;
       const hasVersion = inq.pii_key_version && inq.pii_key_version > 0;
 
-      if (!hasAnyEnc && !inq.pii_key_version) {
-        // Plaintext fallback
-      } else if (hasAllEnc && hasVersion) {
+      if (hasAllEnc && hasVersion) {
         try {
           userName = decryptInquiryPii('user_name', inq.id, inq.user_name_enc, inq.pii_key_version);
           userEmail = decryptInquiryPii('user_email', inq.id, inq.user_email_enc, inq.pii_key_version);
