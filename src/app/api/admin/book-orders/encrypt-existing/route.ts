@@ -3,6 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/utils/admin';
 import { encryptBookOrderPii, decryptBookOrderPii } from '@/lib/server/bookOrderPiiCrypto';
 
+type InvalidReason =
+  | 'blankEncryptedValue'
+  | 'partialEncryptedState'
+  | 'versionWithoutCiphertext'
+  | 'invalidKeyVersion'
+  | 'decryptFailed'
+  | 'plaintextMismatch'
+  | 'plaintextMissingOrBlank'
+  | 'plaintextLengthInvalid';
+
 function jsonNoStore(body: unknown, init?: { status?: number }) {
   return NextResponse.json(body, {
     status: init?.status ?? 200,
@@ -97,7 +107,18 @@ export async function POST(req: Request) {
     let protectedCount = 0;
     let needsMigrationCount = 0;
     let invalidCount = 0;
-    
+
+    const invalidReasons: Record<InvalidReason, number> = {
+      blankEncryptedValue: 0,
+      partialEncryptedState: 0,
+      versionWithoutCiphertext: 0,
+      invalidKeyVersion: 0,
+      decryptFailed: 0,
+      plaintextMismatch: 0,
+      plaintextMissingOrBlank: 0,
+      plaintextLengthInvalid: 0,
+    };
+
     const needsMigrationRows: any[] = [];
 
     for (const row of allRows) {
@@ -111,45 +132,118 @@ export async function POST(req: Request) {
         shipping_address,
       } = row;
 
-      const hasAllEnc =
-        typeof shipping_name_enc === 'string' && shipping_name_enc.trim() !== '' &&
-        typeof shipping_phone_enc === 'string' && shipping_phone_enc.trim() !== '' &&
-        typeof shipping_address_enc === 'string' && shipping_address_enc.trim() !== '';
+      // A. 암호화 컬럼에 공백 문자열 존재
+      const isBlankEnc = (val: any) => typeof val === 'string' && val.trim() === '';
+      if (
+        (shipping_name_enc !== null && isBlankEnc(shipping_name_enc)) ||
+        (shipping_phone_enc !== null && isBlankEnc(shipping_phone_enc)) ||
+        (shipping_address_enc !== null && isBlankEnc(shipping_address_enc))
+      ) {
+        invalidCount++;
+        invalidReasons.blankEncryptedValue++;
+        continue;
+      }
 
-      const hasVersion = Number.isInteger(pii_key_version) && pii_key_version > 0;
+      // B. 암호문 일부만 존재
+      const hasNameEnc = typeof shipping_name_enc === 'string' && shipping_name_enc.trim() !== '';
+      const hasPhoneEnc = typeof shipping_phone_enc === 'string' && shipping_phone_enc.trim() !== '';
+      const hasAddressEnc = typeof shipping_address_enc === 'string' && shipping_address_enc.trim() !== '';
+      const encCount = (hasNameEnc ? 1 : 0) + (hasPhoneEnc ? 1 : 0) + (hasAddressEnc ? 1 : 0);
 
-      const hasNoEnc = shipping_name_enc === null && shipping_phone_enc === null && shipping_address_enc === null;
-      const hasNoVersion = pii_key_version === null;
+      if (encCount === 1 || encCount === 2) {
+        invalidCount++;
+        invalidReasons.partialEncryptedState++;
+        continue;
+      }
 
-      const plainNameValid = typeof shipping_name === 'string' && shipping_name.trim() !== '' && shipping_name.length <= 100;
-      const plainPhoneValid = typeof shipping_phone === 'string' && shipping_phone.trim() !== '' && shipping_phone.length <= 50;
-      const plainAddressValid = typeof shipping_address === 'string' && shipping_address.trim() !== '' && shipping_address.length <= 500;
-      const plainAllValid = plainNameValid && plainPhoneValid && plainAddressValid;
+      const hasAllEnc = encCount === 3;
+      const hasNoEnc = encCount === 0;
 
-      if (hasAllEnc && hasVersion) {
+      // C. 키 버전만 존재
+      if (hasNoEnc && pii_key_version !== null && pii_key_version !== undefined) {
+        invalidCount++;
+        invalidReasons.versionWithoutCiphertext++;
+        continue;
+      }
+
+      // D. 암호문 3개가 있지만 버전이 무효
+      if (hasAllEnc) {
+        if (!Number.isInteger(pii_key_version) || pii_key_version <= 0) {
+          invalidCount++;
+          invalidReasons.invalidKeyVersion++;
+          continue;
+        }
+
+        // E. 복호화 실패
+        let decName = '';
+        let decPhone = '';
+        let decAddress = '';
+        let decryptSuccess = true;
+
         try {
-          const decName = decryptBookOrderPii('shipping_name', row.id, shipping_name_enc, pii_key_version);
-          const decPhone = decryptBookOrderPii('shipping_phone', row.id, shipping_phone_enc, pii_key_version);
-          const decAddress = decryptBookOrderPii('shipping_address', row.id, shipping_address_enc, pii_key_version);
-          
-          if (
-            (typeof shipping_name === 'string' && shipping_name !== decName) ||
-            (typeof shipping_phone === 'string' && shipping_phone !== decPhone) ||
-            (typeof shipping_address === 'string' && shipping_address !== decAddress)
-          ) {
-            invalidCount++;
-          } else {
-            protectedCount++;
+          decName = decryptBookOrderPii('shipping_name', row.id, shipping_name_enc, pii_key_version).trim();
+          decPhone = decryptBookOrderPii('shipping_phone', row.id, shipping_phone_enc, pii_key_version).trim();
+          decAddress = decryptBookOrderPii('shipping_address', row.id, shipping_address_enc, pii_key_version).trim();
+
+          if (!decName || !decPhone || !decAddress) {
+            decryptSuccess = false;
           }
         } catch {
-          invalidCount++;
+          decryptSuccess = false;
         }
-      } else if (hasNoEnc && hasNoVersion && plainAllValid) {
-        needsMigrationCount++;
-        needsMigrationRows.push(row);
-      } else {
-        invalidCount++;
+
+        if (!decryptSuccess) {
+          invalidCount++;
+          invalidReasons.decryptFailed++;
+          continue;
+        }
+
+        // F. 암호문과 남아 있는 평문 불일치
+        let mismatch = false;
+        if (typeof shipping_name === 'string' && shipping_name !== decName) mismatch = true;
+        if (typeof shipping_phone === 'string' && shipping_phone !== decPhone) mismatch = true;
+        if (typeof shipping_address === 'string' && shipping_address !== decAddress) mismatch = true;
+
+        if (mismatch) {
+          invalidCount++;
+          invalidReasons.plaintextMismatch++;
+          continue;
+        }
+
+        protectedCount++;
+        continue;
       }
+
+      // G. 암호화되지 않은 행의 평문 누락
+      const isMissingOrBlank = (val: any) => typeof val !== 'string' || val.trim() === '';
+      if (isMissingOrBlank(shipping_name) || isMissingOrBlank(shipping_phone) || isMissingOrBlank(shipping_address)) {
+        invalidCount++;
+        invalidReasons.plaintextMissingOrBlank++;
+        continue;
+      }
+
+      // H. 평문 길이 초과
+      if (
+        shipping_name.length > 100 ||
+        shipping_phone.length > 50 ||
+        shipping_address.length > 500
+      ) {
+        invalidCount++;
+        invalidReasons.plaintextLengthInvalid++;
+        continue;
+      }
+
+      needsMigrationCount++;
+      needsMigrationRows.push(row);
+    }
+
+    const invalidReasonTotal = Object.values(invalidReasons).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+
+    if (invalidReasonTotal !== invalidCount) {
+      throw new Error('Invalid migration classification totals');
     }
 
     if (mode === 'dry-run') {
@@ -159,6 +253,7 @@ export async function POST(req: Request) {
         protected: protectedCount,
         needsMigration: needsMigrationCount,
         invalid: invalidCount,
+        invalidReasons,
         canExecute: invalidCount === 0
       });
     }
@@ -169,7 +264,8 @@ export async function POST(req: Request) {
         total: allRows.length,
         protected: protectedCount,
         needsMigration: needsMigrationCount,
-        invalid: invalidCount
+        invalid: invalidCount,
+        invalidReasons
       }, { status: 409 });
     }
 
