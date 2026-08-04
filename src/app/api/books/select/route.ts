@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { decryptOrderPii } from '@/lib/server/orderPiiCrypto';
+import { encryptBookOrderPii } from '@/lib/server/bookOrderPiiCrypto';
 
 export async function POST(req: Request) {
   try {
@@ -88,7 +89,7 @@ export async function POST(req: Request) {
          throw new Error('Empty decrypted PII');
       }
     } catch (err) {
-      console.error('place_book_order_v2 failed', { code: 'DECRYPTION_FAILED' });
+      console.error('book order creation failed');
       return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
     }
 
@@ -112,25 +113,57 @@ export async function POST(req: Request) {
 
     const bookOrderId = crypto.randomUUID();
 
+    let encryptedShippingName, encryptedShippingPhone, encryptedShippingAddress;
+    try {
+      encryptedShippingName = encryptBookOrderPii('shipping_name', bookOrderId, shippingName);
+      encryptedShippingPhone = encryptBookOrderPii('shipping_phone', bookOrderId, shippingPhone);
+      encryptedShippingAddress = encryptBookOrderPii('shipping_address', bookOrderId, shippingAddress);
+
+      const keyVersion = encryptedShippingName.keyVersion;
+      if (
+        !Number.isInteger(keyVersion) ||
+        keyVersion <= 0 ||
+        encryptedShippingPhone.keyVersion !== keyVersion ||
+        encryptedShippingAddress.keyVersion !== keyVersion
+      ) {
+        throw new Error('Book order shipping encryption version mismatch');
+      }
+    } catch (err) {
+      console.error('book order creation failed');
+      return NextResponse.json(
+        { error: '서버 오류가 발생했습니다.' },
+        {
+          status: 500,
+          headers: {
+            'Cache-Control': 'no-store',
+          },
+        }
+      );
+    }
+
     // 3. RPC 호출
-    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('place_book_order_v2', {
+    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('place_book_order_v3', {
       p_book_order_id: bookOrderId,
       p_subscription_order_id: subOrderId,
       p_user_id: user.id,
       p_book_ids: bookIds,
       p_shipping_name: shippingName,
       p_shipping_phone: shippingPhone,
-      p_shipping_address: shippingAddress
+      p_shipping_address: shippingAddress,
+      p_shipping_name_enc: encryptedShippingName.encryptedValue,
+      p_shipping_phone_enc: encryptedShippingPhone.encryptedValue,
+      p_shipping_address_enc: encryptedShippingAddress.encryptedValue,
+      p_pii_key_version: encryptedShippingName.keyVersion
     });
 
     if (rpcError) {
-      console.error('place_book_order_v2 failed', { code: rpcError.code ?? 'UNKNOWN' });
+      console.error('book order creation failed');
       return NextResponse.json({ error: '도서 신청 중 오류가 발생했습니다. 다시 시도해주세요.' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, newOrderId: bookOrderId });
   } catch (err: any) {
-    console.error('place_book_order_v2 failed', { code: 'UNEXPECTED_ERROR' });
+    console.error('book order creation failed');
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
