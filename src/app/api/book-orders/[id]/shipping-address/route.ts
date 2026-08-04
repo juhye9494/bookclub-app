@@ -79,9 +79,9 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     const { data: updateData, error: updateErr } = await supabaseAdmin
       .from('book_orders')
       .update({
-        shipping_name: shippingName,
-        shipping_phone: shippingPhone,
-        shipping_address: shippingAddress,
+        shipping_name: null,
+        shipping_phone: null,
+        shipping_address: null,
         shipping_name_enc: encryptedShippingName.encryptedValue,
         shipping_phone_enc: encryptedShippingPhone.encryptedValue,
         shipping_address_enc: encryptedShippingAddress.encryptedValue,
