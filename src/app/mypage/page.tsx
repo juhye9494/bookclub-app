@@ -345,33 +345,26 @@ export default function MyPage() {
         let booksError = null;
 
         if (orderIds.length > 0) {
-          const { data: boData, error: boErr } = await supabase
-            .from('book_orders')
-            .select('id, subscription_order_id, user_id, cycle_id, order_status, shipping_name, shipping_phone, shipping_address, created_at, updated_at')
-            .eq('user_id', session.user.id)
-            .in('subscription_order_id', orderIds)
-            .order('created_at', { ascending: false });
-
-          if (boErr) {
-            console.error('book orders fetch error:', boErr);
-            bookOrdersError = boErr;
-          } else {
-            bookOrderRows = boData;
-          }
-        }
-
-        if (bookOrderRows && bookOrderRows.length > 0) {
-          const bookOrderIds = bookOrderRows.map(bo => bo.id);
-          const { data: itemsData, error: itemsErr } = await supabase
-            .from('book_order_items')
-            .select('id, book_order_id, book_id, book_title_snapshot, quantity, created_at')
-            .in('book_order_id', bookOrderIds);
+          try {
+            const boRes = await fetch('/api/mypage/book-orders', {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${session.access_token}`
+              },
+              cache: 'no-store'
+            });
             
-          if (itemsErr) {
-            console.error('book order items fetch error:', itemsErr);
-            bookItemsError = itemsErr;
-          } else {
-            bookItemRows = itemsData;
+            if (!boRes.ok) {
+              console.error('mypage book order request failed');
+              bookOrdersError = true;
+            } else {
+              const boData = await boRes.json();
+              bookOrderRows = boData.bookOrders || [];
+              bookItemRows = (bookOrderRows || []).flatMap((bo: any) => bo.book_order_items || []);
+            }
+          } catch (err) {
+            console.error('mypage book order request failed');
+            bookOrdersError = true;
           }
         }
 
