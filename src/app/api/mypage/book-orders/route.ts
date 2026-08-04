@@ -11,24 +11,19 @@ function jsonNoStore(body: unknown, init?: { status?: number }) {
 
 function readBookOrderPii(
   encryptedValue: unknown,
-  plaintextValue: unknown,
   field: 'shipping_name' | 'shipping_phone' | 'shipping_address',
   bookOrderId: string,
   keyVersion: unknown
 ): string {
-  const hasEncryptedValue =
-    typeof encryptedValue === 'string' &&
-    encryptedValue.trim().length > 0;
-
-  if (!hasEncryptedValue) {
-    return typeof plaintextValue === 'string' ? plaintextValue : '';
+  if (typeof encryptedValue !== 'string' || encryptedValue.trim().length === 0) {
+    throw new Error('Missing encrypted book order data');
   }
 
   if (!Number.isInteger(keyVersion) || (keyVersion as number) <= 0) {
     throw new Error('Missing or invalid pii_key_version');
   }
 
-  const decrypted = decryptBookOrderPii(field, bookOrderId, encryptedValue as string, keyVersion as number);
+  const decrypted = decryptBookOrderPii(field, bookOrderId, encryptedValue, keyVersion as number);
   if (decrypted.trim().length === 0) {
     throw new Error('Invalid decrypted shipping PII');
   }
@@ -99,9 +94,6 @@ export async function GET(req: Request) {
         user_id,
         cycle_id,
         order_status,
-        shipping_name,
-        shipping_phone,
-        shipping_address,
         shipping_name_enc,
         shipping_phone_enc,
         shipping_address_enc,
@@ -126,24 +118,8 @@ export async function GET(req: Request) {
     }
 
     const processedBookOrders = (bookOrdersData || []).map((order: any) => {
-      const hasShippingEnc =
-        (typeof order.shipping_name_enc === 'string' && order.shipping_name_enc.trim().length > 0) ||
-        (typeof order.shipping_phone_enc === 'string' && order.shipping_phone_enc.trim().length > 0) ||
-        (typeof order.shipping_address_enc === 'string' && order.shipping_address_enc.trim().length > 0);
-
-      const hasShippingVersion = Number.isInteger(order.pii_key_version) && order.pii_key_version > 0;
-
-      if (hasShippingVersion && !hasShippingEnc) {
-        throw new Error('Incomplete book order encrypted data');
-      }
-
-      if (hasShippingEnc && !hasShippingVersion) {
-        throw new Error('Incomplete book order encrypted data');
-      }
-
       const shippingName = readBookOrderPii(
         order.shipping_name_enc,
-        order.shipping_name,
         'shipping_name',
         order.id,
         order.pii_key_version
@@ -151,7 +127,6 @@ export async function GET(req: Request) {
 
       const shippingPhone = readBookOrderPii(
         order.shipping_phone_enc,
-        order.shipping_phone,
         'shipping_phone',
         order.id,
         order.pii_key_version
@@ -159,7 +134,6 @@ export async function GET(req: Request) {
 
       const shippingAddress = readBookOrderPii(
         order.shipping_address_enc,
-        order.shipping_address,
         'shipping_address',
         order.id,
         order.pii_key_version
