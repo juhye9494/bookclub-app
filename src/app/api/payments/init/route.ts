@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { decryptProfilePii } from '@/lib/server/piiCrypto';
 
 export async function POST(req: Request) {
   try {
@@ -40,16 +41,46 @@ export async function POST(req: Request) {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('name, phone, address')
+      .select('id, name, phone, address, phone_enc, address_enc, pii_key_version')
       .eq('id', user.id)
       .single();
+
+    let finalPhone = profile?.phone || '';
+    let finalAddress = profile?.address || '';
+
+    if (profile) {
+      if ((profile.phone_enc || profile.address_enc) && profile.pii_key_version !== 1) {
+        return NextResponse.json({ error: '회원정보를 안전하게 불러오지 못했습니다.' }, { status: 500 });
+      }
+
+      try {
+        if (profile.phone_enc) {
+          finalPhone = await decryptProfilePii(profile.phone_enc, {
+            profileId: profile.id,
+            field: 'phone'
+          });
+        }
+        if (profile.address_enc) {
+          finalAddress = await decryptProfilePii(profile.address_enc, {
+            profileId: profile.id,
+            field: 'address'
+          });
+        }
+      } catch {
+        return NextResponse.json({ error: '회원정보를 안전하게 불러오지 못했습니다.' }, { status: 500 });
+      }
+    }
+
+    const finalName = typeof profile?.name === 'string' ? profile.name.trim() : '';
+    finalPhone = typeof finalPhone === 'string' ? finalPhone.trim() : '';
+    finalAddress = typeof finalAddress === 'string' ? finalAddress.trim() : '';
 
     if (
       profileError ||
       !user.email ||
-      !profile?.name?.trim() ||
-      !profile?.phone?.trim() ||
-      !profile?.address?.trim()
+      !finalName ||
+      !finalPhone ||
+      !finalAddress
     ) {
       if (profileError) {
         console.error('[Payment Init] Profile fetch failed');
@@ -122,9 +153,9 @@ export async function POST(req: Request) {
       .insert({
         user_id: user.id,
         user_email: user.email,
-        user_name: profile.name.trim(),
-        user_phone: profile.phone.trim(),
-        user_address: profile.address.trim(),
+        user_name: finalName,
+        user_phone: finalPhone,
+        user_address: finalAddress,
         is_test: process.env.VERCEL_ENV !== 'production',
         payment_order_id: orderId,
         payment_status: 'PENDING',
@@ -141,8 +172,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ orderId: createdOrder.payment_order_id, amount: EXPECTED_AMOUNT });
-  } catch (err: any) {
-    console.error('Init Payment Error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: '결제 초기화 중 오류가 발생했습니다.' }, { status: 500 });
   }
 }
