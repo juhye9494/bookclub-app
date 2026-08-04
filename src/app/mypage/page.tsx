@@ -280,26 +280,27 @@ export default function MyPage() {
 
       setOrdersLoading(true);
 
-      const { data: doneOrders, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          user_id,
-          user_name,
-          user_phone,
-          user_address,
-          total_amount,
-          payment_order_id,
-          payment_status,
-          cycle_id,
-          created_at
-        `)
-        .eq('user_id', session.user.id)
-        .neq('payment_status', 'PENDING')
-        .order('created_at', { ascending: false });
+      let doneOrders: any[] | null = null;
+      let ordersError = false;
+      try {
+        const ordersResponse = await fetch('/api/mypage/orders', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          cache: 'no-store',
+        });
+        if (!ordersResponse.ok) {
+          ordersError = true;
+        } else {
+          const ordersResult = await ordersResponse.json();
+          doneOrders = Array.isArray(ordersResult.orders) ? ordersResult.orders : [];
+        }
+      } catch (err) {
+        ordersError = true;
+      }
 
       if (ordersError) {
-        console.error('orders fetch error:', ordersError);
         setOrdersFetchError(true);
         setOrdersLoading(false);
       } else if (doneOrders) {
