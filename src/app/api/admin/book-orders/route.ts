@@ -1,12 +1,48 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/utils/admin';
+import {
+  decryptOrderPii,
+  isEncryptedOrderPii,
+} from '@/lib/server/orderPiiCrypto';
+
+function jsonNoStore(body: unknown, init?: { status?: number }) {
+  return NextResponse.json(body, {
+    status: init?.status ?? 200,
+    headers: { 'Cache-Control': 'no-store' },
+  });
+}
+
+function readOrderPii(
+  encryptedValue: unknown,
+  plaintextValue: unknown,
+  field: 'user_name' | 'user_email' | 'user_phone' | 'user_address',
+  paymentOrderId: string
+): string {
+  const hasEncryptedValue =
+    typeof encryptedValue === 'string'
+      ? encryptedValue.trim() !== ''
+      : encryptedValue !== null && encryptedValue !== undefined;
+
+  if (!hasEncryptedValue) {
+    return typeof plaintextValue === 'string' ? plaintextValue : '';
+  }
+
+  if (!isEncryptedOrderPii(encryptedValue)) {
+    throw new Error('Invalid encrypted order data');
+  }
+
+  return decryptOrderPii(encryptedValue, {
+    field,
+    paymentOrderId,
+  });
+}
 
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return jsonNoStore({ error: 'Unauthorized' }, { status: 401 });
     }
     const token = authHeader.replace('Bearer ', '');
 
@@ -15,7 +51,7 @@ export async function GET(req: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!serviceRoleKey) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+      return jsonNoStore({ error: 'Server configuration error' }, { status: 500 });
     }
 
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
@@ -25,7 +61,7 @@ export async function GET(req: Request) {
 
     const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
     if (userError || !user || !isAdmin(user.email)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return jsonNoStore({ error: 'Forbidden' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -41,6 +77,10 @@ export async function GET(req: Request) {
           user_name,
           user_phone,
           user_address,
+          user_name_enc,
+          user_email_enc,
+          user_phone_enc,
+          user_address_enc,
           total_amount,
           payment_order_id,
           payment_status
@@ -56,8 +96,7 @@ export async function GET(req: Request) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Failed to fetch book orders:', error.code);
-      return NextResponse.json({ error: '목록 조회 실패' }, { status: 500 });
+      return jsonNoStore({ error: '목록 조회 실패' }, { status: 500 });
     }
 
     const orderIds = (data || []).map((order: any) => order.id).filter(Boolean);
@@ -78,8 +117,7 @@ export async function GET(req: Request) {
         .in('book_order_id', orderIds);
 
       if (itemsError) {
-        console.error('Failed to fetch book order items:', itemsError.code);
-        return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
+        return jsonNoStore({ error: 'Failed to fetch items' }, { status: 500 });
       }
 
       for (const item of orderItems || []) {
@@ -108,8 +146,7 @@ export async function GET(req: Request) {
         .in('id', bookIds);
 
       if (booksError) {
-        console.error('Failed to fetch books for ISBNs:', booksError.code);
-        return NextResponse.json(
+        return jsonNoStore(
           { error: 'Failed to fetch book information' },
           { status: 500 }
         );
@@ -123,17 +160,63 @@ export async function GET(req: Request) {
       );
     }
 
-    const enrichedOrders = (data || []).map((order: any) => ({
-      ...order,
-      book_order_items: (itemsByOrderId[order.id] || []).map((item: any) => ({
-        ...item,
-        isbn: item.book_id ? isbnMap[item.book_id] || '' : '',
-      })),
-    }));
+    const enrichedOrders = (data || []).map((order: any) => {
+      const subscriptionOrder = order.subscription_order;
+      let safeSubscriptionOrder = subscriptionOrder;
 
-    return NextResponse.json({ orders: enrichedOrders });
+      if (subscriptionOrder) {
+        const paymentOrderId = subscriptionOrder.payment_order_id;
+        
+        if (
+          typeof paymentOrderId !== 'string' ||
+          paymentOrderId.trim() === ''
+        ) {
+          throw new Error('Invalid order identifier');
+        }
+
+        safeSubscriptionOrder = {
+          user_email: readOrderPii(
+            subscriptionOrder.user_email_enc,
+            subscriptionOrder.user_email,
+            'user_email',
+            paymentOrderId
+          ),
+          user_name: readOrderPii(
+            subscriptionOrder.user_name_enc,
+            subscriptionOrder.user_name,
+            'user_name',
+            paymentOrderId
+          ),
+          user_phone: readOrderPii(
+            subscriptionOrder.user_phone_enc,
+            subscriptionOrder.user_phone,
+            'user_phone',
+            paymentOrderId
+          ),
+          user_address: readOrderPii(
+            subscriptionOrder.user_address_enc,
+            subscriptionOrder.user_address,
+            'user_address',
+            paymentOrderId
+          ),
+          total_amount: subscriptionOrder.total_amount,
+          payment_order_id: paymentOrderId,
+          payment_status: subscriptionOrder.payment_status,
+        };
+      }
+
+      return {
+        ...order,
+        subscription_order: safeSubscriptionOrder,
+        book_order_items: (itemsByOrderId[order.id] || []).map((item: any) => ({
+          ...item,
+          isbn: item.book_id ? isbnMap[item.book_id] || '' : '',
+        })),
+      };
+    });
+
+    return jsonNoStore({ orders: enrichedOrders });
   } catch (err: any) {
-    console.error('Admin order GET error');
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return jsonNoStore({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
