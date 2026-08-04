@@ -470,7 +470,19 @@ export default function MyPage() {
 
       setGroupParticipations(allGroupActivities);
 
-      const { data: ep } = await supabase.from('event_participants').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+      let ep = null;
+      try {
+        const epRes = await fetch('/api/mypage/event-applications', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: 'no-store'
+        });
+        if (epRes.ok) {
+          const epData = await epRes.json();
+          ep = epData.applications;
+        }
+      } catch (err) {
+        console.error('mypage event applications fetch error:', err);
+      }
 
       const { data: existingEvents } = await supabase.from('events').select('id, title');
       const existingEventIds = new Set((existingEvents || []).map((e: any) => e.id));

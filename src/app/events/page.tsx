@@ -93,9 +93,21 @@ export default function EventsPage() {
   useEffect(() => {
     if (!user) return;
     async function checkApplied() {
-      const { data } = await supabase.from('event_participants').select('event_id').eq('user_id', user.id);
-      if (data) {
-        setAppliedEventIds(new Set(data.map((d: any) => d.event_id)));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      try {
+        const res = await fetch('/api/mypage/event-applications', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: 'no-store'
+        });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.applications) {
+            setAppliedEventIds(new Set(result.applications.map((d: any) => d.event_id)));
+          }
+        }
+      } catch (err) {
+        console.error('event application lookup failed');
       }
     }
     checkApplied();
