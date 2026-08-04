@@ -142,14 +142,11 @@ export async function POST(req: Request) {
     }
 
     // 3. RPC 호출
-    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('place_book_order_v3', {
+    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('place_book_order_v4', {
       p_book_order_id: bookOrderId,
       p_subscription_order_id: subOrderId,
       p_user_id: user.id,
       p_book_ids: bookIds,
-      p_shipping_name: shippingName,
-      p_shipping_phone: shippingPhone,
-      p_shipping_address: shippingAddress,
       p_shipping_name_enc: encryptedShippingName.encryptedValue,
       p_shipping_phone_enc: encryptedShippingPhone.encryptedValue,
       p_shipping_address_enc: encryptedShippingAddress.encryptedValue,
