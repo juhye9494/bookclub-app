@@ -181,11 +181,11 @@ export async function POST(req: Request) {
         let decryptSuccess = true;
 
         try {
-          decName = decryptBookOrderPii('shipping_name', row.id, shipping_name_enc, pii_key_version).trim();
-          decPhone = decryptBookOrderPii('shipping_phone', row.id, shipping_phone_enc, pii_key_version).trim();
-          decAddress = decryptBookOrderPii('shipping_address', row.id, shipping_address_enc, pii_key_version).trim();
+          decName = decryptBookOrderPii('shipping_name', row.id, shipping_name_enc, pii_key_version);
+          decPhone = decryptBookOrderPii('shipping_phone', row.id, shipping_phone_enc, pii_key_version);
+          decAddress = decryptBookOrderPii('shipping_address', row.id, shipping_address_enc, pii_key_version);
 
-          if (!decName || !decPhone || !decAddress) {
+          if (decName.trim().length === 0 || decPhone.trim().length === 0 || decAddress.trim().length === 0) {
             decryptSuccess = false;
           }
         } catch {
