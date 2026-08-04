@@ -158,7 +158,7 @@ export async function PATCH(request: Request) {
       if (typeof body.phone !== 'string' || body.phone.trim() === '') {
         return NextResponse.json({ error: '연락처는 필수이며 비어 있을 수 없습니다.' }, { status: 400 });
       }
-      updates.phone = body.phone;
+      updates.phone = null;
       updates.phone_enc = encryptProfilePii(body.phone, { profileId: user.id, field: 'phone' });
       requiresKeyVersion = true;
     }
@@ -167,7 +167,7 @@ export async function PATCH(request: Request) {
       if (typeof body.address !== 'string') {
         return NextResponse.json({ error: '주소는 문자열이어야 합니다.' }, { status: 400 });
       }
-      updates.address = body.address;
+      updates.address = null;
       if (body.address.trim() === '') {
         updates.address_enc = null;
       } else {
@@ -217,6 +217,12 @@ export async function PATCH(request: Request) {
       if (updatedProfile.pii_key_version !== 1) throw new PiiCryptoError('PII_VERSION_UNSUPPORTED');
       outAddress = decryptProfilePii(updatedProfile.address_enc, { profileId: user.id, field: 'address' });
     }
+
+    if ('phone' in body) outPhone = body.phone;
+    if ('address' in body) outAddress = body.address;
+    
+    if (outPhone === null) outPhone = '';
+    if (outAddress === null) outAddress = '';
 
     return NextResponse.json({
       id: updatedProfile.id,
