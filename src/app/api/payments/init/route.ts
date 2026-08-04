@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { decryptProfilePii } from '@/lib/server/piiCrypto';
+import {
+  encryptOrderPii,
+  createOrderPiiHmac,
+} from '@/lib/server/orderPiiCrypto';
 
 export async function POST(req: Request) {
   try {
@@ -148,6 +152,39 @@ export async function POST(req: Request) {
     // 3. Create PENDING order
     // id (UUID) 필드 생략: DB gen_random_uuid()에 의존
     // status 필드 생략: 운영 DB에 없는 커스텀 필드 제거
+
+    if (process.env.PII_ENCRYPTION_ACTIVE_VERSION !== '1') {
+      return NextResponse.json({ error: '결제 초기화 중 오류가 발생했습니다.' }, { status: 500 });
+    }
+
+    const userNameEnc = encryptOrderPii(finalName, {
+      field: 'user_name',
+      paymentOrderId: orderId,
+    });
+
+    const userEmailEnc = encryptOrderPii(user.email, {
+      field: 'user_email',
+      paymentOrderId: orderId,
+    });
+
+    const userPhoneEnc = encryptOrderPii(finalPhone, {
+      field: 'user_phone',
+      paymentOrderId: orderId,
+    });
+
+    const userAddressEnc = encryptOrderPii(finalAddress, {
+      field: 'user_address',
+      paymentOrderId: orderId,
+    });
+
+    const userNameHmac = createOrderPiiHmac(finalName, {
+      field: 'user_name',
+    });
+
+    const userEmailHmac = createOrderPiiHmac(user.email, {
+      field: 'user_email',
+    });
+
     const { data: createdOrder, error: insertError } = await supabaseAdmin
       .from('orders')
       .insert({
@@ -156,6 +193,13 @@ export async function POST(req: Request) {
         user_name: finalName,
         user_phone: finalPhone,
         user_address: finalAddress,
+        user_name_enc: userNameEnc,
+        user_email_enc: userEmailEnc,
+        user_phone_enc: userPhoneEnc,
+        user_address_enc: userAddressEnc,
+        user_name_hmac: userNameHmac,
+        user_email_hmac: userEmailHmac,
+        pii_key_version: 1,
         is_test: process.env.VERCEL_ENV !== 'production',
         payment_order_id: orderId,
         payment_status: 'PENDING',
