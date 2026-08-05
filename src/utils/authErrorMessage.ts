@@ -21,7 +21,7 @@ export function getAuthErrorMessage(error: unknown): string {
       return "이메일 인증이 완료되지 않았습니다. 인증 메일을 확인해주세요.";
     case 'user_already_exists':
     case 'email_exists':
-      return "이미 가입된 이메일입니다.";
+      return "이미 가입 요청된 이메일입니다. 받은편지함을 확인하거나 인증 메일을 다시 요청해 주세요.";
     case 'weak_password':
       return "비밀번호가 보안 조건을 충족하지 않습니다.";
     case 'same_password':
