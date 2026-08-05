@@ -112,8 +112,7 @@ export async function POST(req: Request) {
     let paymentKey = order.payment_key;
     const secretKey = process.env.TOSS_SECRET_KEY;
     if (!secretKey) {
-      console.error('[CRITICAL] TOSS_SECRET_KEY is not configured.');
-      return NextResponse.json({ error: '결제 취소 키가 설정되지 않았습니다.' }, { status: 500 });
+      return NextResponse.json({ error: '결제 취소 설정을 확인할 수 없습니다.' }, { status: 500 });
     }
     const encryptedSecretKey = Buffer.from(`${secretKey}:`).toString('base64');
 
@@ -180,26 +179,14 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: '결제 취소 상태 확인에 실패했습니다. 고객센터에 문의해주세요.' }, { status: 500 });
         }
       } else {
-        const paymentKeySuffix =
-          typeof paymentKey === 'string' && paymentKey.length >= 6
-            ? paymentKey.slice(-6)
-            : 'N/A';
+        const isLiveKey = secretKey.startsWith('live_');
+        const isTestKey = secretKey.startsWith('test_');
 
-        console.error('[TOSS_CANCEL_ERROR]', {
-          referenceId,
-          internalOrderId: order.id,
-          paymentOrderId: order.payment_order_id,
-          paymentKeySuffix,
-          tossHttpStatus: cancelRes.status,
-          tossErrorCode:
-            typeof cancelData?.code === 'string'
-              ? cancelData.code
-              : 'UNKNOWN',
-          tossErrorMessage:
-            typeof cancelData?.message === 'string'
-              ? cancelData.message
-              : 'UNKNOWN',
-        });
+        if (cancelRes.status === 401) {
+          console.error('toss payment cancellation authentication failed', { isLiveKey, isTestKey });
+        } else {
+          console.error('toss payment cancellation failed', { isLiveKey, isTestKey });
+        }
 
         if (paymentKey) {
           try {
