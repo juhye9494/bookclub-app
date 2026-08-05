@@ -16,7 +16,7 @@ const INSIGHT_POSTS = [
     content: `
       최근 글로벌 시장에서 반도체 섹터의 지수가 연일 급등하며 사상 최고치를 경신했습니다. 엔비디아를 필두로 한 AI 가속기 시장의 독점이 지속되는 한편, 국내 메모리 반도체 리더들의 고대역폭 메모리(HBM) 경쟁도 더욱 뜨거워지고 있습니다.
       <br/><br/>
-      이러한 현상은 단순한 단기 과열일까요, 아니면 새로운 메가 트렌드의 서막일까요? 역사적으로 반도체 사이클은 약 3~4년 주기로 호황과 불황을 반복해 왔습니다. 하지만 이번 AI 혁명은 하드웨어 인프라에 대한 수요의 근본적인 체질 개선을 요구하고 있습니다. 
+      이러한 현상은 단순한 단기 과열일까요, 아니면 새로운 메가 트렌드의 서막일까요? 역사적으로 반도체 사이클은 약 3~4년 주기로 호황과 불황을 반복해 왔습니다. 하지만 이번 AI 혁명은 하드웨어 인프라에 대한 수요의 근본적인 체질 개선을 요구하고 있습니다.
       <br/><br/>
       <strong>■ 핵심 전망 포인트:</strong><br/>
       1. AI 데이터센터 인프라 확장 속도가 2027년까지 가속화될 것입니다.<br/>
@@ -41,8 +41,8 @@ const INSIGHT_POSTS = [
       언더라인 독서클럽의 많은 회원분들이 남겨주신 주옥같은 서평 중, 이번 주 마케터가 꼽은 베스트 리뷰는 아이디 <em>'reading_star'</em> 님의 글입니다.
       <br/><br/>
       <strong>[독자 리뷰 본문 일부]</strong><br/>
-      "하루 30분 책을 읽겠다는 나와의 약속이 벌써 한 달째 지켜지고 있습니다. 정경자 대표의 [정리로 시작하는 인생 리셋]을 읽으며, 물리적인 방의 가구 배치만을 바꾼 것이 아닙니다. 
-      내 컴퓨터 바탕화면의 쓸모없는 파일들, 그리고 머릿속에서 부유하던 해묵은 고민들을 비워내기 시작했습니다. 
+      "하루 30분 책을 읽겠다는 나와의 약속이 벌써 한 달째 지켜지고 있습니다. 정경자 대표의 [정리로 시작하는 인생 리셋]을 읽으며, 물리적인 방의 가구 배치만을 바꾼 것이 아닙니다.
+      내 컴퓨터 바탕화면의 쓸모없는 파일들, 그리고 머릿속에서 부유하던 해묵은 고민들을 비워내기 시작했습니다.
       비우는 법을 알게 되니 역설적으로 채울 수 있는 여유가 생겼고, 내 일상도 한층 가벼워졌습니다. 웰컴 굿즈로 받은 모래시계를 보며 매일 모래가 떨어지는 30분 동안 밑줄을 긋는 시간이 제 하루 중 가장 밀도 높은 행복입니다."
       <br/><br/>
       정리가 물건의 정리가 아니라 내 삶의 우선순위를 정렬하는 작업이라는 깨달음이 마케터에게도 큰 울림을 주었습니다. 여러분은 최근 일상에서 무엇을 비워내고 계시나요? 댓글로 여러분의 정리에 관한 소회를 나누어 주세요!
@@ -64,7 +64,7 @@ const INSIGHT_POSTS = [
       <br/><br/>
       제가 매일 아침 출근 직후 컴퓨터를 켜기 전에 모래시계를 뒤집고 30분 동안 책을 읽기 시작한 지 3년이 되었습니다. 처음 10분은 눈앞의 활자가 잘 읽히지 않고 엉뚱한 업무 생각만 떠올랐습니다. 하지만 모래알이 떨어지는 소리 없는 집중 속에 20분을 넘어서면 어느새 뇌가 고요해지며 저자의 생각에 온전히 동화되는 것을 느낍니다.
       <br/><br/>
-      하루 30분은 전체 하루의 단 2%에 불과합니다. 하지만 이 2%의 시간이 만드는 생각의 근육이 나머지 98%의 삶을 주도적으로 살아가게 하는 에너지가 됩니다. 
+      하루 30분은 전체 하루의 단 2%에 불과합니다. 하지만 이 2%의 시간이 만드는 생각의 근육이 나머지 98%의 삶을 주도적으로 살아가게 하는 에너지가 됩니다.
       <br/><br/>
       한 권의 책을 완벽히 소화하려 부담 가질 필요는 없습니다. 그 속에서 단 한 줄, 내 마음을 울린 밑줄(Underline)을 찾아내고 그것을 가슴에 새기는 것만으로도 충분합니다. 이번 주말, 단 30분만 스마트폰을 끄고 모래시계를 뒤집어 보는 것은 어떨까요?
     `,
@@ -80,8 +80,12 @@ export default function PlusInsightPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
-  const [comments, setComments] = useState<any>({});
-  // Admin email whitelist for comment deletion
+  const [comments, setComments] = useState<any[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [user, setUser] = useState<any>(null);
@@ -141,14 +145,7 @@ export default function PlusInsightPage() {
 
     void loadSessionAndProfile();
 
-    // Load from localStorage if present
-    const savedComments = localStorage.getItem('insight_comments');
-    if (savedComments) {
-      setComments(JSON.parse(savedComments));
-    } else {
-      setComments({});
-      localStorage.setItem('insight_comments', JSON.stringify({}));
-    }
+    // Comments logic removed - will be loaded on demand via API
 
     const savedLikes = localStorage.getItem('insight_likes');
     if (savedLikes) {
@@ -163,7 +160,42 @@ export default function PlusInsightPage() {
     if (savedLiked) {
       setLikedPosts(new Set(JSON.parse(savedLiked)));
     }
+    const fetchInitialCounts = async () => {
+      // If needed, fetch comment counts per post here.
+      // The prompt did not specify fetching counts for all posts ahead of time from DB,
+      // but "댓글 개수 표시" on the list might mean we should keep it or load it.
+      // Actually, since we only fetch on modal open, we can just let it be 0 or use initial data.
+      // We will just use the `commentsCount` from INSIGHT_POSTS / DB or `commentCounts` state.
+    };
   }, []);
+
+  const loadComments = async (postId: string) => {
+    setCommentsLoading(true);
+    setCommentsError(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await fetch(`/api/insight/comments?postId=${postId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setComments(data.comments || []);
+      setCommentCounts(prev => ({ ...prev, [postId]: data.count || 0 }));
+    } catch (err) {
+      setCommentsError(true);
+      setComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedPost) {
+      loadComments(selectedPost.id);
+    }
+  }, [selectedPost]);
 
   const handleLike = (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -188,49 +220,78 @@ export default function PlusInsightPage() {
     }
   };
 
-  const handleAddComment = (postId: string) => {
+  const handleAddComment = async (postId: string) => {
+    if (isSubmitting) return;
     if (!newComment.trim()) {
       alert('댓글 내용을 입력해주세요.');
       return;
     }
-    if (!authorName.trim()) {
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
       alert('로그인이 필요합니다.');
       window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
       return;
     }
 
-    const newCommentObj = {
-      id: Date.now(),
-      author: authorName,
-      user_id: user.id,
-      content: newComment,
-      date: new Date().toISOString().slice(0, 10)
-    };
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/insight/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ postId, content: newComment })
+      });
+      const data = await res.json();
 
-    const postComments = comments[postId] || [];
-    const updatedComments = {
-      ...comments,
-      [postId]: [...postComments, newCommentObj]
-    };
+      if (!res.ok) {
+        if (data.error === '프로필 이름을 먼저 설정해 주세요.') {
+          alert(data.error);
+        } else {
+          alert('댓글 등록에 실패했습니다.');
+        }
+        setIsSubmitting(false);
+        return;
+      }
 
-    setComments(updatedComments);
-    localStorage.setItem('insight_comments', JSON.stringify(updatedComments));
-    setNewComment('');
-    setAuthorName('');
+      setNewComment('');
+      await loadComments(postId);
+    } catch (err) {
+      alert('댓글 등록 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-// Delete comment handler (author or admin can delete)
-const handleDeleteComment = (postId: string, commentId: number) => {
-  const postComments = comments[postId] || [];
-  const updated = {
-    ...comments,
-    [postId]: postComments.filter((c: any) => c.id !== commentId),
+
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    if (!confirm('정말로 이 댓글을 삭제하시겠습니까?')) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    try {
+      const res = await fetch(`/api/insight/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!res.ok) {
+        alert('댓글 삭제 권한이 없거나 실패했습니다.');
+        return;
+      }
+
+      await loadComments(postId);
+    } catch (err) {
+      alert('댓글 삭제 중 오류가 발생했습니다.');
+    }
   };
-  setComments(updated);
-  localStorage.setItem('insight_comments', JSON.stringify(updated));
-};
   return (
     <div style={{ background: 'var(--bg-warm)', minHeight: '100vh', fontFamily: 'var(--sans)', color: 'var(--text)', paddingTop: '64px' }}>
-      
+
       {/* Styles */}
       <style>{`
         .insight-banner {
@@ -305,8 +366,8 @@ const handleDeleteComment = (postId: string, commentId: number) => {
       <div className="insight-grid">
         {posts.map(post => {
           const currentLikes = likes[post.id] || post.likes;
-          const currentCommentsCount = (comments[post.id] || []).length;
-          
+          const currentCommentsCount = commentCounts[post.id] ?? post.commentsCount ?? 0;
+
           return (
             <div key={post.id} className="insight-card" onClick={() => setSelectedPost(post)}>
               <div style={{ aspectRatio: '16/10', overflow: 'hidden', position: 'relative' }}>
@@ -315,7 +376,7 @@ const handleDeleteComment = (postId: string, commentId: number) => {
                   <span className="insight-day-badge">{post.day} 발행</span>
                 </div>
               </div>
-              
+
               <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -345,12 +406,12 @@ const handleDeleteComment = (postId: string, commentId: number) => {
       {/* Pagination */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginBottom: '80px' }}>
-          <button 
-            disabled={currentPage === 1} 
+          <button
+            disabled={currentPage === 1}
             onClick={() => {
               setCurrentPage(currentPage - 1);
               window.scrollTo({ top: 0, behavior: 'smooth' });
-            }} 
+            }}
             style={{ background: 'transparent', border: 'none', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text)', fontSize: '0.9rem' }}
           >
             ‹ 이전
@@ -358,24 +419,24 @@ const handleDeleteComment = (postId: string, commentId: number) => {
           {[...Array(totalPages)].map((_, idx) => {
             const page = idx + 1;
             return (
-              <button 
-                key={page} 
+              <button
+                key={page}
                 onClick={() => {
                   setCurrentPage(page);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                }} 
+                }}
                 style={{ background: currentPage === page ? 'var(--accent)' : 'transparent', color: currentPage === page ? '#fff' : 'var(--text)', border: 'none', borderRadius: '4px', padding: '4px 12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: currentPage === page ? 700 : 400 }}
               >
                 {page}
               </button>
             );
           })}
-          <button 
-            disabled={currentPage === totalPages} 
+          <button
+            disabled={currentPage === totalPages}
             onClick={() => {
               setCurrentPage(currentPage + 1);
               window.scrollTo({ top: 0, behavior: 'smooth' });
-            }} 
+            }}
             style={{ background: 'transparent', border: 'none', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text)', fontSize: '0.9rem' }}
           >
             다음 ›
@@ -385,26 +446,26 @@ const handleDeleteComment = (postId: string, commentId: number) => {
 
       {/* Detail Post Overlay Modal */}
       {selectedPost && (
-        <div 
+        <div
           className="modal-overlay open"
           style={{ zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelectedPost(null); }}
         >
-          <div 
-            style={{ 
-              background: '#ffffff', 
-              borderRadius: '24px', 
-              width: 'min(780px, 95vw)', 
-              maxHeight: '90vh', 
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              width: 'min(780px, 95vw)',
+              maxHeight: '90vh',
               display: 'flex',
               flexDirection: 'column',
-              overflow: 'hidden', 
+              overflow: 'hidden',
               position: 'relative',
               boxShadow: '0 20px 60px rgba(0,0,0,0.18)'
             }}
           >
             {/* Close Button */}
-            <button 
+            <button
               onClick={() => setSelectedPost(null)}
               style={{ position: 'absolute', top: '16px', right: '20px', background: 'rgba(255,255,255,0.9)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
             >
@@ -429,21 +490,21 @@ const handleDeleteComment = (postId: string, commentId: number) => {
               </div>
 
               {/* Main Content text */}
-              <div 
+              <div
                 style={{ fontSize: '0.96rem', lineHeight: '1.85', color: 'var(--text-mid)', wordBreak: 'break-all' }}
                 dangerouslySetInnerHTML={{ __html: selectedPost.content }}
               />
 
               {/* Like bar */}
               <div style={{ display: 'flex', justifyContent: 'center', margin: '32px 0 16px' }}>
-                <button 
+                <button
                   onClick={(e) => handleLike(selectedPost.id, e)}
-                  style={{ 
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 30px', 
-                    background: likedPosts.has(selectedPost.id) ? 'var(--accent)' : 'var(--accent-light)', 
-                    border: '1.5px solid var(--accent)', 
-                    color: likedPosts.has(selectedPost.id) ? '#fff' : 'var(--accent)', 
-                    borderRadius: '40px', fontWeight: 600, fontSize: '0.92rem', cursor: 'pointer', transition: 'all 0.2s' 
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 30px',
+                    background: likedPosts.has(selectedPost.id) ? 'var(--accent)' : 'var(--accent-light)',
+                    border: '1.5px solid var(--accent)',
+                    color: likedPosts.has(selectedPost.id) ? '#fff' : 'var(--accent)',
+                    borderRadius: '40px', fontWeight: 600, fontSize: '0.92rem', cursor: 'pointer', transition: 'all 0.2s'
                   }}
                 >
                   {likedPosts.has(selectedPost.id) ? '❤️ 좋아요를 눌렀어요!' : '🩶 유익한 글이에요!'} ({likes[selectedPost.id] || selectedPost.likes})
@@ -453,47 +514,59 @@ const handleDeleteComment = (postId: string, commentId: number) => {
               {/* Comments Section */}
               <div style={{ marginTop: '40px', borderTop: '2px solid var(--text)' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginTop: '24px', marginBottom: '16px' }}>
-                  독자 댓글 ({(comments[selectedPost.id] || []).length}개)
+                  독자 댓글 ({commentCounts[selectedPost.id] ?? 0}개)
                 </h3>
 
                 {/* Comment list */}
                 <div>
-                  {(comments[selectedPost.id] || []).map((c: any) => (
-                    <div key={c.id} className="comment-row" style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
-                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>{c.author}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>{c.date}</span>
-                          {(c.user_id === user?.id || isAdmin(user?.email)) && (
-                            <button onClick={() => handleDeleteComment(selectedPost.id, c.id)}
-                              style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>
-                              삭제
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <p style={{ fontSize: '0.88rem', color: 'var(--text-mid)', margin: '4px 0 0 0' }}>{c.content}</p>
-                    </div>
-                  ))}
-                  {(comments[selectedPost.id] || []).length === 0 && (
+                  {commentsLoading ? (
                     <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px 0', fontSize: '0.88rem' }}>
-                      아직 등록된 댓글이 없습니다.
+                      댓글 불러오는 중...
                     </p>
+                  ) : commentsError ? (
+                    <p style={{ textAlign: 'center', color: '#e74c3c', padding: '24px 0', fontSize: '0.88rem' }}>
+                      댓글 조회에 실패했습니다.
+                    </p>
+                  ) : (
+                    <>
+                      {comments.map((c: any) => (
+                        <div key={c.id} className="comment-row" style={{ display: 'flex', flexDirection: 'column', marginBottom: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--text)' }}>{c.author_name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ color: 'var(--text-muted)' }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                              {c.can_delete && (
+                                <button onClick={() => handleDeleteComment(selectedPost.id, c.id)}
+                                  style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                  삭제
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <p style={{ fontSize: '0.88rem', color: 'var(--text-mid)', margin: '4px 0 0 0' }}>{c.content}</p>
+                        </div>
+                      ))}
+                      {comments.length === 0 && (
+                        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px 0', fontSize: '0.88rem' }}>
+                          아직 등록된 댓글이 없습니다.
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
                 {/* Comment Input */}
                 <div className="comment-input-area" style={{ overflow: 'hidden' }}>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input 
-                      type="text" 
-                      placeholder="따뜻한 한마디를 남겨주세요." 
+                    <input
+                      type="text"
+                      placeholder="따뜻한 한마디를 남겨주세요."
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
                       style={{ flex: 1, minWidth: 0, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '10px', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' }}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment(selectedPost.id); }}
                     />
-                    <button 
+                    <button
                       onClick={() => handleAddComment(selectedPost.id)}
                       style={{ padding: '10px 20px', background: 'var(--text)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                     >
