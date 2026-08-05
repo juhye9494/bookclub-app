@@ -319,7 +319,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
             <input type="password" placeholder="비밀번호를 입력하세요" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           {!isLoginMode && (
-            <>\
+            <>
               <div className="form-field">
                 <label>이름</label>
                 <input type="text" placeholder="홍길동" value={name} onChange={(e) => setName(e.target.value)} />
