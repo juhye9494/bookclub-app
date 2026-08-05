@@ -41,12 +41,39 @@ export async function GET(req: Request) {
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
+    const authEmailById = new Map<string, string>();
+    const perPage = 1000;
+    let page = 1;
+
+    while (true) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+
+      if (error) {
+        console.error('admin profile lookup failed');
+        return NextResponse.json({ error: '회원정보를 불러오지 못했습니다.' }, { status: 500 });
+      }
+
+      for (const authUser of data.users) {
+        authEmailById.set(authUser.id, authUser.email ?? '');
+      }
+
+      if (data.users.length < perPage) {
+        break;
+      }
+
+      page += 1;
+    }
+
     const { data: rows, error: dbError } = await supabaseAdmin
       .from('profiles')
-      .select('id, name, email, phone, address, created_at, has_paid, phone_enc, address_enc, pii_key_version')
+      .select('id, name, phone, address, created_at, has_paid, phone_enc, address_enc, pii_key_version')
       .order('created_at', { ascending: false });
 
     if (dbError) {
+      console.error('admin profile lookup failed');
       return NextResponse.json({ error: '회원정보를 불러오지 못했습니다.' }, { status: 500 });
     }
 
@@ -70,6 +97,7 @@ export async function GET(req: Request) {
           });
         }
       } catch (err) {
+        console.error('admin profile lookup failed');
         if (err instanceof PiiCryptoError) {
           return NextResponse.json({ error: '회원정보를 안전하게 불러오지 못했습니다.' }, { status: 500 });
         }
@@ -79,7 +107,7 @@ export async function GET(req: Request) {
       profiles.push({
         id: row.id,
         name: row.name,
-        email: row.email,
+        email: authEmailById.get(row.id) ?? '',
         phone: finalPhone,
         address: finalAddress,
         has_paid: row.has_paid,
@@ -96,6 +124,7 @@ export async function GET(req: Request) {
       }
     );
   } catch (err) {
+    console.error('admin profile lookup failed');
     return NextResponse.json({ error: '회원정보를 불러오지 못했습니다.' }, { status: 500 });
   }
 }
