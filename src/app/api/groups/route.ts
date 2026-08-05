@@ -51,32 +51,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Intro must be a string under 2000 characters' }, { status: 400 });
     }
 
-    // Server-side profile name fetch (조회 에러와 Null 필드 분리)
+    // Server-side profile name fetch
     const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('name').eq('id', user.id).maybeSingle();
     
     if (profileError) {
-      console.error('Failed to fetch profile:', profileError);
+      console.error('group operation failed');
       return NextResponse.json({ error: 'Failed to create group' }, { status: 500 });
     }
     
-    const leaderName = profile?.name || user.email || 'Leader';
+    const leaderName = profile?.name?.trim();
+    if (!leaderName || leaderName.length === 0 || leaderName.length > 100) {
+      return NextResponse.json({ error: '프로필 이름을 먼저 설정해 주세요.' }, { status: 400 });
+    }
+
     const groupId = `group-${crypto.randomUUID()}`;
 
-    const { data, error: rpcError } = await supabaseAdmin.rpc('create_group_secure', {
+    const { data, error: rpcError } = await supabaseAdmin.rpc('create_group_secure_v2', {
       p_id: groupId, p_title: p_title.trim(), p_desc: p_desc || '', p_book: p_book || '',
-      p_creator_id: user.id, p_creator_email: user.email || '', p_creator_name: leaderName,
+      p_creator_id: user.id, p_creator_name: leaderName,
       p_max_members: maxMembers, p_tags: Array.isArray(p_tags) ? p_tags : [],
       p_perks: Array.isArray(p_perks) ? p_perks : ['커피값 지원 신청가능'],
       p_place: p_place || null, p_time: p_time || null, p_intro: p_intro || null
     });
 
     if (rpcError) {
-      console.error('create_group_secure error:', rpcError);
+      console.error('group operation failed');
       return NextResponse.json({ error: 'Failed to create group' }, { status: 500 });
     }
 
     if (!data || data.success !== true) {
-      console.error('create_group_secure returned failure:', data);
+      console.error('group operation failed');
       return NextResponse.json({ error: 'Failed to create group' }, { status: 500 });
     }
 
@@ -86,7 +90,7 @@ export async function POST(req: Request) {
     if (error.message === 'AUTH_UNAUTHORIZED') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('POST /api/groups error:', error);
+    console.error('group operation failed');
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

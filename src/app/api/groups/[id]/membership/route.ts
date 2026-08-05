@@ -13,19 +13,12 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       return getMemberAccessErrorResponse(accessInfo);
     }
 
-    const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('name').eq('id', user.id).maybeSingle();
-    if (profileError) {
-      console.error('Failed to fetch profile:', profileError);
-      return NextResponse.json({ error: 'Failed to join group' }, { status: 500 });
-    }
-    const user_name = profile?.name || user.email || 'Member';
-
-    const { data, error: rpcError } = await supabaseAdmin.rpc('join_group_atomic', {
-      p_group_id: id, p_user_id: user.id, p_user_email: user.email || '', p_user_name: user_name
+    const { data, error: rpcError } = await supabaseAdmin.rpc('join_group_atomic_v2', {
+      p_group_id: id, p_user_id: user.id
     });
 
     if (rpcError) {
-      console.error('join_group_atomic error:', rpcError);
+      console.error('group operation failed');
       return NextResponse.json({ error: 'Failed to join group' }, { status: 500 });
     }
     if (data && data.success === false) {
@@ -42,7 +35,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     if (error.message === 'AUTH_UNAUTHORIZED') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('POST membership error:', error);
+    console.error('group operation failed');
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -57,7 +50,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     });
 
     if (rpcError) {
-      console.error('leave_group_atomic error:', rpcError);
+      console.error('group operation failed');
       return NextResponse.json({ error: 'Failed to cancel membership' }, { status: 500 });
     }
     if (data && data.success === false) {
@@ -72,7 +65,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     if (error.message === 'AUTH_UNAUTHORIZED') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('DELETE membership error:', error);
+    console.error('group operation failed');
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
