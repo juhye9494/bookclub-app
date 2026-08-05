@@ -6,6 +6,7 @@ create or replace function public.create_group_secure_v2(
   p_desc text,
   p_book text,
   p_creator_id uuid,
+  p_creator_name text,
   p_max_members integer,
   p_tags text[],
   p_perks text[],
@@ -33,7 +34,7 @@ begin
     place, time, intro,
     creator_id, status
   ) values (
-    p_id, p_title, p_desc, p_book, null,
+    p_id, p_title, p_desc, p_book, p_creator_name,
     p_max_members, 1, p_tags, p_perks,
     p_place, p_time, p_intro,
     p_creator_id, '모집중'
@@ -46,7 +47,7 @@ begin
     p_id, p_creator_id, null, null, 'leader', p_title
   );
 
-  return json_build_object('success', true);
+  return pg_catalog.json_build_object('success', true);
 end;
 $$;
 
@@ -56,6 +57,7 @@ revoke all on function public.create_group_secure_v2(
   text,
   text,
   uuid,
+  text,
   integer,
   text[],
   text[],
@@ -70,6 +72,7 @@ revoke all on function public.create_group_secure_v2(
   text,
   text,
   uuid,
+  text,
   integer,
   text[],
   text[],
@@ -84,6 +87,7 @@ revoke all on function public.create_group_secure_v2(
   text,
   text,
   uuid,
+  text,
   integer,
   text[],
   text[],
@@ -98,6 +102,7 @@ grant execute on function public.create_group_secure_v2(
   text,
   text,
   uuid,
+  text,
   integer,
   text[],
   text[],
@@ -129,27 +134,27 @@ begin
   end if;
 
   select * into v_group from public.groups where id = p_group_id for update;
-  if not found then return json_build_object('success', false, 'code', 'GROUP_NOT_FOUND'); end if;
+  if not found then return pg_catalog.json_build_object('success', false, 'code', 'GROUP_NOT_FOUND'); end if;
   
   -- 방장 여부 확인 (작성자 ID이거나 이미 leader 역할인 경우)
   select exists(select 1 from public.group_participants where group_id = p_group_id and user_id = p_user_id and role = 'leader') into v_is_leader;
   if v_group.creator_id = p_user_id or v_is_leader then
-    return json_build_object('success', false, 'code', 'CREATOR_CANNOT_JOIN');
+    return pg_catalog.json_build_object('success', false, 'code', 'CREATOR_CANNOT_JOIN');
   end if;
 
   if v_group.status = '모집마감' or v_group."membersCount" >= v_group."maxMembers" then
-    return json_build_object('success', false, 'code', 'GROUP_CLOSED');
+    return pg_catalog.json_build_object('success', false, 'code', 'GROUP_CLOSED');
   end if;
 
   select exists(select 1 from public.group_participants where group_id = p_group_id and user_id = p_user_id and role = 'member') into v_exists;
-  if v_exists then return json_build_object('success', false, 'code', 'ALREADY_JOINED'); end if;
+  if v_exists then return pg_catalog.json_build_object('success', false, 'code', 'ALREADY_JOINED'); end if;
 
   insert into public.group_participants (group_id, user_id, user_email, user_name, role, group_title)
   values (p_group_id, p_user_id, null, null, 'member', v_group.title);
 
   update public.groups set "membersCount" = (select count(*) from public.group_participants where group_id = p_group_id) where id = p_group_id;
 
-  return json_build_object('success', true);
+  return pg_catalog.json_build_object('success', true);
 end;
 $$;
 
