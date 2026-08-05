@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAuthenticatedUser } from '@/lib/server/auth';
 import { checkMemberAccess, getMemberAccessErrorResponse } from '@/lib/server/memberAccess';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { encryptEventParticipantPii } from '@/lib/server/eventParticipantPiiCrypto';
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -15,34 +16,73 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 
     const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('name').eq('id', user.id).maybeSingle();
     if (profileError) {
-      console.error('Failed to fetch profile:', profileError);
-      return NextResponse.json({ error: 'Failed to apply for event' }, { status: 500 });
+      console.error('event application failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
     }
-    const user_name = profile?.name || user.email || 'Member';
+    const profileName = profile?.name || user.email || 'Member';
 
-    const { data, error: rpcError } = await supabaseAdmin.rpc('apply_event_atomic', {
-      p_event_id: id, p_user_id: user.id, p_user_email: user.email || '', p_user_name: user_name
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i;
+    if (!uuidRegex.test(id) || !uuidRegex.test(user.id)) {
+      console.error('event application failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    }
+    if (!user.email || user.email.length === 0 || user.email.length > 320) {
+      console.error('event application failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    }
+    if (!profileName || profileName.length === 0 || profileName.length > 100) {
+      console.error('event application failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    }
+
+    let encryptedName;
+    let encryptedEmail;
+    try {
+      encryptedName = encryptEventParticipantPii('user_name', id, user.id, profileName);
+      encryptedEmail = encryptEventParticipantPii('user_email', id, user.id, user.email);
+    } catch (err) {
+      console.error('event application failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    }
+
+    const keyVersion = encryptedName.keyVersion;
+    if (
+      !Number.isInteger(keyVersion) || keyVersion <= 0 ||
+      encryptedEmail.keyVersion !== keyVersion
+    ) {
+      console.error('event application failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    }
+
+    const { data, error: rpcError } = await supabaseAdmin.rpc('apply_event_atomic_v2', {
+      p_event_id: id,
+      p_user_id: user.id,
+      p_user_email: user.email,
+      p_user_name: profileName,
+      p_user_name_enc: encryptedName.encryptedValue,
+      p_user_email_enc: encryptedEmail.encryptedValue,
+      p_pii_key_version: keyVersion,
     });
 
     if (rpcError) {
-      console.error('apply_event_atomic error:', rpcError);
-      return NextResponse.json({ error: 'Failed to apply for event' }, { status: 500 });
+      console.error('event application failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
     }
     if (data && data.success === false) {
       const code = data.code;
       let status = 400;
       if (code === 'EVENT_NOT_FOUND') status = 404;
       else if (code === 'ALREADY_APPLIED') status = 409;
-      return NextResponse.json({ error: code }, { status });
+      return NextResponse.json({ error: code }, { status, headers: { 'Cache-Control': 'no-store' } });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error: any) {
     if (error.message === 'AUTH_UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'Cache-Control': 'no-store' } });
     }
-    console.error('POST application error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('event application failed');
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
   }
 }
 
