@@ -21,15 +21,15 @@ export function getAuthErrorMessage(error: unknown): string {
       return "이메일 인증이 완료되지 않았습니다. 인증 메일을 확인해주세요.";
     case 'user_already_exists':
     case 'email_exists':
-      return "이미 가입된 이메일입니다. 로그인해주세요.";
+      return "이미 가입된 이메일입니다.";
     case 'weak_password':
       return "비밀번호가 보안 조건을 충족하지 않습니다.";
     case 'same_password':
       return "기존 비밀번호와 다른 비밀번호를 입력해주세요.";
     case 'otp_expired':
-      return "인증번호 또는 인증 링크가 만료되었습니다. 다시 요청해주세요.";
+      return "인증 링크가 만료되었습니다. 인증 메일을 다시 요청해 주세요.";
     case 'over_email_send_rate_limit':
-      return "인증 메일 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
+      return "인증 메일 발송이 잠시 제한되었습니다. 잠시 후 다시 시도해 주세요.";
     case 'over_request_rate_limit':
       return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
     case 'signup_disabled':
@@ -54,7 +54,7 @@ export function getAuthErrorMessage(error: unknown): string {
       return "요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.";
     case 'unexpected_failure':
     case 'conflict':
-      return "일시적인 인증 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+      return "회원가입 처리에 실패했습니다. 브라우저를 닫지 말고 다시 시도해 주세요.";
     case 'captcha_failed':
       return "보안 인증에 실패했습니다. 다시 시도해주세요.";
     case 'flow_state_expired':

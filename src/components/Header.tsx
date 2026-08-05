@@ -110,6 +110,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
         email,
         password,
         options: {
+          emailRedirectTo: window.location.origin + '/auth/confirm',
           data: {
             profile_setup_token: profileSetupToken
           }
