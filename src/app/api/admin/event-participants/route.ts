@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/utils/admin';
 import { decryptProfilePii } from '@/lib/server/piiCrypto';
+import { decryptEventParticipantPii } from '@/lib/server/eventParticipantPiiCrypto';
 
 export async function GET(request: Request) {
   try {
@@ -27,11 +28,11 @@ export async function GET(request: Request) {
 
     const { data: participants, error: participantsError } = await supabaseAdmin
       .from('event_participants')
-      .select('event_id, event_title, user_id, user_name, user_email, created_at')
+      .select('event_id, user_id, event_title, user_name, user_email, user_name_enc, user_email_enc, pii_key_version, created_at')
       .order('created_at', { ascending: false });
 
     if (participantsError) {
-      return NextResponse.json({ error: 'Failed to fetch participants' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+      return NextResponse.json({ error: '이벤트 신청자 정보를 불러오지 못했습니다.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
     }
 
     const userIds = Array.from(
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
         .in('id', userIds);
 
       if (profilesError) {
-        return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+        return NextResponse.json({ error: '이벤트 신청자 정보를 불러오지 못했습니다.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
       }
 
       if (profilesData) {
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
 
           if (p.phone_enc) {
             if (p.pii_key_version !== 1) {
-              return NextResponse.json({ error: 'Failed to decrypt profile' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+              return NextResponse.json({ error: '이벤트 신청자 정보를 불러오지 못했습니다.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
             }
             try {
               finalPhone = await decryptProfilePii(p.phone_enc, {
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
                 field: 'phone'
               });
             } catch {
-              return NextResponse.json({ error: 'Failed to decrypt profile' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+              return NextResponse.json({ error: '이벤트 신청자 정보를 불러오지 못했습니다.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
             }
           }
           phoneMap[p.id] = finalPhone;
@@ -75,14 +76,54 @@ export async function GET(request: Request) {
       }
     }
 
-    const enrichedParticipants = (participants || []).map((p: any) => ({
-      event_id: p.event_id,
-      event_title: p.event_title,
-      user_name: p.user_name,
-      user_email: p.user_email,
-      user_phone: p.user_id ? phoneMap[p.user_id] || '' : '',
-      created_at: p.created_at
-    }));
+    let enrichedParticipants: any[] = [];
+    for (const p of participants || []) {
+      let resolvedUserName = '';
+      let resolvedUserEmail = '';
+
+      const hasEncName = typeof p.user_name_enc === 'string' && p.user_name_enc.length > 0;
+      const hasEncEmail = typeof p.user_email_enc === 'string' && p.user_email_enc.length > 0;
+      const isValidVersion = typeof p.pii_key_version === 'number' && p.pii_key_version > 0;
+
+      if (hasEncName && hasEncEmail && isValidVersion) {
+        try {
+          resolvedUserName = decryptEventParticipantPii(
+            'user_name',
+            p.event_id,
+            p.user_id,
+            p.user_name_enc,
+            p.pii_key_version
+          );
+          resolvedUserEmail = decryptEventParticipantPii(
+            'user_email',
+            p.event_id,
+            p.user_id,
+            p.user_email_enc,
+            p.pii_key_version
+          );
+        } catch {
+          return NextResponse.json({ error: '이벤트 신청자 정보를 불러오지 못했습니다.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+        }
+      } else if (!p.user_name_enc && !p.user_email_enc && (p.pii_key_version === null || p.pii_key_version === undefined)) {
+        if (typeof p.user_name === 'string' && p.user_name.length > 0 && typeof p.user_email === 'string' && p.user_email.length > 0) {
+          resolvedUserName = p.user_name;
+          resolvedUserEmail = p.user_email;
+        } else {
+          return NextResponse.json({ error: '이벤트 신청자 정보를 불러오지 못했습니다.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+        }
+      } else {
+        return NextResponse.json({ error: '이벤트 신청자 정보를 불러오지 못했습니다.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+      }
+
+      enrichedParticipants.push({
+        event_id: p.event_id,
+        event_title: p.event_title,
+        user_name: resolvedUserName,
+        user_email: resolvedUserEmail,
+        user_phone: p.user_id ? phoneMap[p.user_id] || '' : '',
+        created_at: p.created_at
+      });
+    }
 
     return NextResponse.json(
       { data: enrichedParticipants },
@@ -93,6 +134,6 @@ export async function GET(request: Request) {
       }
     );
   } catch {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ error: '이벤트 신청자 정보를 불러오지 못했습니다.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
   }
 }
