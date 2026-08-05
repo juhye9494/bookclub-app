@@ -61,7 +61,7 @@ export async function GET(request: Request) {
 
     const { data: profile, error: dbError } = await supabase
       .from('profiles')
-      .select('id, email, name, phone, address, phone_enc, address_enc, pii_key_version, has_paid, created_at')
+      .select('id, name, phone, address, phone_enc, address_enc, pii_key_version, has_paid, created_at')
       .eq('id', user.id)
       .single();
 
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       id: profile.id,
-      email: profile.email,
+      email: user.email ?? '',
       name: profile.name,
       phone,
       address,
@@ -184,7 +184,7 @@ export async function PATCH(request: Request) {
       .from('profiles')
       .update(updates)
       .eq('id', user.id)
-      .select('id, email, name, phone, address, phone_enc, address_enc, pii_key_version, has_paid, created_at')
+      .select('id, name, phone, address, phone_enc, address_enc, pii_key_version, has_paid, created_at')
       .single();
 
     if (dbError) {
@@ -226,7 +226,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({
       id: updatedProfile.id,
-      email: updatedProfile.email,
+      email: user.email ?? '',
       name: updatedProfile.name,
       phone: outPhone,
       address: outAddress,

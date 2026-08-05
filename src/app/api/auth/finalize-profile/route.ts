@@ -76,7 +76,6 @@ export async function POST(request: Request) {
       .from('profiles')
       .upsert({
         id: authData.user.id,
-        email: authData.user.email,
         name: trimmedName,
         phone: null,
         phone_enc: phoneEnc,
