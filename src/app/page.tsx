@@ -67,9 +67,9 @@ export default function Home() {
         const cycle = cycles[0];
         setCycleLabel(cycle.label);
         setActiveCycle(cycle);
-        const { data: bData } = await supabase.from('books').select('*').eq('cycle_id', cycle.id);
+        const { data: bData } = await supabase.from('books').select('*').eq('cycle_id', cycle.id).order('order_idx', { ascending: true }).order('created_at', { ascending: true });
         if (bData) {
-          const sortedBooks = [...bData].sort((a, b) => (a.order_idx || 0) - (b.order_idx || 0)).slice(0, 25);
+          const sortedBooks = [...bData].slice(0, 25);
           const formatted = sortedBooks.map((b: any, i: number) => {
             const colors = [
               { bg: '#3b4b72', bgDark: '#121931' }, // CES 2026 (블루)
