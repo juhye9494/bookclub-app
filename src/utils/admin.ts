@@ -11,6 +11,6 @@ export const ADMIN_EMAILS = [
 ];
 
 export function isAdmin(email: string | undefined | null): boolean {
-  if (!email) return false;
-  return ADMIN_EMAILS.includes(email);
+  if (!email || email.trim() === '') return false;
+  return ADMIN_EMAILS.includes(email.trim().toLowerCase());
 }
