@@ -162,6 +162,29 @@ export default function PlusInsightPage() {
     }
   }, []);
 
+  const loadCommentCounts = async () => {
+    const postIds = INSIGHT_POSTS.map((post) => post.id);
+    try {
+      const response = await fetch(
+        `/api/insight/comments/counts?postIds=${encodeURIComponent(postIds.join(','))}`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) {
+        throw new Error('COMMENT_COUNT_LOOKUP_FAILED');
+      }
+      const data = await response.json();
+      if (data.counts) {
+        setCommentCounts(prev => ({ ...prev, ...data.counts }));
+      }
+    } catch (err) {
+      console.error('Failed to load initial comment counts');
+    }
+  };
+
+  useEffect(() => {
+    loadCommentCounts();
+  }, []);
+
   const loadComments = async (postId: string) => {
     setComments([]);
     setCommentsLoading(true);
@@ -357,7 +380,7 @@ export default function PlusInsightPage() {
       <div className="insight-grid">
         {posts.map(post => {
           const currentLikes = likes[post.id] || post.likes;
-          const currentCommentsCount = commentCounts[post.id] ?? post.commentsCount ?? 0;
+          const currentCommentsCount = commentCounts[post.id] ?? 0;
 
           return (
             <div key={post.id} className="insight-card" onClick={() => setSelectedPost(post)}>
