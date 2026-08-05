@@ -141,28 +141,13 @@ export default function PlusInsightPage() {
 
     void loadSessionAndProfile();
 
-    // Initial seeds for comments
-    const initialComments: any = {
-      'insight-1': [
-        { id: 1, author: '김철수', content: '반도체 리츠 도서랑 같이 보니까 이해가 더 잘 되더라고요.', date: '2026-06-01' },
-        { id: 2, author: '이영희', content: '엔비디아 주가 보면서 에디터님 글 읽으니 진짜 소름 돋네요.', date: '2026-06-01' }
-      ],
-      'insight-2': [
-        { id: 1, author: '박지성', content: '저도 이 서평 보고 자극받아 독서노트 쓰기 시작했습니다!', date: '2026-05-28' }
-      ],
-      'insight-3': [
-        { id: 1, author: '홍길동', content: '모래시계 진짜 최고의 굿즈입니다. 집중이 잘 돼요.', date: '2026-05-29' },
-        { id: 2, author: '최지우', content: '2%의 법칙, 가슴에 깊이 새깁니다.', date: '2026-05-30' }
-      ]
-    };
-    
     // Load from localStorage if present
     const savedComments = localStorage.getItem('insight_comments');
     if (savedComments) {
       setComments(JSON.parse(savedComments));
     } else {
-      setComments(initialComments);
-      localStorage.setItem('insight_comments', JSON.stringify(initialComments));
+      setComments({});
+      localStorage.setItem('insight_comments', JSON.stringify({}));
     }
 
     const savedLikes = localStorage.getItem('insight_likes');
@@ -492,7 +477,7 @@ const handleDeleteComment = (postId: string, commentId: number) => {
                   ))}
                   {(comments[selectedPost.id] || []).length === 0 && (
                     <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px 0', fontSize: '0.88rem' }}>
-                      첫 번째 댓글을 작성해 보세요!
+                      아직 등록된 댓글이 없습니다.
                     </p>
                   )}
                 </div>
