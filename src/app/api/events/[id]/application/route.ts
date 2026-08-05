@@ -22,7 +22,11 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     const profileName = profile?.name || user.email || 'Member';
 
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i;
-    if (!uuidRegex.test(id) || !uuidRegex.test(user.id)) {
+    if (!uuidRegex.test(user.id)) {
+      console.error('event application failed');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+    }
+    if (typeof id !== 'string' || id.trim() === '' || id.length > 200 || /[:\x00-\x1F\x7F]/.test(id)) {
       console.error('event application failed');
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
     }

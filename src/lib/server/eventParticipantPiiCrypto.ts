@@ -104,12 +104,15 @@ function assertEventParticipantPiiContext(context: EventParticipantPiiContext): 
   if (typeof context.eventId !== 'string' || context.eventId.trim() === '') {
     throw new EventParticipantPiiCryptoError('INPUT_INVALID');
   }
+  if (context.eventId.length > 200 || /[:\x00-\x1F\x7F]/.test(context.eventId)) {
+    throw new EventParticipantPiiCryptoError('INPUT_INVALID');
+  }
   if (typeof context.userId !== 'string' || context.userId.trim() === '') {
     throw new EventParticipantPiiCryptoError('INPUT_INVALID');
   }
-  // Simple UUID validation
+  // Simple UUID validation for userId
   const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i;
-  if (!uuidRegex.test(context.eventId) || !uuidRegex.test(context.userId)) {
+  if (!uuidRegex.test(context.userId)) {
     throw new EventParticipantPiiCryptoError('INPUT_INVALID');
   }
 }
