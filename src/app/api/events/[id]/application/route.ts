@@ -58,11 +58,9 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
     }
 
-    const { data, error: rpcError } = await supabaseAdmin.rpc('apply_event_atomic_v2', {
+    const { data, error: rpcError } = await supabaseAdmin.rpc('apply_event_atomic_v3', {
       p_event_id: id,
       p_user_id: user.id,
-      p_user_email: user.email,
-      p_user_name: profileName,
       p_user_name_enc: encryptedName.encryptedValue,
       p_user_email_enc: encryptedEmail.encryptedValue,
       p_pii_key_version: keyVersion,
