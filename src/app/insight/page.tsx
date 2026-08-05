@@ -160,16 +160,10 @@ export default function PlusInsightPage() {
     if (savedLiked) {
       setLikedPosts(new Set(JSON.parse(savedLiked)));
     }
-    const fetchInitialCounts = async () => {
-      // If needed, fetch comment counts per post here.
-      // The prompt did not specify fetching counts for all posts ahead of time from DB,
-      // but "댓글 개수 표시" on the list might mean we should keep it or load it.
-      // Actually, since we only fetch on modal open, we can just let it be 0 or use initial data.
-      // We will just use the `commentsCount` from INSIGHT_POSTS / DB or `commentCounts` state.
-    };
   }, []);
 
   const loadComments = async (postId: string) => {
+    setComments([]);
     setCommentsLoading(true);
     setCommentsError(false);
     try {
@@ -192,15 +186,13 @@ export default function PlusInsightPage() {
   };
 
   useEffect(() => {
-    if (selectedPost) {
-      loadComments(selectedPost.id);
-    }
-  }, [selectedPost]);
+    if (!selectedPost?.id) return;
+    loadComments(selectedPost.id);
+  }, [selectedPost?.id]);
 
   const handleLike = (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (likedPosts.has(postId)) {
-      // 이미 좋아요 누른 게시물 → 취소
       const updated = { ...likes, [postId]: Math.max((likes[postId] || 1) - 1, 0) };
       setLikes(updated);
       localStorage.setItem('insight_likes', JSON.stringify(updated));
@@ -209,7 +201,6 @@ export default function PlusInsightPage() {
       setLikedPosts(newLiked);
       localStorage.setItem('insight_liked_posts', JSON.stringify(Array.from(newLiked)));
     } else {
-      // 좋아요
       const updated = { ...likes, [postId]: (likes[postId] || 0) + 1 };
       setLikes(updated);
       localStorage.setItem('insight_likes', JSON.stringify(updated));
@@ -246,8 +237,8 @@ export default function PlusInsightPage() {
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        if (data.error === '프로필 이름을 먼저 설정해 주세요.') {
+      if (!res.ok || data.success !== true) {
+        if (data.error) {
           alert(data.error);
         } else {
           alert('댓글 등록에 실패했습니다.');
