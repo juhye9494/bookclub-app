@@ -415,7 +415,7 @@ export default function Home() {
 
           <div className="plan-card reveal">
             <p className="plan-name">한경 언더라인 독서클럽 3개월권</p>
-            <p className="plan-price">45,000<span>원</span></p>
+            <p className="plan-price"><span className="price-number" style={{ letterSpacing: '0.02em' }}>45,000</span><span className="price-unit">원</span></p>
             <p className="plan-period">3개월 구독 · 일시납</p>
             
             {activeCycle?.recruitment_start_date && activeCycle?.recruitment_end_date && (
