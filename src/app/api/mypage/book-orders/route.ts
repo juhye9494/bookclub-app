@@ -110,7 +110,12 @@ export async function GET(req: Request) {
           book_id,
           book_title_snapshot,
           quantity,
-          created_at
+          created_at,
+          book:books (
+            title,
+            author,
+            cover
+          )
         )
       `)
       .eq('user_id', user.id)
@@ -162,7 +167,14 @@ export async function GET(req: Request) {
         delivery_note: deliveryNote,
         created_at: order.created_at,
         updated_at: order.updated_at,
-        book_order_items: order.book_order_items || []
+        book_order_items: (order.book_order_items || []).map((item: any) => ({
+          ...item,
+          book: item.book ? {
+            title: item.book.title,
+            author: item.book.author,
+            cover_url: item.book.cover
+          } : null
+        }))
       };
     });
 

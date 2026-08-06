@@ -89,6 +89,7 @@ export default function MyPage() {
   const [editShippingDetailAddress, setEditShippingDetailAddress] = useState("");
   const [editDeliveryNote, setEditDeliveryNote] = useState("");
   const [shippingSaving, setShippingSaving] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   const openShippingPostcode = () => {
     const daum = (window as any).daum;
@@ -952,24 +953,17 @@ export default function MyPage() {
                         border: '1px solid #e2e8f0',
                       }}
                     >
-                      {item.book?.cover_url ? (
+                      {item.book?.cover_url && !failedImages[item.id] && (
                         <img
                           src={item.book.cover_url}
                           alt={displayTitle}
+                          onError={() => setFailedImages(prev => ({ ...prev, [item.id]: true }))}
                           style={{
                             width: '48px',
                             height: '68px',
                             objectFit: 'cover',
                             borderRadius: '4px',
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: '48px',
-                            height: '68px',
-                            background: '#e2e8f0',
-                            borderRadius: '4px',
+                            flexShrink: 0,
                           }}
                         />
                       )}
