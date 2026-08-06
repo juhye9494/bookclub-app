@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { decryptBookOrderPii } from '@/lib/server/bookOrderPiiCrypto';
+import { decryptBookOrderPii, BookOrderPiiField } from '@/lib/server/bookOrderPiiCrypto';
 
 function jsonNoStore(body: unknown, init?: { status?: number }) {
   return NextResponse.json(body, {
@@ -11,11 +11,14 @@ function jsonNoStore(body: unknown, init?: { status?: number }) {
 
 function readBookOrderPii(
   encryptedValue: unknown,
-  field: 'shipping_name' | 'shipping_phone' | 'shipping_address',
+  field: BookOrderPiiField,
   bookOrderId: string,
   keyVersion: unknown
 ): string {
   if (typeof encryptedValue !== 'string' || encryptedValue.trim().length === 0) {
+    if (field === 'delivery_note') {
+      return '';
+    }
     throw new Error('Missing encrypted book order data');
   }
 
@@ -24,7 +27,7 @@ function readBookOrderPii(
   }
 
   const decrypted = decryptBookOrderPii(field, bookOrderId, encryptedValue, keyVersion as number);
-  if (decrypted.trim().length === 0) {
+  if (decrypted.trim().length === 0 && field !== 'delivery_note') {
     throw new Error('Invalid decrypted shipping PII');
   }
   return decrypted;
@@ -97,6 +100,7 @@ export async function GET(req: Request) {
         shipping_name_enc,
         shipping_phone_enc,
         shipping_address_enc,
+        delivery_note_enc,
         pii_key_version,
         created_at,
         updated_at,
@@ -139,6 +143,13 @@ export async function GET(req: Request) {
         order.pii_key_version
       );
 
+      const deliveryNote = order.delivery_note_enc ? readBookOrderPii(
+        order.delivery_note_enc,
+        'delivery_note',
+        order.id,
+        order.pii_key_version
+      ) : null;
+
       return {
         id: order.id,
         subscription_order_id: order.subscription_order_id,
@@ -148,6 +159,7 @@ export async function GET(req: Request) {
         shipping_name: shippingName,
         shipping_phone: shippingPhone,
         shipping_address: shippingAddress,
+        delivery_note: deliveryNote,
         created_at: order.created_at,
         updated_at: order.updated_at,
         book_order_items: order.book_order_items || []
