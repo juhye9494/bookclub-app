@@ -15,14 +15,14 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     const { id: bookOrderId } = await context.params;
 
     if (!bookOrderId || !UUID_REGEX.test(bookOrderId)) {
-      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 });
+      return NextResponse.json({ error: '?�못???�청?�니??' }, { status: 400 });
     }
 
     const headersList = await headers();
     const authHeader = headersList.get('authorization');
-    
+
     if (!authHeader) {
-      return NextResponse.json({ error: '인증 정보가 없습니다.' }, { status: 401 });
+      return NextResponse.json({ error: '?�증 ?�보가 ?�습?�다.' }, { status: 401 });
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -33,7 +33,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
     const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
     if (userError || !user) {
-      return NextResponse.json({ error: '유효하지 않은 사용자입니다.' }, { status: 401 });
+      return NextResponse.json({ error: '?�효?��? ?��? ?�용?�입?�다.' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -41,33 +41,52 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     const shippingPhone = typeof body.shipping_phone === 'string' ? body.shipping_phone.trim() : '';
     const shippingAddress = typeof body.shipping_address === 'string' ? body.shipping_address.trim() : '';
 
+    let parsedDeliveryNote: string | null = null;
+    if (body.deliveryNote !== undefined && body.deliveryNote !== null) {
+      const trimmed = String(body.deliveryNote).trim();
+      if (trimmed !== '') {
+        if (trimmed.length > 200) {
+          return NextResponse.json({ error: '배송 ?�청?�항?� 200???�하�??�력??주세??' }, { status: 400 });
+        }
+        if (/[\r\n\t]/.test(trimmed)) {
+          return NextResponse.json({ error: '배송 ?�청?�항???�용?��? ?�는 문자가 ?�함?�어 ?�습?�다.' }, { status: 400 });
+        }
+        parsedDeliveryNote = trimmed;
+      }
+    }
+
     if (
       !shippingName || shippingName.length > 100 ||
       !shippingPhone || !PHONE_REGEX.test(shippingPhone) ||
       !shippingAddress || shippingAddress.length > 500
     ) {
-      return NextResponse.json({ error: '배송지 정보(받는 분, 연락처, 주소)를 모두 올바르게 입력해주세요.' }, { status: 400 });
+      return NextResponse.json({ error: '배송지 ?�보(받는 �? ?�락�? 주소)�?모두 ?�바르게 ?�력?�주?�요.' }, { status: 400 });
     }
 
-    let encryptedShippingName, encryptedShippingPhone, encryptedShippingAddress;
+    let encryptedShippingName, encryptedShippingPhone, encryptedShippingAddress, encryptedDeliveryNote;
     try {
       encryptedShippingName = encryptBookOrderPii('shipping_name', bookOrderId, shippingName);
       encryptedShippingPhone = encryptBookOrderPii('shipping_phone', bookOrderId, shippingPhone);
       encryptedShippingAddress = encryptBookOrderPii('shipping_address', bookOrderId, shippingAddress);
+
+      if (parsedDeliveryNote) {
+        encryptedDeliveryNote = encryptBookOrderPii('delivery_note', bookOrderId, parsedDeliveryNote);
+      }
 
       const keyVersion = encryptedShippingName.keyVersion;
       if (
         !Number.isInteger(keyVersion) ||
         keyVersion <= 0 ||
         encryptedShippingPhone.keyVersion !== keyVersion ||
-        encryptedShippingAddress.keyVersion !== keyVersion
+        encryptedShippingAddress.keyVersion !== keyVersion ||
+        (encryptedDeliveryNote && encryptedDeliveryNote.keyVersion !== keyVersion)
       ) {
         throw new Error('Book order shipping encryption version mismatch');
       }
     } catch (err) {
       console.error('book order shipping address update failed');
       return NextResponse.json(
-        { error: '서버 오류가 발생했습니다.' },
+        { error: '?�버 ?�류가 발생?�습?�다.' },
         {
           status: 500,
           headers: { 'Cache-Control': 'no-store' }
@@ -75,7 +94,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       );
     }
 
-    // 조건부 UPDATE 실행
+    // 조건부 UPDATE ?�행
     const { data: updateData, error: updateErr } = await supabaseAdmin
       .from('book_orders')
       .update({
@@ -85,28 +104,29 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
         shipping_name_enc: encryptedShippingName.encryptedValue,
         shipping_phone_enc: encryptedShippingPhone.encryptedValue,
         shipping_address_enc: encryptedShippingAddress.encryptedValue,
+        delivery_note_enc: encryptedDeliveryNote ? encryptedDeliveryNote.encryptedValue : null,
         pii_key_version: encryptedShippingName.keyVersion,
         updated_at: new Date().toISOString(),
       })
       .eq('id', bookOrderId)
       .eq('user_id', user.id)
-      .eq('order_status', '주문접수')
+      .eq('order_status', '주문?�수')
       .select('id')
       .maybeSingle();
 
     if (updateErr) {
       console.error('book order shipping address update failed');
-      return NextResponse.json({ error: '배송지 변경 중 오류가 발생했습니다.' }, { status: 500 });
+      return NextResponse.json({ error: '배송지 변�?�??�류가 발생?�습?�다.' }, { status: 500 });
     }
 
     if (!updateData) {
-      return NextResponse.json({ error: '이미 배송 준비가 시작되어 배송지를 변경할 수 없습니다.' }, { status: 409 });
+      return NextResponse.json({ error: '?��? 배송 준비�? ?�작?�어 배송지�?변경할 ???�습?�다.' }, { status: 409 });
     }
 
     return NextResponse.json({ success: true, data: updateData });
 
   } catch (err: any) {
     console.error('book order shipping address update failed');
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    return NextResponse.json({ error: '?�버 ?�류가 발생?�습?�다.' }, { status: 500 });
   }
 }
