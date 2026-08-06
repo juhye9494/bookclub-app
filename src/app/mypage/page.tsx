@@ -87,6 +87,7 @@ export default function MyPage() {
   const [editShippingPostcode, setEditShippingPostcode] = useState("");
   const [editShippingBaseAddress, setEditShippingBaseAddress] = useState("");
   const [editShippingDetailAddress, setEditShippingDetailAddress] = useState("");
+  const [editDeliveryNote, setEditDeliveryNote] = useState("");
   const [shippingSaving, setShippingSaving] = useState(false);
 
   const openShippingPostcode = () => {
@@ -128,7 +129,7 @@ export default function MyPage() {
       const res = await fetch(`/api/book-orders/${editingShippingOrderId}/shipping-address`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
-        body: JSON.stringify({ shipping_name: editShippingName, shipping_phone: editShippingPhone, shipping_address: finalShippingAddress })
+        body: JSON.stringify({ shipping_name: editShippingName, shipping_phone: editShippingPhone, shipping_address: finalShippingAddress, deliveryNote: editDeliveryNote })
       });
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || "배송지 변경에 실패했습니다.");
@@ -141,9 +142,10 @@ export default function MyPage() {
             bo.id === editingShippingOrderId
               ? {
                   ...bo,
-                  shipping_name: data.data?.shipping_name,
-                  shipping_phone: data.data?.shipping_phone,
-                  shipping_address: data.data?.shipping_address,
+                  shipping_name: editShippingName,
+                  shipping_phone: editShippingPhone,
+                  shipping_address: finalShippingAddress,
+                  delivery_note: editDeliveryNote.trim() || null
                 }
               : bo
           ),
@@ -156,6 +158,7 @@ export default function MyPage() {
       setEditShippingPostcode('');
       setEditShippingBaseAddress('');
       setEditShippingDetailAddress('');
+      setEditDeliveryNote('');
     } catch(e: any) {
       alert(e.message);
     } finally {
@@ -1475,6 +1478,23 @@ export default function MyPage() {
                 </div>
                 <input readOnly value={editShippingBaseAddress} placeholder="기본 주소" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#f9fafb', marginBottom: '8px' }} />
                 <input id="editShippingDetailAddressInput" value={editShippingDetailAddress} onChange={e=>setEditShippingDetailAddress(e.target.value)} placeholder="상세 주소" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+              </div>
+              <div style={{ marginTop: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>배송 요청사항 (선택)</label>
+                <textarea
+                  value={editDeliveryNote}
+                  onChange={(e) => setEditDeliveryNote(e.target.value)}
+                  placeholder="문 앞에 놓아주세요 / 부재 시 경비실에 맡겨주세요 / 공동현관 출입방법"
+                  maxLength={200}
+                  rows={2}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', resize: 'none', fontFamily: 'inherit', fontSize: '0.85rem' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                  <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: 0, flex: 1, paddingRight: '8px' }}>
+                    배송에 필요한 내용만 입력해 주세요. 공동현관 출입정보 등 민감한 정보는 꼭 필요한 경우에만 작성해 주세요.
+                  </p>
+                  <span style={{ fontSize: '0.75rem', color: '#6b7280', whiteSpace: 'nowrap' }}>{editDeliveryNote.length}/200</span>
+                </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
