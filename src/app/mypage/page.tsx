@@ -1057,9 +1057,10 @@ export default function MyPage() {
                   {shippingPhone && ` (${shippingPhone})`}
                   <br />
                   {shippingAddress}
+                  <br />
+                  배송 요청사항: {bo.delivery_note || '없음'}
                 </div>
               </div>
-
               {isEditable && (
                 <div
                   style={{
@@ -1127,6 +1128,7 @@ export default function MyPage() {
                         setEditShippingBaseAddress(shippingAddress);
                       }
                       setEditShippingDetailAddress('');
+                      setEditDeliveryNote(bo.delivery_note || '');
                     }}
                     style={{
                       padding: '8px 16px',
