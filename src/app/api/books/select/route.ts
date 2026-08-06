@@ -172,7 +172,11 @@ export async function POST(req: Request) {
     });
 
     if (rpcError) {
-      console.error('book order creation failed');
+      console.error('BOOK_ORDER_CREATE_FAILED', JSON.stringify({
+        code: rpcError.code,
+        message: rpcError.message,
+        func: 'place_book_order_v5'
+      }));
       return NextResponse.json({ error: '배송 요청사항을 포함한 주문 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.' }, { status: 400 });
     }
 
