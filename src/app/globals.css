@@ -548,7 +548,8 @@ body {
       font-family: var(--serif); font-size: 3.5rem; font-weight: 700; color: #fff;
       letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px;
     }
-    .plan-price span { font-size: 1.2rem; font-weight: 400; color: rgba(255,255,255,0.5); }
+    .plan-price .price-unit { font-size: 1.2rem; font-weight: 400; color: rgba(255,255,255,0.5); }
+    .plan-price .price-number { font: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; color: inherit; letter-spacing: 0.02em; }
     .plan-period { font-size: 0.82rem; color: rgba(255,255,255,0.4); margin-bottom: 36px; }
     .plan-items { list-style: none; text-align: left; margin-bottom: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
     .plan-items li {
