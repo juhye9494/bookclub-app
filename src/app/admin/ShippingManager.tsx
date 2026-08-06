@@ -439,7 +439,6 @@ export default function ShippingManager() {
               <th style={thStyle}>이메일</th>
               <th style={thStyle}>연락처</th>
               <th style={thStyle}>배송지</th>
-              <th style={thStyle}>배송요청사항</th>
               <th style={thStyle}>선택 도서</th>
               <th style={thStyle}>상태</th>
             </tr>
@@ -478,9 +477,6 @@ export default function ShippingManager() {
                   </td>
                   <td style={{ ...tdStyle, fontSize: '0.78rem', color: '#6b7280', maxWidth: '180px' }}>
                     {order.user_address || '-'}
-                  </td>
-                  <td style={{ ...tdStyle, fontSize: '0.78rem', color: '#111827', maxWidth: '180px' }}>
-                    {order.delivery_note || '-'}
                   </td>
                   <td style={{ ...tdStyle, minWidth: '160px' }}>
                     {Array.isArray(order.book_order_items) && order.book_order_items.length > 0 ? (
