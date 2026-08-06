@@ -30,6 +30,7 @@ function BooksContent() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deliveryNote, setDeliveryNote] = useState('');
   
   const scrollPosRef = useRef<number>(0);
   const [maxSelectAllowed, setMaxSelectAllowed] = useState(4);
@@ -329,8 +330,8 @@ function BooksContent() {
       
       const endpoint = editOrderId ? '/api/books/edit-select' : '/api/books/select';
       const requestBody = editOrderId 
-        ? { editOrderId, bookIds: Array.from(selectedIds) }
-        : { subOrderId: order.id, bookIds: Array.from(selectedIds) };
+        ? { editOrderId, bookIds: Array.from(selectedIds), deliveryNote: deliveryNote.trim() || null }
+        : { subOrderId: order.id, bookIds: Array.from(selectedIds), deliveryNote: deliveryNote.trim() || null };
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -615,6 +616,20 @@ function BooksContent() {
                 return <li key={id} style={{ fontWeight: 600 }}>• {b?.title}</li>;
               })}
             </ul>
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 700, marginBottom: '8px' }}>배송 요청사항 (선택)</label>
+              <textarea
+                value={deliveryNote}
+                onChange={e => setDeliveryNote(e.target.value)}
+                maxLength={200}
+                placeholder="문 앞에 놓아주세요 / 부재 시 경비실에 맡겨주세요 / 공동현관 출입방법"
+                style={{ width: '100%', padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px', minHeight: '80px', fontFamily: 'inherit', resize: 'vertical' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+                <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: 0 }}>배송에 필요한 내용만 입력해 주세요. 공동현관 출입정보 등 민감한 정보는 꼭 필요한 경우에만 작성해 주세요.</p>
+                <span style={{ fontSize: '0.8rem', color: deliveryNote.length >= 200 ? '#ef4444' : '#9ca3af' }}>{deliveryNote.length} / 200</span>
+              </div>
+            </div>
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '32px', cursor: 'pointer' }}>
               <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)} style={{ marginTop: '4px', width: '18px', height: '18px', accentColor: 'var(--accent)' }} />
               <span style={{ fontSize: '0.95rem', color: '#4b5563', lineHeight: 1.5 }}>

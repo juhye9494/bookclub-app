@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { subOrderId, bookIds } = body;
+    const { subOrderId, bookIds, deliveryNote } = body;
 
     if (!subOrderId) {
       return NextResponse.json({ error: '구독 주문 번호가 필요합니다.' }, { status: 400 });
@@ -44,6 +44,20 @@ export async function POST(req: Request) {
     const uniqueIds = new Set(bookIds);
     if (uniqueIds.size !== bookIds.length) {
       return NextResponse.json({ error: '중복된 도서가 포함되어 있습니다.' }, { status: 400 });
+    }
+
+    let parsedDeliveryNote: string | null = null;
+    if (deliveryNote !== undefined && deliveryNote !== null) {
+      const trimmed = String(deliveryNote).trim();
+      if (trimmed !== '') {
+        if (trimmed.length > 200) {
+          return NextResponse.json({ error: '배송 요청사항은 200자 이하로 입력해 주세요.' }, { status: 400 });
+        }
+        if (/[\r\n\t]/.test(trimmed)) {
+          return NextResponse.json({ error: '배송 요청사항에 허용되지 않는 문자가 포함되어 있습니다.' }, { status: 400 });
+        }
+        parsedDeliveryNote = trimmed;
+      }
     }
 
     // 1. 주문 소유권, 결제 상태 검사 및 암호화된 배송정보 조회
@@ -113,25 +127,28 @@ export async function POST(req: Request) {
 
     const bookOrderId = crypto.randomUUID();
 
-    let encryptedShippingName, encryptedShippingPhone, encryptedShippingAddress;
+    let encryptedShippingName, encryptedShippingPhone, encryptedShippingAddress, encryptedDeliveryNote;
     try {
       encryptedShippingName = encryptBookOrderPii('shipping_name', bookOrderId, shippingName);
       encryptedShippingPhone = encryptBookOrderPii('shipping_phone', bookOrderId, shippingPhone);
       encryptedShippingAddress = encryptBookOrderPii('shipping_address', bookOrderId, shippingAddress);
+      
+      encryptedDeliveryNote = parsedDeliveryNote ? encryptBookOrderPii('delivery_note', bookOrderId, parsedDeliveryNote) : null;
 
       const keyVersion = encryptedShippingName.keyVersion;
       if (
         !Number.isInteger(keyVersion) ||
         keyVersion <= 0 ||
         encryptedShippingPhone.keyVersion !== keyVersion ||
-        encryptedShippingAddress.keyVersion !== keyVersion
+        encryptedShippingAddress.keyVersion !== keyVersion ||
+        (encryptedDeliveryNote && encryptedDeliveryNote.keyVersion !== keyVersion)
       ) {
         throw new Error('Book order shipping encryption version mismatch');
       }
     } catch (err) {
       console.error('book order creation failed');
       return NextResponse.json(
-        { error: '서버 오류가 발생했습니다.' },
+        { error: '배송 요청사항을 포함한 주문 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.' },
         {
           status: 500,
           headers: {
@@ -142,7 +159,7 @@ export async function POST(req: Request) {
     }
 
     // 3. RPC 호출
-    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('place_book_order_v4', {
+    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('place_book_order_v5', {
       p_book_order_id: bookOrderId,
       p_subscription_order_id: subOrderId,
       p_user_id: user.id,
@@ -150,17 +167,18 @@ export async function POST(req: Request) {
       p_shipping_name_enc: encryptedShippingName.encryptedValue,
       p_shipping_phone_enc: encryptedShippingPhone.encryptedValue,
       p_shipping_address_enc: encryptedShippingAddress.encryptedValue,
-      p_pii_key_version: encryptedShippingName.keyVersion
+      p_pii_key_version: encryptedShippingName.keyVersion,
+      p_delivery_note_enc: encryptedDeliveryNote ? encryptedDeliveryNote.encryptedValue : null
     });
 
     if (rpcError) {
       console.error('book order creation failed');
-      return NextResponse.json({ error: '도서 신청 중 오류가 발생했습니다. 다시 시도해주세요.' }, { status: 400 });
+      return NextResponse.json({ error: '배송 요청사항을 포함한 주문 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, newOrderId: bookOrderId });
   } catch (err: any) {
     console.error('book order creation failed');
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    return NextResponse.json({ error: '배송 요청사항을 포함한 주문 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.' }, { status: 500 });
   }
 }

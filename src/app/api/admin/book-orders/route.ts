@@ -5,7 +5,7 @@ import {
   decryptOrderPii,
   isEncryptedOrderPii,
 } from '@/lib/server/orderPiiCrypto';
-import { decryptBookOrderPii } from '@/lib/server/bookOrderPiiCrypto';
+import { decryptBookOrderPii, BookOrderPiiField } from '@/lib/server/bookOrderPiiCrypto';
 
 function jsonNoStore(body: unknown, init?: { status?: number }) {
   return NextResponse.json(body, {
@@ -42,7 +42,7 @@ function readOrderPii(
 
 function readBookOrderPii(
   encryptedValue: unknown,
-  field: 'shipping_name' | 'shipping_phone' | 'shipping_address',
+  field: BookOrderPiiField,
   bookOrderId: string,
   keyVersion: unknown
 ): string {
@@ -101,6 +101,7 @@ export async function GET(req: Request) {
         shipping_name_enc,
         shipping_phone_enc,
         shipping_address_enc,
+        delivery_note_enc,
         pii_key_version,
         tracking_number,
         created_at,
@@ -214,6 +215,24 @@ export async function GET(req: Request) {
         order.pii_key_version
       );
 
+      let deliveryNote = '';
+      if (
+        order.delivery_note_enc &&
+        typeof order.delivery_note_enc === 'string' &&
+        order.delivery_note_enc.trim() !== ''
+      ) {
+        try {
+          deliveryNote = readBookOrderPii(
+            order.delivery_note_enc,
+            'delivery_note',
+            order.id,
+            order.pii_key_version
+          );
+        } catch (e) {
+          console.error(`Failed to decrypt delivery note for book order ${order.id}`);
+        }
+      }
+
       const subscriptionOrder = order.subscription_order;
       let safeSubscriptionOrder = null;
 
@@ -267,6 +286,7 @@ export async function GET(req: Request) {
         shipping_name: shippingName,
         shipping_phone: shippingPhone,
         shipping_address: shippingAddress,
+        delivery_note: deliveryNote,
         tracking_number: order.tracking_number,
         created_at: order.created_at,
         updated_at: order.updated_at,

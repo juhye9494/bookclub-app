@@ -15,6 +15,7 @@ interface Order {
   tracking_number: string;
   payment_order_id: string;
   created_at: string;
+  delivery_note?: string;
 }
 
 const STATUS_OPTIONS = [
@@ -94,7 +95,8 @@ export default function ShippingManager() {
         order_status: bo.order_status || '주문접수',
         tracking_number: bo.tracking_number || '',
         payment_order_id: bo.subscription_order?.payment_order_id || '',
-        created_at: bo.created_at
+        created_at: bo.created_at,
+        delivery_note: bo.delivery_note || ''
       }));
       setOrders(mapped);
     }
@@ -271,7 +273,11 @@ export default function ShippingManager() {
     };
 
     const escapeCsvValue = (value: unknown) => {
-      const text = String(value ?? '');
+      let text = String(value ?? '');
+      // CSV Injection 방어: =, +, -, @ 로 시작하는 경우 앞에 공백 추가
+      if (/^[=+\-@]/.test(text)) {
+        text = ' ' + text;
+      }
       return `"${text.replace(/"/g, '""')}"`;
     };
 
@@ -283,7 +289,7 @@ export default function ShippingManager() {
         day: 'numeric',
       }).format(new Date(value));
 
-    const headers = ['주문일자', '주문번호', '고객명', '이메일', '연락처', '배송주소', '상태', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3', '도서4', 'ISBN4'];
+    const headers = ['주문일자', '주문번호', '고객명', '이메일', '연락처', '배송주소', '배송요청사항', '상태', '도서1', 'ISBN1', '도서2', 'ISBN2', '도서3', 'ISBN3', '도서4', 'ISBN4'];
     const headerRow = headers.map(escapeCsvValue).join(',');
 
     const rows = target.map(order => {
@@ -300,6 +306,7 @@ export default function ShippingManager() {
         order.user_email,
         toExcelText(order.user_phone),
         order.user_address || '',
+        order.delivery_note || '',
         order.order_status,
         book1?.book_title_snapshot || '', book1?.isbn ? toExcelText(book1.isbn) : '',
         book2?.book_title_snapshot || '', book2?.isbn ? toExcelText(book2.isbn) : '',
@@ -432,6 +439,7 @@ export default function ShippingManager() {
               <th style={thStyle}>이메일</th>
               <th style={thStyle}>연락처</th>
               <th style={thStyle}>배송지</th>
+              <th style={thStyle}>배송요청사항</th>
               <th style={thStyle}>선택 도서</th>
               <th style={thStyle}>상태</th>
             </tr>
@@ -470,6 +478,9 @@ export default function ShippingManager() {
                   </td>
                   <td style={{ ...tdStyle, fontSize: '0.78rem', color: '#6b7280', maxWidth: '180px' }}>
                     {order.user_address || '-'}
+                  </td>
+                  <td style={{ ...tdStyle, fontSize: '0.78rem', color: '#111827', maxWidth: '180px' }}>
+                    {order.delivery_note || '-'}
                   </td>
                   <td style={{ ...tdStyle, minWidth: '160px' }}>
                     {Array.isArray(order.book_order_items) && order.book_order_items.length > 0 ? (

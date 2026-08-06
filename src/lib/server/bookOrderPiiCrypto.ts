@@ -4,7 +4,8 @@ import crypto from 'crypto';
 export type BookOrderPiiField =
   | 'shipping_name'
   | 'shipping_phone'
-  | 'shipping_address';
+  | 'shipping_address'
+  | 'delivery_note';
 
 export interface BookOrderPiiContext {
   field: BookOrderPiiField;
@@ -30,6 +31,7 @@ const BOOK_ORDER_PII_FIELDS: readonly BookOrderPiiField[] = [
   'shipping_name',
   'shipping_phone',
   'shipping_address',
+  'delivery_note',
 ];
 
 function getActiveVersion(): string {
