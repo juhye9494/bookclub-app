@@ -92,14 +92,22 @@ export default function MembersManager() {
       ]);
 
       if (!profilesRes.ok) {
-        const errorData = await profilesRes.json().catch(() => ({}));
-        alert(errorData.error || '관리자 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        if (profilesRes.status === 401 || profilesRes.status === 403) {
+          const errorData = await profilesRes.json().catch(() => ({}));
+          alert(errorData.error || '회원 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        } else {
+          alert('회원 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        }
         return;
       }
 
       if (!ordersRes.ok) {
-        const errorData = await ordersRes.json().catch(() => ({}));
-        alert(errorData.error || '관리자 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        if (ordersRes.status === 401 || ordersRes.status === 403) {
+          const errorData = await ordersRes.json().catch(() => ({}));
+          alert(errorData.error || '구독 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        } else {
+          alert('구독 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        }
         return;
       }
 

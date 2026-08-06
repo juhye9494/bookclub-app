@@ -42,7 +42,7 @@ export async function GET(req: Request) {
 
     const { data: orders, error: dbError } = await supabaseAdmin
       .from('orders')
-      .select('id, user_id, cycle_id, total_amount, payment_status, created_at, canceled_at')
+      .select('id, user_id, cycle_id, total_amount, payment_status, created_at')
       .order('created_at', { ascending: false });
 
     if (dbError) {
