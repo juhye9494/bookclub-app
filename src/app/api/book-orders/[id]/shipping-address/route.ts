@@ -15,14 +15,14 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     const { id: bookOrderId } = await context.params;
 
     if (!bookOrderId || !UUID_REGEX.test(bookOrderId)) {
-      return NextResponse.json({ error: '?�못???�청?�니??' }, { status: 400 });
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 });
     }
 
     const headersList = await headers();
     const authHeader = headersList.get('authorization');
 
     if (!authHeader) {
-      return NextResponse.json({ error: '?�증 ?�보가 ?�습?�다.' }, { status: 401 });
+      return NextResponse.json({ error: '인증 정보가 없습니다.' }, { status: 401 });
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -33,7 +33,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
     const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
     if (userError || !user) {
-      return NextResponse.json({ error: '?�효?��? ?��? ?�용?�입?�다.' }, { status: 401 });
+      return NextResponse.json({ error: '유효하지 않은 사용자입니다.' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -46,10 +46,10 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       const trimmed = String(body.deliveryNote).trim();
       if (trimmed !== '') {
         if (trimmed.length > 200) {
-          return NextResponse.json({ error: '배송 ?�청?�항?� 200???�하�??�력??주세??' }, { status: 400 });
+          return NextResponse.json({ error: '배송 요청사항은 200자 이하로 입력해 주세요.' }, { status: 400 });
         }
         if (/[\r\n\t]/.test(trimmed)) {
-          return NextResponse.json({ error: '배송 ?�청?�항???�용?��? ?�는 문자가 ?�함?�어 ?�습?�다.' }, { status: 400 });
+          return NextResponse.json({ error: '배송 요청사항에 허용되지 않는 문자가 포함되어 있습니다.' }, { status: 400 });
         }
         parsedDeliveryNote = trimmed;
       }
@@ -60,7 +60,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       !shippingPhone || !PHONE_REGEX.test(shippingPhone) ||
       !shippingAddress || shippingAddress.length > 500
     ) {
-      return NextResponse.json({ error: '배송지 ?�보(받는 �? ?�락�? 주소)�?모두 ?�바르게 ?�력?�주?�요.' }, { status: 400 });
+      return NextResponse.json({ error: '배송지 정보(받는 분, 연락처, 주소)를 모두 올바르게 입력해주세요.' }, { status: 400 });
     }
 
     let encryptedShippingName, encryptedShippingPhone, encryptedShippingAddress, encryptedDeliveryNote;
@@ -86,7 +86,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     } catch (err) {
       console.error('book order shipping address update failed');
       return NextResponse.json(
-        { error: '?�버 ?�류가 발생?�습?�다.' },
+        { error: '서버 오류가 발생했습니다.' },
         {
           status: 500,
           headers: { 'Cache-Control': 'no-store' }
@@ -94,7 +94,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       );
     }
 
-    // 조건부 UPDATE ?�행
+    // 조건부 UPDATE 실행
     const { data: updateData, error: updateErr } = await supabaseAdmin
       .from('book_orders')
       .update({
@@ -110,23 +110,23 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       })
       .eq('id', bookOrderId)
       .eq('user_id', user.id)
-      .eq('order_status', '주문?�수')
+      .eq('order_status', '주문접수')
       .select('id')
       .maybeSingle();
 
     if (updateErr) {
       console.error('book order shipping address update failed');
-      return NextResponse.json({ error: '배송지 변�?�??�류가 발생?�습?�다.' }, { status: 500 });
+      return NextResponse.json({ error: '배송지 변경 중 오류가 발생했습니다.' }, { status: 500 });
     }
 
     if (!updateData) {
-      return NextResponse.json({ error: '?��? 배송 준비�? ?�작?�어 배송지�?변경할 ???�습?�다.' }, { status: 409 });
+      return NextResponse.json({ error: '이미 배송 준비가 시작되어 배송지를 변경할 수 없습니다.' }, { status: 409 });
     }
 
     return NextResponse.json({ success: true, data: updateData });
 
   } catch (err: any) {
     console.error('book order shipping address update failed');
-    return NextResponse.json({ error: '?�버 ?�류가 발생?�습?�다.' }, { status: 500 });
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
