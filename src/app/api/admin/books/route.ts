@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/utils/admin';
 
@@ -27,14 +27,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '필수 값이 누락되었습니다.' }, { status: 400 });
     }
 
-    const { error: insertErr } = await supabaseAdmin.from('books').insert({
-      cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture
-    });
+    const id = `b-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
-    if (insertErr) throw insertErr;
+    const { data, error: insertErr } = await supabaseAdmin.from('books').insert({
+      id, cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture
+    }).select().single();
 
-    return NextResponse.json({ success: true });
+    if (insertErr) {
+      console.error('[Admin Book Insert Error]', insertErr.code);
+      return NextResponse.json({ error: 'Failed to create book' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('[Admin Book API Error]');
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

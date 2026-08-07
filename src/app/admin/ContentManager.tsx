@@ -111,33 +111,37 @@ export default function ContentManager() {
   const saveBook = async (payload: any) => {
     const sessionData = await supabase.auth.getSession();
     const token = sessionData.data.session?.access_token;
-    if (isCreatingBook) {
-      const newBook = { ...payload, id: 'b-' + Date.now(), cycle_id: payload.cycle_id || activeCycleId, order_idx: activeCycleBooks.length };
-      const res = await fetch('/api/admin/books', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(newBook)
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        alert('생성 실패: ' + (errorData.error || 'Unknown Error'));
+    try {
+      if (isCreatingBook) {
+        const newBook = { ...payload, cycle_id: payload.cycle_id || activeCycleId, order_idx: activeCycleBooks.length };
+        const res = await fetch('/api/admin/books', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(newBook)
+        });
+        if (!res.ok) {
+          alert('도서를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+          return;
+        }
+      } else {
+        const res = await fetch(`/api/admin/books/${payload.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          alert('도서를 수정하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+          return;
+        }
       }
-    } else {
-      const res = await fetch(`/api/admin/books/${payload.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        alert('수정 실패: ' + (errorData.error || 'Unknown Error'));
-      }
+      setEditingBook(null);
+      setIsCreatingBook(false);
+      await loadData();
+      localStorage.removeItem('bookEditDraft');
+      alert('저장 완료!');
+    } catch (error) {
+      alert('요청 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     }
-    setEditingBook(null);
-    setIsCreatingBook(false);
-    await loadData();
-    localStorage.removeItem('bookEditDraft');
-    alert('저장 완료!');
   };
 
   const moveBook = (index: number, direction: number) => {
