@@ -24,11 +24,14 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     const body = await req.json();
     
     // We allow partial updates
-    const { cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark } = body;
+    const { cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark, isbn } = body;
 
-    const { error: updateErr } = await supabaseAdmin.from('books').update({
+    const updatePayload: any = {
       cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark
-    }).eq('id', bookId);
+    };
+    if (isbn !== undefined) updatePayload.isbn = isbn;
+
+    const { error: updateErr } = await supabaseAdmin.from('books').update(updatePayload).eq('id', bookId);
 
     if (updateErr) throw updateErr;
 
