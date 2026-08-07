@@ -200,9 +200,11 @@ function BooksContent() {
         ];
         const formatted = bData.map((b: any, i: number) => {
           const c = colors[i % colors.length];
+          const finalBg = b.bg_color || b.bg || c.bg;
+          const finalBgDark = b.bg_color_dark || b.bgdark || c.bgDark;
           return {
             id: b.id, title: b.title, author: b.author, genre: b.genre,
-            bg: b.bg_color || c.bg, bgDark: b.bg_color_dark || c.bgDark,
+            bg: finalBg, bgDark: finalBgDark,
             img: b.cover, tags: b.tags || [], desc: b.description,
             is_new: b.is_new || false,
             is_orderable: b.is_orderable

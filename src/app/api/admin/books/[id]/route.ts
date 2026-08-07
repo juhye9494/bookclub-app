@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/utils/admin';
 
@@ -24,10 +24,10 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     const body = await req.json();
     
     // We allow partial updates
-    const { cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture } = body;
+    const { cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark } = body;
 
     const { error: updateErr } = await supabaseAdmin.from('books').update({
-      cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture
+      cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark
     }).eq('id', bookId);
 
     if (updateErr) throw updateErr;
