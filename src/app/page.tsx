@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-
+import SubscriptionPopup from '@/components/SubscriptionPopup';
 
 
 const RECOMMENDATIONS = [
@@ -602,6 +602,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <SubscriptionPopup />
     </>
   );
 }

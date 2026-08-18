@@ -5,6 +5,7 @@ import {
   encryptOrderPii,
   createOrderPiiHmac,
 } from '@/lib/server/orderPiiCrypto';
+import { getCycleOneStatus, TARGET_CYCLE_ID } from '@/lib/server/cycleUtils';
 
 export async function POST(req: Request) {
   try {
@@ -137,6 +138,29 @@ export async function POST(req: Request) {
 
     if (existingOrders && existingOrders.length > 0) {
       return NextResponse.json({ error: '이미 해당 기수의 구독을 완료하셨습니다.' }, { status: 409 });
+    }
+
+    // 2.1 Enforce subscriber limit for cycle-2026-h1
+    if (cycle_id === TARGET_CYCLE_ID) {
+      const cycleStatus = await getCycleOneStatus();
+
+      if (cycleStatus === 'error') {
+        return NextResponse.json(
+          {
+            error: '현재 멤버십 신청 가능 여부를 확인할 수 없습니다.\n잠시 후 다시 시도해주세요.'
+          },
+          { status: 503 }
+        );
+      }
+
+      if (cycleStatus === 'closed') {
+        return NextResponse.json(
+          {
+            error: '한경 언더라인 1기 모집이 마감되었습니다.\n보내주신 관심에 감사드립니다.'
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // 2.5 Cleanup old PENDING orders for this user and cycle
