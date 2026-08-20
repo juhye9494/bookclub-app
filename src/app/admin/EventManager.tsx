@@ -86,22 +86,36 @@ export default function EventManager() {
 
   const handleSaveEvent = async (event: any) => {
     try {
+      const sessionData = await supabase.auth.getSession();
+      const token = sessionData.data.session?.access_token;
+      if (!token) return;
+
       if (isCreatingEvent) {
         const newEvent = {
           ...event,
           id: 'ev-' + Date.now(),
           order_idx: events.length
         };
-        const { error } = await supabase.from('events').insert(newEvent);
-        if (error) {
-          alert('이벤트 추가 실패: ' + error.message + '\n\n(참고: 수파베이스에 events 테이블이 생성되었는지 확인해주세요.)');
+        const res = await fetch('/api/admin/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(newEvent)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          alert('이벤트 추가 실패: ' + (err.error || res.statusText));
         } else {
           alert('이벤트가 추가되었습니다.');
         }
       } else {
-        const { error } = await supabase.from('events').update(event).eq('id', event.id);
-        if (error) {
-          alert('이벤트 수정 실패: ' + error.message);
+        const res = await fetch(`/api/admin/events/${event.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(event)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          alert('이벤트 수정 실패: ' + (err.error || res.statusText));
         } else {
           alert('이벤트가 저장되었습니다.');
         }
@@ -117,11 +131,18 @@ export default function EventManager() {
   const handleDeleteEvent = async (eventId: string) => {
     if (!confirm('이 이벤트를 정말 삭제하시겠습니까?')) return;
     try {
-      const { error } = await supabase.from('events').delete().eq('id', eventId);
-      if (error) {
-        alert('이벤트 삭제 실패: ' + error.message);
+      const sessionData = await supabase.auth.getSession();
+      const token = sessionData.data.session?.access_token;
+      if (!token) return;
+
+      const res = await fetch(`/api/admin/events/${eventId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert('이벤트 삭제 실패: ' + (err.error || res.statusText));
       } else {
-        alert('이벤트가 삭제되었습니다.');
         await loadEvents();
       }
     } catch (err: any) {
@@ -140,12 +161,23 @@ export default function EventManager() {
 
     setLoading(true);
     try {
-      for (let i = 0; i < list.length; i++) {
-        await supabase.from('events').update({ order_idx: i }).eq('id', list[i].id);
+      const sessionData = await supabase.auth.getSession();
+      const token = sessionData.data.session?.access_token;
+      if (!token) return;
+
+      const res = await fetch('/api/admin/events/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ list })
+      });
+      if (!res.ok) {
+        console.error('Error reordering events');
+      } else {
+        await loadEvents();
       }
-      await loadEvents();
     } catch (err) {
       console.error('Error reordering events:', err);
+    } finally {
       setLoading(false);
     }
   };
