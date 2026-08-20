@@ -92,6 +92,7 @@ export default function Home() {
               tags: b.tags || [],
               desc: b.description,
               lecture: b.lecture,
+              is_new: b.is_new || false,
               ebook_url: b.ebook_url || '',
               benefit: b.lecture ? '+ 저자 강연권' : ''
             };
@@ -282,7 +283,8 @@ export default function Home() {
                 `}</style>
                 <div className="hero-rolling-track">
                   {[...books.slice(0, 10), ...books.slice(0, 10)].map((book, i) => (
-                    <div key={i} className="hero-rolling-item">
+                    <div key={i} className="hero-rolling-item" style={{ position: 'relative' }}>
+                      {book.is_new && <div style={{ position: 'absolute', top: '-8px', left: '-8px', width: '36px', height: '36px', background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)', color: '#fff', fontSize: '0.55rem', fontWeight: 800, borderRadius: '50%', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.03em', boxShadow: '0 3px 10px rgba(231,76,60,0.5)', transform: 'rotate(-12deg)' }}>NEW</div>}
                       <div className="hero-rolling-cover">
                         <img src={book.img} alt={book.title} />
                       </div>

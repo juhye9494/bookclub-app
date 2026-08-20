@@ -24,10 +24,10 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     const body = await req.json();
     
     // We allow partial updates
-    const { cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark, isbn } = body;
+    const { cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark, isbn, is_new } = body;
 
     const updatePayload: any = {
-      cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark
+      cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark, is_new
     };
     if (isbn !== undefined) updatePayload.isbn = isbn;
 

@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     if (userError || !user || !isAdmin(user.email)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await req.json();
-    const { cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark, isbn } = body;
+    const { cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark, isbn, is_new } = body;
 
     if (!cycle_id || !title) {
       return NextResponse.json({ error: '필수 값이 누락되었습니다.' }, { status: 400 });
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const id = `b-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
     const insertPayload: any = {
-      id, cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark
+      id, cycle_id, title, author, genre, description, cover, tags, is_public, is_orderable, is_deleted, order_idx, lecture, bg_color, bg_color_dark, is_new
     };
     if (isbn !== undefined) insertPayload.isbn = isbn;
 
