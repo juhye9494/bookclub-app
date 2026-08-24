@@ -63,7 +63,7 @@ export default function SubscriptionPopup() {
 
   return (
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 sm:p-6"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           handleClose();
@@ -71,11 +71,11 @@ export default function SubscriptionPopup() {
       }}
     >
       <div 
-        className="relative bg-[#faf9f7] w-[90%] max-w-[400px] rounded-2xl shadow-2xl overflow-hidden border border-gray-200/50 p-8 flex flex-col items-center text-center"
+        className="relative bg-[#faf9f7] w-full max-w-[520px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-gray-200/50 p-6 pb-8 sm:p-10 flex flex-col items-center text-center"
       >
         <button 
           onClick={handleClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors"
+          className="absolute top-5 right-5 sm:top-6 sm:right-6 text-gray-400 hover:text-gray-700 transition-colors bg-white rounded-full p-1"
           aria-label="닫기"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -88,43 +88,53 @@ export default function SubscriptionPopup() {
           {isClosed ? 'MEMBERSHIP CLOSED' : 'MEMBERSHIP'}
         </span>
 
-        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6 break-keep">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 break-keep px-2 sm:px-8">
           {isClosed 
             ? '한경 언더라인 1기 모집 마감' 
             : '멤버십 모집 마감이 임박했습니다'}
         </h2>
 
         {isClosed ? (
-          <p className="text-[15px] leading-relaxed text-gray-600 mb-8 break-keep">
-            안녕하세요.<br/>
-            예상보다 많은 관심을 보내주셔서<br/>
-            준비된 모집 인원이 모두 마감되었습니다.<br/>
-            <br/>
-            한경 언더라인에 보내주신 관심에 진심으로 감사드리며,<br/>
-            다음 기수 모집 소식은<br/>
-            한경 언더라인 홈페이지를 통해 안내해 드리겠습니다.<br/>
-            <br/>
-            감사합니다.
-          </p>
+          <div className="flex flex-col gap-4 sm:gap-5 text-[15px] sm:text-base leading-[1.75] text-gray-600 mb-8 sm:mb-10 break-keep w-full">
+            <p>
+              안녕하세요.<br/>
+              예상보다 많은 관심을 보내주셔서<br/>
+              준비된 모집 인원이 모두 마감되었습니다.
+            </p>
+            <p>
+              한경 언더라인에 보내주신 관심에 진심으로 감사드리며,<br/>
+              다음 기수 모집 소식은<br/>
+              한경 언더라인 홈페이지를 통해 안내해 드리겠습니다.
+            </p>
+            <p className="mt-1">
+              감사합니다.
+            </p>
+          </div>
         ) : (
-          <p className="text-[15px] leading-relaxed text-gray-600 mb-8 break-keep">
-            안녕하세요.<br/>
-            한경 언더라인에 보내주신 관심에 감사드립니다.<br/>
-            <br/>
-            많은 분들께서 함께해 주신 덕분에<br/>
-            멤버십 가입 가능 정원이 얼마 남지 않았습니다.<br/>
-            <br/>
-            정원 마감 시 모집이 종료될 예정이니,<br/>
-            서둘러 신청해 주세요.<br/>
-            <br/>
-            지금, 한경 언더라인과 함께<br/>
-            즐거운 독서 여정을 시작해보시길 바랍니다.<br/>
-            <br/>
-            감사합니다.
-          </p>
+          <div className="flex flex-col gap-4 sm:gap-5 text-[15px] sm:text-base leading-[1.75] text-gray-600 mb-8 sm:mb-10 break-keep w-full">
+            <p>
+              안녕하세요.<br/>
+              한경 언더라인에 보내주신 관심에 감사드립니다.
+            </p>
+            <p>
+              많은 분들께서 함께해 주신 덕분에<br/>
+              멤버십 가입 가능 정원이 얼마 남지 않았습니다.
+            </p>
+            <p>
+              정원 마감 시 모집이 종료될 예정이니,<br/>
+              서둘러 신청해 주세요.
+            </p>
+            <p>
+              지금, 한경 언더라인과 함께<br/>
+              즐거운 독서 여정을 시작해보시길 바랍니다.
+            </p>
+            <p className="mt-1">
+              감사합니다.
+            </p>
+          </div>
         )}
 
-        <div className="w-full flex flex-col gap-3">
+        <div className="w-full flex flex-col gap-3 mt-auto">
           {!isClosed ? (
             <button 
               onClick={handleSubscribe}
