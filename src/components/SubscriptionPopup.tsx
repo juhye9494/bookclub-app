@@ -71,11 +71,11 @@ export default function SubscriptionPopup() {
       }}
     >
       <div 
-        className="relative bg-[#faf9f7] w-full max-w-[520px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-gray-200/50 px-6 pt-12 pb-10 sm:px-10 sm:pt-14 sm:pb-12 flex flex-col items-center text-center"
+        className="relative bg-[#faf9f7] w-full max-w-[500px] h-auto max-h-[95vh] overflow-y-auto rounded-2xl shadow-2xl border border-gray-200/50 px-6 sm:px-10 pt-[32px] pb-[26px] flex flex-col items-center text-center"
       >
         <button 
           onClick={handleClose}
-          className="absolute top-5 right-5 sm:top-6 sm:right-6 text-gray-400 hover:text-gray-700 transition-colors bg-white rounded-full p-1.5"
+          className="absolute top-[16px] right-[16px] text-gray-400 hover:text-gray-700 transition-colors bg-white rounded-full p-1.5"
           aria-label="닫기"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -84,18 +84,18 @@ export default function SubscriptionPopup() {
           </svg>
         </button>
 
-        <span className="text-xs font-bold tracking-widest text-[#fc6640] mb-4">
+        <span className="text-xs font-bold tracking-widest text-[#fc6640] mb-[8px]">
           {isClosed ? 'MEMBERSHIP CLOSED' : 'MEMBERSHIP'}
         </span>
 
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-8 sm:mb-10 break-keep px-2 sm:px-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-[16px] break-keep px-2 sm:px-4">
           {isClosed 
             ? '한경 언더라인 1기 모집 마감' 
             : '멤버십 모집 마감이 임박했습니다'}
         </h2>
 
         {isClosed ? (
-          <div className="flex flex-col gap-6 sm:gap-7 text-[15px] sm:text-base leading-[1.8] text-gray-600 mb-10 sm:mb-12 break-keep w-full">
+          <div className="flex flex-col gap-[26px] text-[15px] sm:text-base leading-[1.8] text-gray-600 break-keep w-full">
             <p>
               안녕하세요.<br/>
               예상보다 많은 관심을 보내주셔서<br/>
@@ -106,12 +106,12 @@ export default function SubscriptionPopup() {
               다음 기수 모집 소식은<br/>
               한경 언더라인 홈페이지를 통해 안내해 드리겠습니다.
             </p>
-            <p className="mt-2 font-medium">
+            <p className="font-medium">
               감사합니다.
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-6 sm:gap-7 text-[15px] sm:text-base leading-[1.8] text-gray-600 mb-10 sm:mb-12 break-keep w-full">
+          <div className="flex flex-col gap-[26px] text-[15px] sm:text-base leading-[1.8] text-gray-600 break-keep w-full">
             <p>
               안녕하세요.<br/>
               한경 언더라인에 보내주신 관심에 감사드립니다.
@@ -128,24 +128,24 @@ export default function SubscriptionPopup() {
               지금, 한경 언더라인과 함께<br/>
               즐거운 독서 여정을 시작해보시길 바랍니다.
             </p>
-            <p className="mt-2 font-medium">
+            <p className="font-medium">
               감사합니다.
             </p>
           </div>
         )}
 
-        <div className="w-full flex flex-col gap-4 mt-auto">
+        <div className="w-[92%] sm:w-[90%] flex flex-col mt-[24px]">
           {!isClosed ? (
             <button 
               onClick={handleSubscribe}
-              className="w-full py-4 bg-[#fc6640] text-white rounded-xl font-semibold text-base shadow-lg shadow-[#fc6640]/30 hover:bg-[#e55a36] hover:-translate-y-0.5 transition-all"
+              className="w-full py-[14px] bg-[#fc6640] text-white rounded-xl font-semibold text-base shadow-lg shadow-[#fc6640]/30 hover:bg-[#e55a36] hover:-translate-y-0.5 transition-all"
             >
               멤버십 신청하기
             </button>
           ) : (
             <button 
               onClick={handleClose}
-              className="w-full py-4 bg-gray-900 text-white rounded-xl font-semibold text-base hover:bg-gray-800 transition-colors"
+              className="w-full py-[14px] bg-gray-900 text-white rounded-xl font-semibold text-base hover:bg-gray-800 transition-colors"
             >
               확인
             </button>
@@ -153,7 +153,7 @@ export default function SubscriptionPopup() {
           
           <button 
             onClick={handleHideToday}
-            className="mt-3 text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4 transition-colors"
+            className="mt-[16px] mb-0 text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4 transition-colors"
           >
             오늘 하루 보지 않기
           </button>
