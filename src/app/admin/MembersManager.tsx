@@ -46,6 +46,7 @@ export default function MembersManager() {
   const [compCycleId, setCompCycleId] = useState('');
   const [compGrantReason, setCompGrantReason] = useState('');
   const [compLoading, setCompLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -171,6 +172,53 @@ export default function MembersManager() {
   function getBookOrdersForMember(userId: string) {
     return bookOrders.filter(bo => bo.user_id === userId && (selectedCycleId === 'all' || bo.cycle_id === selectedCycleId));
   }
+
+    const handleDownloadCSV = async () => {
+    setIsDownloading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      const params = new URLSearchParams({
+        search,
+        filter,
+        cycle_id: selectedCycleId
+      });
+
+      const res = await fetch(`/api/admin/members-csv?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'CSV 다운로드에 실패했습니다.');
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const date = new Date();
+      const offset = date.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(date.getTime() - offset)).toISOString().slice(0, 10);
+      
+      a.download = `underline_members_${localISOTime}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert('CSV 다운로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   function isSubscribed(userId: string) {
     return orders.some(o => o.user_id === userId && o.payment_status === 'DONE' && (selectedCycleId === 'all' || o.cycle_id === selectedCycleId));
@@ -299,7 +347,8 @@ export default function MembersManager() {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
         <input
           type="text"
           placeholder="이름, 이메일, 전화번호 검색"
@@ -314,8 +363,29 @@ export default function MembersManager() {
         </select>
         <select value={selectedCycleId} onChange={(e: any) => setSelectedCycleId(e.target.value)} style={{ padding: '12px', border: '1px solid #d1d5db', borderRadius: '8px' }}>
           <option value="all">전체 기수</option>
-          {cycles.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+            {cycles.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <button 
+          onClick={handleDownloadCSV}
+          disabled={isDownloading}
+          style={{ 
+            padding: '12px 20px', 
+            background: '#f3f4f6', 
+            color: '#374151', 
+            border: '1px solid #d1d5db', 
+            borderRadius: '8px', 
+            cursor: isDownloading ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s',
+            marginLeft: 'auto'
+          }}
+        >
+          {isDownloading ? 'CSV 생성 중...' : '⬇ CSV 다운로드'}
+        </button>
       </div>
 
       {selectedCycleId !== 'all' && (() => {
