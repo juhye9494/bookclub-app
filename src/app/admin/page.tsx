@@ -21,8 +21,14 @@ export default function AdminPage() {
     async function checkAdminAndFetchData() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        alert("관리자 로그인이 필요합니다.");
-        router.push('/');
+        window.dispatchEvent(
+          new CustomEvent('open-login', {
+            detail: {
+              mode: 'login',
+              returnTo: '/admin',
+            },
+          })
+        );
         return;
       }
 

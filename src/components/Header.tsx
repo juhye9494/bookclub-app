@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import { isAdmin } from '@/utils/admin';
 import DaumPostcodeEmbed from 'react-daum-postcode';
 
 const AUTH_METADATA_CLEANUP_KEY = 'auth_metadata_cleanup_2026_08_v1';
@@ -18,6 +19,7 @@ export default function Header() {
   // Auth Modal State
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
+  const [returnTo, setReturnTo] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -79,6 +81,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
     });
     const handleOpenLogin = (e: any) => {
       setIsLoginMode(e.detail?.mode !== 'signup');
+    setReturnTo(e.detail?.returnTo || '');
       setIsLoginOpen(true);
     };
     window.addEventListener('open-login', handleOpenLogin);
@@ -98,7 +101,16 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
       alert('로그인 성공!');
       setIsLoginOpen(false);
       window.dispatchEvent(new CustomEvent('auth-success'));
-      router.replace('/');
+      if (returnTo) {
+        if (returnTo === '/admin' && !isAdmin(email)) {
+          alert('관리자 권한이 없는 계정입니다.');
+          router.replace('/');
+        } else {
+          router.replace(returnTo);
+        }
+      } else {
+        router.replace('/');
+      }
       router.refresh();
     } else {
       if (!name || !phone || !address || !detailAddress) {
