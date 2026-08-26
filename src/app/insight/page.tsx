@@ -89,8 +89,9 @@ export default function PlusInsightPage() {
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [user, setUser] = useState<any>(null);
-  const [likes, setLikes] = useState<any>({});
+  const [actualLikes, setActualLikes] = useState<Record<string, number>>({});
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
 
   // Load posts from Supabase
   const loadPosts = async (page: number) => {
@@ -116,51 +117,60 @@ export default function PlusInsightPage() {
 
   useEffect(() => {
     const loadSessionAndProfile = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.user) {
-        setUser(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+      if (session?.user) {
+        const { data: profile } = await supabase.from('profiles').select('name').eq('id', session.user.id).single();
+        setAuthorName(profile?.name || '');
+      } else {
         setAuthorName('');
-        return;
       }
-
-      setUser(session.user);
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) {
-        console.error('[Insight] Profile fetch failed');
-        setAuthorName('');
-        return;
-      }
-
-      setAuthorName(profile?.name || '');
     };
-
     void loadSessionAndProfile();
 
-    // Comments logic removed - will be loaded on demand via API
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
 
-    const savedLikes = localStorage.getItem('insight_likes');
-    if (savedLikes) {
-      setLikes(JSON.parse(savedLikes));
-    } else {
-      const initialLikes = { 'insight-1': 42, 'insight-2': 35, 'insight-3': 58 };
-      setLikes(initialLikes);
-      localStorage.setItem('insight_likes', JSON.stringify(initialLikes));
-    }
+    const loadActualLikes = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_insight_like_counts');
+        if (error) throw error;
+        const counts: Record<string, number> = {};
+        data?.forEach((row: any) => {
+          counts[row.post_id] = row.like_count;
+        });
+        setActualLikes(counts);
+      } catch (err) {
+        console.error('Failed to load insight like counts:', err);
+      }
+    };
+    void loadActualLikes();
 
-    const savedLiked = localStorage.getItem('insight_liked_posts');
-    if (savedLiked) {
-      setLikedPosts(new Set(JSON.parse(savedLiked)));
-    }
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    const syncLikedPosts = async () => {
+      if (!user) {
+        setLikedPosts(new Set());
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from('insight_likes')
+          .select('post_id')
+          .eq('user_id', user.id);
+        if (error) throw error;
+        setLikedPosts(new Set(data?.map((row) => row.post_id) || []));
+      } catch (err) {
+        console.error('Failed to sync liked posts:', err);
+      }
+    };
+    void syncLikedPosts();
+  }, [user]);
 
   const loadCommentCounts = async () => {
     const postIds = INSIGHT_POSTS.map((post) => post.id);
@@ -213,24 +223,54 @@ export default function PlusInsightPage() {
     loadComments(selectedPost.id);
   }, [selectedPost?.id]);
 
-  const handleLike = (postId: string, e: React.MouseEvent) => {
+  const handleLike = async (postId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (likedPosts.has(postId)) {
-      const updated = { ...likes, [postId]: Math.max((likes[postId] || 1) - 1, 0) };
-      setLikes(updated);
-      localStorage.setItem('insight_likes', JSON.stringify(updated));
-      const newLiked = new Set(likedPosts);
-      newLiked.delete(postId);
-      setLikedPosts(newLiked);
-      localStorage.setItem('insight_liked_posts', JSON.stringify(Array.from(newLiked)));
+
+    if (!user) {
+      window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }));
+      return;
+    }
+
+    if (isLiking[postId]) return;
+    setIsLiking(prev => ({ ...prev, [postId]: true }));
+
+    const isCurrentlyLiked = likedPosts.has(postId);
+    const prevLikedPosts = new Set(likedPosts);
+    const prevActualLikes = { ...actualLikes };
+
+    const newLikedPosts = new Set(likedPosts);
+    if (isCurrentlyLiked) {
+      newLikedPosts.delete(postId);
     } else {
-      const updated = { ...likes, [postId]: (likes[postId] || 0) + 1 };
-      setLikes(updated);
-      localStorage.setItem('insight_likes', JSON.stringify(updated));
-      const newLiked = new Set(likedPosts);
-      newLiked.add(postId);
-      setLikedPosts(newLiked);
-      localStorage.setItem('insight_liked_posts', JSON.stringify(Array.from(newLiked)));
+      newLikedPosts.add(postId);
+    }
+    setLikedPosts(newLikedPosts);
+
+    setActualLikes(prev => ({
+      ...prev,
+      [postId]: Math.max((prev[postId] || 0) + (isCurrentlyLiked ? -1 : 1), 0)
+    }));
+
+    try {
+      if (isCurrentlyLiked) {
+        const { error } = await supabase
+          .from('insight_likes')
+          .delete()
+          .match({ post_id: postId, user_id: user.id });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('insight_likes')
+          .insert({ post_id: postId, user_id: user.id });
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Like action failed:', err);
+      alert('좋아요 처리에 실패했습니다.');
+      setLikedPosts(prevLikedPosts);
+      setActualLikes(prevActualLikes);
+    } finally {
+      setIsLiking(prev => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -379,7 +419,8 @@ export default function PlusInsightPage() {
       {/* Main Grid */}
       <div className="insight-grid">
         {posts.map(post => {
-          const currentLikes = likes[post.id] || post.likes;
+          const currentActualLikes = actualLikes[post.id] || 0;
+          const displayLikes = (post.base_like_count || 0) + currentActualLikes;
           const currentCommentsCount = commentCounts[post.id] ?? 0;
 
           return (
@@ -407,7 +448,7 @@ export default function PlusInsightPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '16px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   <span>{post.author}</span>
                   <div style={{ display: 'flex', gap: '12px' }}>
-                    <span style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onClick={(e) => handleLike(post.id, e)}>{likedPosts.has(post.id) ? '❤️' : '🩶'} {currentLikes}</span>
+                    <span style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onClick={(e) => handleLike(post.id, e)}>{likedPosts.has(post.id) ? '❤️' : '🩶'} {displayLikes}</span>
                     <span>💬 {currentCommentsCount}</span>
                   </div>
                 </div>
@@ -521,7 +562,7 @@ export default function PlusInsightPage() {
                     borderRadius: '40px', fontWeight: 600, fontSize: '0.92rem', cursor: 'pointer', transition: 'all 0.2s'
                   }}
                 >
-                  {likedPosts.has(selectedPost.id) ? '❤️ 좋아요를 눌렀어요!' : '🩶 유익한 글이에요!'} ({likes[selectedPost.id] || selectedPost.likes})
+                  {likedPosts.has(selectedPost.id) ? '❤️ 좋아요를 눌렀어요!' : '🩶 유익한 글이에요!'} ({(selectedPost.base_like_count || 0) + (actualLikes[selectedPost.id] || 0)})
                 </button>
               </div>
 
