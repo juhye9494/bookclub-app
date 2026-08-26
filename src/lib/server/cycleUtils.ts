@@ -2,6 +2,7 @@ import 'server-only';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const TARGET_CYCLE_ID = 'cycle-2026-h1';
+export const MEMBERSHIP_MAX_COUNT = 230;
 
 export async function getCycleOneStatus(): Promise<'none' | 'closing' | 'closed' | 'error'> {
   try {
@@ -23,7 +24,7 @@ export async function getCycleOneStatus(): Promise<'none' | 'closing' | 'closed'
     const paidUserIds = new Set(validUserIds);
     const count = paidUserIds.size;
 
-    if (count >= 225) {
+    if (count >= MEMBERSHIP_MAX_COUNT) {
       return 'closed';
     } else if (count >= 200) {
       return 'closing';
