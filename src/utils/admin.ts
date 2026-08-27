@@ -9,7 +9,9 @@ export const ADMIN_EMAILS = [
   'mwd101@hankyung.com',
   'sj.flyme@gmail.com',
   'ehrtjdlwpgh@hankyung.com',
-  'hyemink@hankyung.com'
+  'hyemink@hankyung.com',
+  'ghkim@hankyung.com',
+  'chaem@hankyung.com'
 ];
 
 export function isAdmin(email: string | undefined | null): boolean {
