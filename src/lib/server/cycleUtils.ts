@@ -2,7 +2,7 @@ import 'server-only';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const TARGET_CYCLE_ID = 'cycle-2026-h1';
-export const MEMBERSHIP_MAX_COUNT = 230;
+export const MEMBERSHIP_MAX_COUNT = 237;
 
 export async function getCycleOneStatus(): Promise<'none' | 'closing' | 'closed' | 'error'> {
   try {

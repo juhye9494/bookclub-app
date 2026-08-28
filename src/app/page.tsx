@@ -35,6 +35,7 @@ export default function Home() {
   const [activeCycle, setActiveCycle] = useState<any>(null);
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [membershipStatus, setMembershipStatus] = useState<'none' | 'closing' | 'closed' | 'loading'>('loading');
   
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
@@ -51,8 +52,26 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    async function fetchStatus() {
+      try {
+        const res = await fetch(`/api/cycles/subscribers-count`);
+        if (res.ok) {
+          const data = await res.json();
+          setMembershipStatus(data.status);
+        } else {
+          setMembershipStatus('none');
+        }
+      } catch (e) {
+        setMembershipStatus('none');
+      }
+    }
+    fetchStatus();
+  }, []);
+
   const handleSubscribeClick = async (e: React.MouseEvent) => {
     e.preventDefault();
+    if (membershipStatus === 'closed') return;
     if (!user) {
       window.dispatchEvent(new CustomEvent('open-login'));
       return;
@@ -448,7 +467,31 @@ export default function Home() {
               </div>
             )}
             
-            <button onClick={handleSubscribeClick} className="plan-btn" style={{ marginTop: activeCycle?.recruitment_start_date && activeCycle?.recruitment_end_date ? '20px' : '24px', display: 'inline-block', width: '100%', border: 'none', cursor: 'pointer', textDecoration: 'none', textAlign: 'center' }}>구독 신청하기</button>
+            {(() => {
+              const isMembershipClosed = membershipStatus === 'closed';
+              return (
+                <button
+                  onClick={handleSubscribeClick}
+                  className="plan-btn"
+                  disabled={isMembershipClosed}
+                  style={{
+                    marginTop: activeCycle?.recruitment_start_date && activeCycle?.recruitment_end_date ? '20px' : '24px',
+                    display: 'inline-block',
+                    width: '100%',
+                    border: 'none',
+                    cursor: isMembershipClosed ? 'not-allowed' : 'pointer',
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    background: isMembershipClosed ? '#6B7280' : undefined,
+                    boxShadow: isMembershipClosed ? 'none' : undefined,
+                    color: isMembershipClosed ? '#D1D5DB' : undefined,
+                    transform: isMembershipClosed ? 'none' : undefined,
+                  }}
+                >
+                  {isMembershipClosed ? '모집 마감' : '구독 신청하기'}
+                </button>
+              );
+            })()}
 
           </div>
 

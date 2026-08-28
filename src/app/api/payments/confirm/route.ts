@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getCycleOneStatus, TARGET_CYCLE_ID } from '@/lib/server/cycleUtils';
 
 const maskKey = (key: string) => {
   if (!key) return '';
@@ -116,6 +117,16 @@ export async function POST(req: Request) {
     }
     const encryptedSecretKey = Buffer.from(`${secretKey}:`).toString('base64');
     
+    // 1.5. 정원 마감 검증 (최종 결제 승인 직전)
+    if (order.cycle_id === TARGET_CYCLE_ID) {
+      const cycleStatus = await getCycleOneStatus();
+      if (cycleStatus === 'closed') {
+        console.warn(`[PAYMENT_CONFIRM] 정원 초과 차단. User ID: ${maskKey(user.id)}, OrderId: ${orderId}`);
+        // 토스 결제 승인 거부 처리 (결제 실패 유도)
+        return NextResponse.json({ error: '모집 정원이 마감되어 결제를 진행할 수 없습니다.' }, { status: 403 });
+      }
+    }
+
     // 2. 결제 승인 요청 (토스 API)
     const confirmResponse = await fetch('https://api.tosspayments.com/v1/payments/confirm', {
       method: 'POST',
