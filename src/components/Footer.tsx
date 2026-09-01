@@ -23,7 +23,6 @@ export default function Footer() {
             <div><strong>호스팅서비스제공자</strong>(주)한경매거진앤북</div>
           </div>
           <div className="footer-contact">
-            📞 02-360-4555
             <div style={{ marginTop: '10px' }}>
               <Link href="/inquiry" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: 'var(--accent)', color: '#fff', borderRadius: '100px', fontSize: '0.82rem', fontWeight: 600, textDecoration: 'none', transition: 'opacity 0.2s' }}>
                 ✉️ 1:1 문의하기
