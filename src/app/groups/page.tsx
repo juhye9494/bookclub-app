@@ -437,9 +437,12 @@ export default function GroupsPage() {
       return;
     }
 
+    const resData = await res.json();
+    const actualGroupId = resData.groupId || groupId;
+
     if (finalChatUrl) {
       try {
-        await saveOpenChatUrl(groupId, finalChatUrl);
+        await saveOpenChatUrl(actualGroupId, finalChatUrl);
       } catch (err) {
         alert('독서모임은 생성되었지만 오픈채팅방 링크 저장에 실패했습니다.');
         return;
