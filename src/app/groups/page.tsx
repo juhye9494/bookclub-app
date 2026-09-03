@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useMemberAccess } from '@/hooks/useMemberAccess';
@@ -480,9 +480,18 @@ export default function GroupsPage() {
       title: newTitle, desc: newDesc, book: newBook, leader: newLeader, maxMembers: parseInt(newMax) || 8, tags: newTags.split(',').map((t: string) => t.trim()).filter(Boolean), place: newPlace, time: newTime, intro: newIntro
     };
 
-    const { error: updateError } = await supabase.from('groups').update(updatedFields).eq('id', editingGroup.id);
-    if (updateError) {
-      alert('독서모임 수정 중 오류가 발생했습니다.');
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`/api/groups/${editingGroup.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token && { 'Authorization': `Bearer ${session.access_token}` })
+      },
+      body: JSON.stringify(updatedFields)
+    });
+    
+    if (!res.ok) {
+      alert('모임 수정 중 오류가 발생했습니다.');
       return;
     }
 
@@ -1185,3 +1194,4 @@ ex.
 
   );
 }
+

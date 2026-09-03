@@ -23,68 +23,6 @@ function initClients(req: Request) {
   return { supabaseAuth, supabaseAdmin, token };
 }
 
-export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
-  try {
-    let clients;
-    try {
-      clients = initClients(req);
-    } catch (e: any) {
-      if (e.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
-    const { supabaseAuth, supabaseAdmin, token } = clients;
-    const { id } = await context.params;
-
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
-    if (userError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const { data: group, error: groupError } = await supabaseAdmin
-      .from('groups')
-      .select('creator_id, membersCount, maxMembers, status')
-      .eq('id', id)
-      .single();
-
-    if (groupError || !group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
-
-    const isCreator = group.creator_id === user.id;
-    const isUserAdmin = isAdmin(user.email);
-
-    if (!isCreator && !isUserAdmin) {
-      const isClosed = group.membersCount >= group.maxMembers || group.status === '모집마감';
-      if (isClosed) return NextResponse.json({ error: 'Recruitment is closed' }, { status: 403 });
-
-      const { data: memberData } = await supabaseAdmin
-        .from('group_participants')
-        .select('id')
-        .eq('group_id', id)
-        .eq('user_id', user.id)
-        .eq('role', 'member')
-        .single();
-      
-      if (!memberData) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const { data: linkData, error: linkError } = await supabaseAdmin
-      .from('group_open_chat_links')
-      .select('open_chat_url')
-      .eq('group_id', id)
-      .single();
-
-    if (linkError || !linkData) return NextResponse.json({ error: 'Link not found' }, { status: 404 });
-
-    return NextResponse.json(
-      { url: linkData.open_chat_url },
-      {
-        headers: {
-          'Cache-Control': 'private, no-store',
-        },
-      }
-    );
-  } catch (err: any) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}
-
 export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
     let clients;
@@ -114,42 +52,58 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     if (!isCreator && !isUserAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await req.json();
-    const { open_chat_url } = body;
 
-    const trimmed = (open_chat_url || '').trim();
-    if (!trimmed) {
-      const { error: deleteError } = await supabaseAdmin
-        .from('group_open_chat_links')
-        .delete()
-        .eq('group_id', id);
-      
-      if (deleteError) {
-        return NextResponse.json({ error: 'Failed to delete open chat URL' }, { status: 500 });
-      }
-      return NextResponse.json({ success: true });
+    const { error: updateError } = await supabaseAdmin
+      .from('groups')
+      .update(body)
+      .eq('id', id);
+
+    if (updateError) {
+      return NextResponse.json({ error: 'Failed to update group' }, { status: 500 });
     }
 
-    let validUrl = '';
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    let clients;
     try {
-      const parsed = new URL(trimmed);
-      if (parsed.protocol !== 'https:' || parsed.hostname !== 'open.kakao.com') {
-        return NextResponse.json({ error: 'Invalid open chat URL' }, { status: 400 });
-      }
-      validUrl = parsed.toString();
-    } catch {
-      return NextResponse.json({ error: 'Invalid open chat URL' }, { status: 400 });
+      clients = initClients(req);
+    } catch (e: any) {
+      if (e.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
+    const { supabaseAuth, supabaseAdmin, token } = clients;
+    const { id } = await context.params;
 
-    const { error: upsertError } = await supabaseAdmin
-      .from('group_open_chat_links')
-      .upsert({
-        group_id: id,
-        open_chat_url: validUrl,
-        updated_at: new Date().toISOString(),
-      });
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
+    if (userError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (upsertError) {
-      return NextResponse.json({ error: 'Failed to save open chat URL' }, { status: 500 });
+    const { data: group, error: groupError } = await supabaseAdmin
+      .from('groups')
+      .select('creator_id')
+      .eq('id', id)
+      .single();
+
+    if (groupError || !group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    
+    const isCreator = group.creator_id === user.id;
+    const isUserAdmin = isAdmin(user.email);
+    
+    if (!isCreator && !isUserAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    const { data: deletedRows, error: deleteError } = await supabaseAdmin
+      .from('groups')
+      .delete()
+      .eq('id', id)
+      .select('id');
+
+    if (deleteError || !deletedRows || deletedRows.length !== 1) {
+      return NextResponse.json({ error: 'Failed to delete group' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
