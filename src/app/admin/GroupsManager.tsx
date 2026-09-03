@@ -21,10 +21,21 @@ export default function GroupsManager() {
       const { data: pData, error: pError } = await supabase.from('group_participants').select('*');
       if (pData) setParticipants(pData);
 
-      // Fetch profiles
-      const { data: profData, error: profError } = await supabase.from('profiles').select('*');
-      if (profData) setProfiles(profData);
-
+      // Fetch profiles via admin API to bypass RLS and get decrypted PII
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const res = await fetch('/api/admin/profiles', {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.profiles) setProfiles(data.profiles);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch admin profiles', err);
+      }
       setLoading(false);
     }
     loadData();
