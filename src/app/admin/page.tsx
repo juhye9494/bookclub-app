@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { isAdmin } from '@/utils/admin';
@@ -11,6 +11,7 @@ import MembersManager from './MembersManager';
 import ShippingManager from './ShippingManager';
 import InquiryManager from './InquiryManager';
 import CyclesManager from './CyclesManager';
+import GroupsManager from './GroupsManager';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -68,7 +69,7 @@ export default function AdminPage() {
         
         {/* TABS */}
         <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e5e7eb', marginBottom: '32px', overflowX: 'auto' }}>
-          {['shipping', 'cycles', 'content', 'members', 'events', 'insights', 'inquiries'].map((tab) => (
+          {['shipping', 'cycles', 'content', 'members', 'groups', 'events', 'insights', 'inquiries'].map((tab) => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)} 
@@ -83,6 +84,7 @@ export default function AdminPage() {
               {tab === 'cycles' && '기수 관리'}
               {tab === 'content' && '기수별 도서 관리'}
               {tab === 'members' && '회원 관리'}
+              {tab === 'groups' && '독서모임 관리'}
               {tab === 'events' && '이벤트 관리'}
               {tab === 'insights' && '인사이트 관리'}
               {tab === 'inquiries' && '고객 센터 문의'}
@@ -96,6 +98,7 @@ export default function AdminPage() {
           {activeTab === 'cycles' && <CyclesManager />}
           {activeTab === 'content' && <ContentManager />}
           {activeTab === 'members' && <MembersManager />}
+          {activeTab === 'groups' && <GroupsManager />}
           {activeTab === 'events' && <EventManager />}
           {activeTab === 'insights' && <InsightManager />}
           {activeTab === 'inquiries' && <InquiryManager />}

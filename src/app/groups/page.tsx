@@ -788,7 +788,7 @@ export default function GroupsPage() {
                       {accessLoading ? '권한 확인 중...' : isFull ? '정원 마감' : '독서모임 참가 신청'}
                     </button>
                   )}
-                  {isAdmin(user?.email) && (
+                  {(isAdmin(user?.email) || isCreator) && (
                     <div className="groups-admin-actions">
                     <button
                       onClick={(e) => { e.stopPropagation(); openEditGroup(group); }}
