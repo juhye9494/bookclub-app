@@ -70,8 +70,8 @@ export default function ApologyPopup() {
           </svg>
         </button>
 
-        <div className="w-full flex flex-col items-center text-center box-border pt-[40px] pb-6 flex-shrink-0" style={{ paddingLeft: '24px', paddingRight: '24px' }}>
-          <span className="text-xs font-bold tracking-widest text-[#fc6640]" style={{ marginBottom: '10px' }}>
+        <div className="w-full flex flex-col items-center text-center box-border flex-shrink-0" style={{ paddingTop: '56px', paddingBottom: '28px', paddingLeft: '24px', paddingRight: '24px' }}>
+          <span className="text-xs font-bold tracking-widest text-[#fc6640]" style={{ marginBottom: '16px' }}>
             NOTICE
           </span>
 
@@ -80,7 +80,7 @@ export default function ApologyPopup() {
           </h2>
         </div>
 
-        <div className="overflow-y-auto py-2 flex-1 scrollbar-hide text-left box-border" style={{ paddingLeft: '24px', paddingRight: '24px' }}>
+        <div className="overflow-y-auto flex-1 scrollbar-hide text-left box-border" style={{ paddingTop: '8px', paddingBottom: '40px', paddingLeft: '24px', paddingRight: '24px' }}>
           <div className="flex flex-col text-[14px] sm:text-[15px] leading-[1.7] text-gray-700 break-keep" style={{ gap: '18px' }}>
             <p>
               안녕하세요, 한경 언더라인 북클럽입니다.
@@ -118,17 +118,17 @@ export default function ApologyPopup() {
           </div>
         </div>
 
-        <div className="w-full flex flex-col items-center pb-[30px] pt-6 mt-2 flex-shrink-0 border-t border-gray-100 box-border" style={{ paddingLeft: '24px', paddingRight: '24px' }}>
+        <div className="w-full flex flex-col items-center flex-shrink-0 border-t border-gray-100 box-border" style={{ marginTop: '8px', paddingTop: '28px', paddingBottom: '40px', paddingLeft: '24px', paddingRight: '24px' }}>
           <div className="flex gap-3 w-full">
             <button 
               onClick={handleClose}
-              className="flex-1 py-[14px] bg-white border border-gray-300 text-gray-700 rounded-xl font-semibold text-base hover:bg-gray-50 transition-colors"
+              className="flex-1 py-[16px] bg-white border border-gray-300 text-gray-700 rounded-xl font-semibold text-base hover:bg-gray-50 transition-colors"
             >
               닫기
             </button>
             <button 
               onClick={handleInquiry}
-              className="flex-1 py-[14px] bg-gray-900 text-white rounded-xl font-semibold text-base shadow-md hover:bg-gray-800 transition-colors"
+              className="flex-1 py-[16px] bg-gray-900 text-white rounded-xl font-semibold text-base shadow-md hover:bg-gray-800 transition-colors"
             >
               1:1 문의하기
             </button>
@@ -136,7 +136,7 @@ export default function ApologyPopup() {
           
           <button 
             onClick={handleHideToday}
-            className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4 transition-colors mt-5"
+            className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4 transition-colors mt-6"
           >
             오늘 하루 보지 않기
           </button>
