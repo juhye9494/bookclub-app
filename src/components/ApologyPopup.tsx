@@ -13,8 +13,8 @@ export default function ApologyPopup() {
 
   useEffect(() => {
     try {
-      // 노출 종료: 2026년 9월 7일(월) 오전 10시 (KST 기준)
-      const expiryDate = new Date('2026-09-07T10:00:00+09:00').getTime();
+      // 노출 즉시 종료 처리 (과거 시간으로 설정)
+      const expiryDate = new Date('2026-09-04T00:00:00+09:00').getTime();
       const now = new Date().getTime();
 
       if (now >= expiryDate) {
