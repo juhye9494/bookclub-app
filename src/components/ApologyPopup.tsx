@@ -118,7 +118,7 @@ export default function ApologyPopup() {
           </div>
         </div>
 
-        <div className="w-full flex flex-col items-center flex-shrink-0 border-t border-gray-100 box-border" style={{ marginTop: '8px', paddingTop: '28px', paddingBottom: '40px', paddingLeft: '24px', paddingRight: '24px' }}>
+        <div className="w-full flex flex-col items-center flex-shrink-0 border-t border-gray-100 box-border" style={{ marginTop: '8px', paddingTop: '28px', paddingBottom: '40px', paddingLeft: '24px', paddingRight: '24px', gap: '16px' }}>
           <div className="flex gap-3 w-full">
             <button 
               onClick={handleClose}
@@ -136,7 +136,7 @@ export default function ApologyPopup() {
           
           <button 
             onClick={handleHideToday}
-            className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4 transition-colors mt-8"
+            className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4 transition-colors"
           >
             오늘 하루 보지 않기
           </button>
