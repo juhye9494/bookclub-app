@@ -136,7 +136,7 @@ export default function ApologyPopup() {
           
           <button 
             onClick={handleHideToday}
-            className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4 transition-colors mt-6"
+            className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-4 transition-colors mt-8"
           >
             오늘 하루 보지 않기
           </button>
