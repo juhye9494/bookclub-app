@@ -13,6 +13,16 @@ export default function ApologyPopup() {
 
   useEffect(() => {
     try {
+      // 노출 종료: 2026년 9월 7일(월) 오전 10시 (KST 기준)
+      const expiryDate = new Date('2026-09-07T10:00:00+09:00').getTime();
+      const now = new Date().getTime();
+
+      if (now >= expiryDate) {
+        setVisible(false);
+        setLoading(false);
+        return;
+      }
+
       const storageKey = `hide_${POPUP_ID}`;
       const hideDate = localStorage.getItem(storageKey);
       const today = new Date().toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
