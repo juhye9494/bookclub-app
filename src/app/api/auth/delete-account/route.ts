@@ -96,7 +96,8 @@ export async function POST(request: Request) {
           inq.category.includes('배송') || 
           inq.category.includes('교환') || 
           inq.category.includes('환불') || 
-          inq.category.includes('결제')
+          inq.category.includes('결제') ||
+          inq.category.includes('활동비')
         );
         if (isDispute) {
           // 익명화: 더미 계정으로 이전하고 개인정보(암호화된 필드)는 null로 파기
