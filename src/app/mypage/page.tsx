@@ -225,6 +225,39 @@ export default function MyPage() {
   const [passwordResetSent, setPasswordResetSent] = useState(false);
   const [changingPw, setChangingPw] = useState(false);
 
+  // Account delete state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('로그인이 필요합니다.');
+
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || '회원 탈퇴 처리 중 오류가 발생했습니다.');
+      }
+
+      alert('회원 탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.');
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setIsDeletingAccount(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
   useEffect(() => {
     async function fetchData() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1360,9 +1393,17 @@ export default function MyPage() {
                   </button>
                 </div>
               )}
+              </div>
+
+              {/* 회원 탈퇴 */}
+              <div style={{ marginTop: '48px', textAlign: 'center' }}>
+                <button onClick={() => setIsDeleteModalOpen(true)}
+                  style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '0.82rem', textDecoration: 'underline', cursor: 'pointer', padding: '4px' }}>
+                  회원 탈퇴
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* 탭 4: 1:1 문의 */}
         {activeTab === 'inquiry' && (
@@ -1452,6 +1493,29 @@ export default function MyPage() {
         )}
       </main>
 
+      {/* 회원 탈퇴 모달 */}
+      {isDeleteModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          onClick={(e) => { if (e.target === e.currentTarget && !isDeletingAccount) setIsDeleteModalOpen(false); }}>
+          <div style={{ background: '#fff', padding: '32px 24px', borderRadius: '16px', width: '100%', maxWidth: '360px', textAlign: 'center' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>⚠️</div>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>정말 탈퇴하시겠습니까?</h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '24px', wordBreak: 'keep-all' }}>
+              회원 탈퇴 시 계정 및 개인정보가 삭제되며 <strong>복구할 수 없습니다.</strong>
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setIsDeleteModalOpen(false)} disabled={isDeletingAccount}
+                style={{ flex: 1, padding: '12px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: isDeletingAccount ? 'not-allowed' : 'pointer', fontSize: '0.9rem' }}>
+                취소
+              </button>
+              <button onClick={handleDeleteAccount} disabled={isDeletingAccount}
+                style={{ flex: 1, padding: '12px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: isDeletingAccount ? 'not-allowed' : 'pointer', fontSize: '0.9rem' }}>
+                {isDeletingAccount ? '처리 중...' : '회원 탈퇴'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingShippingOrderId && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
