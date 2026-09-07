@@ -180,9 +180,27 @@ function InquiryContent() {
     <div style={{ background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--sans)' }}>
       <main style={{ maxWidth: '680px', margin: '0 auto', padding: '96px 5vw 60px' }}>
         <h1 style={{ fontFamily: 'var(--serif)', fontSize: '2rem', marginBottom: '8px' }}>1:1 문의</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '32px' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '24px' }}>
           문의 사항을 남겨주시면 담당자가 확인 후 답변 드리겠습니다.
         </p>
+
+        <div style={{ 
+          background: '#f8fafc', 
+          border: '1px solid #e2e8f0', 
+          borderRadius: '12px', 
+          padding: '16px 20px', 
+          marginBottom: '32px',
+          display: 'flex', 
+          alignItems: 'flex-start', 
+          gap: '12px',
+          color: '#475569',
+          fontSize: '0.92rem',
+          lineHeight: '1.5',
+          wordBreak: 'keep-all'
+        }}>
+          <span style={{ fontSize: '1.1rem', marginTop: '-1px' }}>ℹ️</span>
+          <span>문의사항은 확인 후 <strong>다음 날 오후 5시까지</strong> 순차적으로 답변드립니다.</span>
+        </div>
 
         <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--border)', padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
