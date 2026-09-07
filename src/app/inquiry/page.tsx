@@ -164,7 +164,7 @@ function InquiryContent() {
           <div style={{ fontSize: '3rem', marginBottom: '16px' }}>✅</div>
           <h2 style={{ fontFamily: 'var(--serif)', fontSize: '1.6rem', marginBottom: '12px' }}>문의가 접수되었습니다</h2>
           <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '28px' }}>
-            담당자 확인 후 순차적으로 답변 드리겠습니다.<br />
+            문의사항은 다음 날 오후 5시에 일괄 답변드립니다.<br />
             마이페이지에서 문의 내역과 답변을 확인하실 수 있습니다.
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
@@ -199,7 +199,7 @@ function InquiryContent() {
           wordBreak: 'keep-all'
         }}>
           <span style={{ fontSize: '1.1rem', marginTop: '-1px' }}>ℹ️</span>
-          <span>문의사항은 확인 후 <strong>다음 날 오후 5시까지</strong> 순차적으로 답변드립니다.</span>
+          <span>문의사항은 <strong>다음 날 오후 5시에</strong> 일괄 답변드립니다.</span>
         </div>
 
         <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--border)', padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
