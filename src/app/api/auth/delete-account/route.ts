@@ -22,14 +22,14 @@ export async function POST(request: Request) {
     const { data: hostedGroups, error: groupsError } = await supabaseAdmin
       .from('groups')
       .select('id')
-      .eq('host_id', userId)
+      .eq('creator_id', userId)
       .limit(1);
 
     if (groupsError) {
       return NextResponse.json({ error: 'Failed to verify group host status' }, { status: 500 });
     }
     if (hostedGroups && hostedGroups.length > 0) {
-      return NextResponse.json({ error: '운영 중인 독서모임이 있어 탈퇴할 수 없습니다. 고객센터로 문의해주세요.' }, { status: 400 });
+      return NextResponse.json({ error: '운영 중인 독서모임이 있어 회원 탈퇴가 불가합니다.' }, { status: 400 });
     }
 
     // 3. Prepare Dummy User for anonymization
@@ -79,12 +79,37 @@ export async function POST(request: Request) {
       }
     }
 
-    const deleteTables = ['group_participants', 'event_participants', 'insight_likes', 'inquiries'];
+    const deleteTables = ['group_participants', 'event_participants', 'insight_likes'];
     for (const table of deleteTables) {
       const { error } = await supabaseAdmin.from(table).delete().eq('user_id', userId);
       if (error) {
         console.error(`Failed to delete from ${table}:`, error);
         return NextResponse.json({ error: '데이터 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' }, { status: 500 });
+      }
+    }
+
+    // 4-1. Handle Inquiries (Keep dispute/transaction inquiries, delete simple ones)
+    const { data: userInquiries } = await supabaseAdmin.from('inquiries').select('id, category').eq('user_id', userId);
+    if (userInquiries && userInquiries.length > 0) {
+      for (const inq of userInquiries) {
+        const isDispute = inq.category && (
+          inq.category.includes('배송') || 
+          inq.category.includes('교환') || 
+          inq.category.includes('환불') || 
+          inq.category.includes('결제')
+        );
+        if (isDispute) {
+          // 익명화: 더미 계정으로 이전하고 개인정보(암호화된 필드)는 null로 파기
+          await supabaseAdmin.from('inquiries').update({
+            user_id: dummyUserId,
+            user_name_enc: null,
+            user_email_enc: null,
+            user_phone_enc: null
+          }).eq('id', inq.id);
+        } else {
+          // 단순 문의는 즉시 영구 삭제
+          await supabaseAdmin.from('inquiries').delete().eq('id', inq.id);
+        }
       }
     }
 
