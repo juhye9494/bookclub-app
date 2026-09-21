@@ -6,8 +6,8 @@ export const metadata = {
   title: '공지사항 - 언더라인 독서클럽',
 };
 
-// Next.js ISR/SSR configuration
-export const revalidate = 60; // 60 seconds
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function NoticesPage() {
   const { data: notices, error } = await supabase
