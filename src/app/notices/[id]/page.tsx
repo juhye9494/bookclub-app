@@ -31,8 +31,8 @@ export default async function NoticeDetailPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '120px 20px 80px' }}>
-      <div style={{ borderBottom: '2px solid #222', paddingBottom: '24px', marginBottom: '32px' }}>
+    <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto', padding: '120px 20px 80px' }}>
+      <div style={{ width: '100%', borderBottom: '2px solid #222', paddingBottom: '24px', marginBottom: '32px' }}>
         <h1 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '12px' }}>
           {notice.is_pinned && <span style={{ color: 'var(--accent)', marginRight: '8px' }}>[공지]</span>}
           {notice.title}
@@ -42,7 +42,7 @@ export default async function NoticeDetailPage({ params }: { params: Promise<{ i
         </div>
       </div>
 
-      <div style={{ lineHeight: 1.8, fontSize: '1.05rem', color: '#333', minHeight: '300px', whiteSpace: 'pre-wrap' }}>
+      <div style={{ width: '100%', lineHeight: 1.8, fontSize: '1.05rem', color: '#333', minHeight: '300px', whiteSpace: 'pre-wrap' }}>
         {notice.content}
         
         {notice.image_urls && notice.image_urls.length > 0 && (
@@ -59,7 +59,7 @@ export default async function NoticeDetailPage({ params }: { params: Promise<{ i
         )}
       </div>
 
-      <div style={{ marginTop: '60px', textAlign: 'center' }}>
+      <div style={{ width: '100%', marginTop: '60px', textAlign: 'center' }}>
         <Link 
           href="/notices" 
           style={{ 
