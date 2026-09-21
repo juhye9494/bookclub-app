@@ -284,6 +284,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
           <Link href="/insight" className="nav-link">플러스 인사이트</Link>
           <Link href="/groups" className="nav-link">독서모임</Link>
           <Link href="/events" className="nav-link">이벤트</Link>
+          <Link href="/notices" className="nav-link">공지사항</Link>
           {user ? (
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
               <Link href="/mypage" className="nav-link">마이페이지</Link>
@@ -303,6 +304,7 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
         <Link href="/insight" className="nav-link" onClick={() => setMobileMenuOpen(false)}>플러스 인사이트</Link>
         <Link href="/groups" className="nav-link" onClick={() => setMobileMenuOpen(false)}>독서모임</Link>
         <Link href="/events" className="nav-link" onClick={() => setMobileMenuOpen(false)}>이벤트</Link>
+        <Link href="/notices" className="nav-link" onClick={() => setMobileMenuOpen(false)}>공지사항</Link>
         <div className="mobile-auth-area">
           {user ? (
             <>\
