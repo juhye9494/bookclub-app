@@ -11,7 +11,9 @@ export const ADMIN_EMAILS = [
   'ehrtjdlwpgh@hankyung.com',
   'hyemink@hankyung.com',
   'ghkim@hankyung.com',
-  'chaem@hankyung.com'
+  'chaem@hankyung.com',
+  'dreanian@hankyung.com',
+  'steelcloud@hankyung.com'
 ];
 
 export function isAdmin(email: string | undefined | null): boolean {
