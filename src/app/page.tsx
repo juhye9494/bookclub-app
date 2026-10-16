@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import ApologyPopup from '@/components/ApologyPopup';
+import EventPopup from '@/components/EventPopup';
 
 
 const RECOMMENDATIONS = [
@@ -648,6 +649,7 @@ export default function Home() {
         </div>
       </section>
       <ApologyPopup />
+      <EventPopup />
     </>
   );
 }
