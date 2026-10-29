@@ -225,8 +225,8 @@ export default function Footer() {
 
             <h4>8. 개인정보 보호 책임자</h4>
             <ul>
-              <li>개인정보 보호 책임자: 서은실</li>
-              <li>이메일: ess0317@hankyung.com</li>
+              <li>개인정보 보호 책임자: 김규형 부장</li>
+              <li>이메일: <a href="mailto:ghkim@hankyung.com" style={{ color: 'inherit', textDecoration: 'none' }}>ghkim@hankyung.com</a></li>
             </ul>
 
             <h4>9. 개인정보처리방침의 변경</h4>
