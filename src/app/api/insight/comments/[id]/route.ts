@@ -2,12 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/utils/admin';
 
-function jsonNoStore(body: unknown, init?: { status?: number }) {
-  return NextResponse.json(body, {
-    status: init?.status ?? 200,
-    headers: { 'Cache-Control': 'no-store' },
-  });
-}
+import { jsonNoStore } from '@/lib/server/jsonNoStore';
 
 export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
   try {

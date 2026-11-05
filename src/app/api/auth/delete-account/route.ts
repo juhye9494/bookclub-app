@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     // Transactional records (orders, book_orders) and their snapshot PII are retained for 5-year legal compliance,
     // but they are decoupled from the user by pointing to the dummy user.
     // All other active participation data and inquiries are immediately destroyed.
-    const updateTables = ['orders', 'book_orders', 'insight_comments'];
+    const updateTables = ['orders', 'book_orders', 'insight_comments', 'marketing_consent_history'];
     for (const table of updateTables) {
       const { error } = await supabaseAdmin.from(table).update({ user_id: dummyUserId }).eq('user_id', userId);
       if (error) {
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const deleteTables = ['group_participants', 'event_participants', 'insight_likes'];
+    const deleteTables = ['group_participants', 'event_participants', 'insight_likes', 'marketing_consents'];
     for (const table of deleteTables) {
       const { error } = await supabaseAdmin.from(table).delete().eq('user_id', userId);
       if (error) {

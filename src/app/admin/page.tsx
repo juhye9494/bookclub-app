@@ -13,6 +13,7 @@ import InquiryManager from './InquiryManager';
 import CyclesManager from './CyclesManager';
 import GroupsManager from './GroupsManager';
 import NoticeManager from './NoticeManager';
+import MarketingConsentManager from './MarketingConsentManager';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function AdminPage() {
         
         {/* TABS */}
         <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e5e7eb', marginBottom: '32px', overflowX: 'auto' }}>
-          {['shipping', 'cycles', 'content', 'members', 'groups', 'events', 'insights', 'inquiries', 'notices'].map((tab) => (
+          {['shipping', 'cycles', 'content', 'members', 'marketing', 'groups', 'events', 'insights', 'inquiries', 'notices'].map((tab) => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)} 
@@ -85,6 +86,7 @@ export default function AdminPage() {
               {tab === 'cycles' && '기수 관리'}
               {tab === 'content' && '기수별 도서 관리'}
               {tab === 'members' && '회원 관리'}
+              {tab === 'marketing' && '마케팅 동의 관리'}
               {tab === 'groups' && '독서모임 관리'}
               {tab === 'events' && '이벤트 관리'}
               {tab === 'insights' && '인사이트 관리'}
@@ -100,6 +102,7 @@ export default function AdminPage() {
           {activeTab === 'cycles' && <CyclesManager />}
           {activeTab === 'content' && <ContentManager />}
           {activeTab === 'members' && <MembersManager />}
+          {activeTab === 'marketing' && <MarketingConsentManager />}
           {activeTab === 'groups' && <GroupsManager />}
           {activeTab === 'events' && <EventManager />}
           {activeTab === 'insights' && <InsightManager />}

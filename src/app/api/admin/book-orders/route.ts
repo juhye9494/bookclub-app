@@ -7,12 +7,7 @@ import {
 } from '@/lib/server/orderPiiCrypto';
 import { decryptBookOrderPii, BookOrderPiiField } from '@/lib/server/bookOrderPiiCrypto';
 
-function jsonNoStore(body: unknown, init?: { status?: number }) {
-  return NextResponse.json(body, {
-    status: init?.status ?? 200,
-    headers: { 'Cache-Control': 'no-store' },
-  });
-}
+import { jsonNoStore } from '@/lib/server/jsonNoStore';
 
 function readOrderPii(
   encryptedValue: unknown,

@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import DaumPostcodeEmbed from 'react-daum-postcode';
 import Script from 'next/script';
+import MyPageMarketingConsent from '@/components/MyPageMarketingConsent';
 
-type TabType = 'orders' | 'profile' | 'activity' | 'inquiry';
+type TabType = 'orders' | 'profile' | 'activity' | 'inquiry' | 'marketing';
 
 export default function MyPage() {
   const formatKoreanDate = (value?: string | null) => {
@@ -684,6 +685,7 @@ export default function MyPage() {
             { key: 'profile' as TabType, label: '👤 내 정보 수정' },
             { key: 'activity' as TabType, label: '📋 활동내역' },
             { key: 'inquiry' as TabType, label: '💬 1:1 문의' },
+            { key: 'marketing' as TabType, label: '🔔 마케팅 수신 설정' },
           ]).map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               style={{
@@ -1490,6 +1492,10 @@ export default function MyPage() {
               </div>
             )}
           </div>
+        )}
+        {/* 탭 5: 마케팅 수신 설정 */}
+        {activeTab === 'marketing' && (
+          <MyPageMarketingConsent />
         )}
       </main>
 

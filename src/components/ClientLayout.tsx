@@ -3,6 +3,7 @@ import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import { ToastProvider } from './Toast';
+import MarketingConsentPopup from './MarketingConsentPopup';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           {children}
         </main>
         <Footer />
+        <MarketingConsentPopup />
       </div>
     </ToastProvider>
   );

@@ -35,6 +35,11 @@ export default function Header() {
 const [changingPw, setChangingPw] = useState(false);
 const [passwordResetSent, setPasswordResetSent] = useState(false);
 
+  // 마케팅 수신 동의 (선택, 기본 해제)
+  const [signupMarketingPrivacy, setSignupMarketingPrivacy] = useState(false);
+  const [signupMarketingEmail, setSignupMarketingEmail] = useState(false);
+  const [signupMarketingSms, setSignupMarketingSms] = useState(false);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
@@ -117,6 +122,10 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
         alert('모든 정보를 입력해주세요.');
         return;
       }
+      if ((signupMarketingEmail || signupMarketingSms) && !signupMarketingPrivacy) {
+        alert('광고성 정보 이메일 또는 문자 수신에 동의하시려면 [선택] 마케팅 목적의 개인정보 수집·이용에 동의해 주세요.');
+        return;
+      }
       try {
         const res = await fetch('/api/auth/signup', {
           method: 'POST',
@@ -126,7 +135,12 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
             password,
             name,
             phone,
-            address: `[${zonecode}] ${address} ${detailAddress}`.trim()
+            address: `[${zonecode}] ${address} ${detailAddress}`.trim(),
+            marketingConsent: {
+              privacy: signupMarketingPrivacy,
+              email: signupMarketingEmail,
+              sms: signupMarketingSms
+            }
           })
         });
         
@@ -138,7 +152,11 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
         }
 
         if (data.confirmationRequired) {
-          alert('회원가입 신청이 완료되었습니다. 이메일로 발송된 인증 링크를 확인해 주세요.');
+          if (data.consentSaveFailed) {
+            alert('회원가입 신청이 완료되었습니다. 이메일로 발송된 인증 링크를 확인해 주세요.\n\n※ 선택하신 마케팅 수신 동의 설정 저장이 완료되지 않았습니다. 로그인 후 마케팅 동의 설정(/consent) 또는 마이페이지에서 다시 설정하실 수 있습니다.');
+          } else {
+            alert('회원가입 신청이 완료되었습니다. 이메일로 발송된 인증 링크를 확인해 주세요.');
+          }
           setVerificationEmail(email);
           setIsLoginOpen(false);
           setEmailVerificationSent(true);
@@ -149,6 +167,9 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
           setAddress('');
           setDetailAddress('');
           setZonecode('');
+          setSignupMarketingPrivacy(false);
+          setSignupMarketingEmail(false);
+          setSignupMarketingSms(false);
         } else {
           alert('회원가입 성공!');
           setIsLoginOpen(false);
@@ -352,6 +373,59 @@ const [passwordResetSent, setPasswordResetSent] = useState(false);
                 <input placeholder="상세 주소 (동, 호수 등)" value={detailAddress} onChange={(e) => setDetailAddress(e.target.value)} />
               </div>
             </>
+          )}
+          {!isLoginMode && (
+            <div style={{ marginTop: '16px', marginBottom: '20px', padding: '14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.84rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px solid #edf2f7' }}>
+                <input
+                  type="checkbox"
+                  id="signup-all-marketing"
+                  checked={signupMarketingPrivacy && signupMarketingEmail && signupMarketingSms}
+                  onChange={(e) => {
+                    const c = e.target.checked;
+                    setSignupMarketingPrivacy(c);
+                    setSignupMarketingEmail(c);
+                    setSignupMarketingSms(c);
+                  }}
+                  style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }}
+                />
+                <label htmlFor="signup-all-marketing" style={{ fontWeight: 700, color: '#1e293b', cursor: 'pointer' }}>
+                  마케팅 정보 수신 전체 동의 (선택)
+                </label>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', color: '#475569' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={signupMarketingPrivacy}
+                    onChange={(e) => setSignupMarketingPrivacy(e.target.checked)}
+                    style={{ width: '15px', height: '15px', accentColor: 'var(--accent)' }}
+                  />
+                  <span>[선택] 마케팅 목적의 개인정보 수집·이용 동의</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={signupMarketingEmail}
+                    onChange={(e) => setSignupMarketingEmail(e.target.checked)}
+                    style={{ width: '15px', height: '15px', accentColor: 'var(--accent)' }}
+                  />
+                  <span>[선택] 광고성 정보 이메일 수신 동의</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={signupMarketingSms}
+                    onChange={(e) => setSignupMarketingSms(e.target.checked)}
+                    style={{ width: '15px', height: '15px', accentColor: 'var(--accent)' }}
+                  />
+                  <span>[선택] 광고성 정보 문자(SMS/MMS) 수신 동의</span>
+                </label>
+              </div>
+              <p style={{ margin: '8px 0 0', fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.4 }}>
+                * 동의하지 않으셔도 회원가입 및 기본 서비스 이용에는 아무런 제한이 없습니다.
+              </p>
+            </div>
           )}
           <button className="modal-btn" onClick={handleAuth}>{isLoginMode ? '로그인하기' : '가입하기'}</button>
           {isLoginMode && (
