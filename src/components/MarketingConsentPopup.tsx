@@ -13,12 +13,7 @@ export default function MarketingConsentPopup() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const isLocalTestPopup =
-      typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
-      window.localStorage.getItem('__test_enable_marketing_popup') === '1';
-
-    if (!ENABLE_GLOBAL_POPUP && !isLocalTestPopup) {
+    if (!ENABLE_GLOBAL_POPUP) {
       setIsOpen(false);
       setLoading(false);
       return;
@@ -26,6 +21,7 @@ export default function MarketingConsentPopup() {
 
     // 동의 페이지나 관리자 페이지에서는 팝업 노출 안 함
     if (pathname === '/consent' || pathname?.startsWith('/admin')) {
+      setIsOpen(false);
       setLoading(false);
       return;
     }
@@ -72,7 +68,7 @@ export default function MarketingConsentPopup() {
           return;
         }
 
-        // 미응답(unanswered) 회원에게만 팝업 표시
+        // 미응답(unanswered) 회원에게만 팝업 표시 (유료 구독 여부와 무관)
         setIsOpen(true);
       } catch (err) {
         console.error('Marketing consent check failed:', err);
@@ -103,7 +99,7 @@ export default function MarketingConsentPopup() {
     setIsOpen(false);
   };
 
-  // '동의 여부 설정하기' 클릭 시: 동의 페이지로 이동
+  // '신청하기' 클릭 시: 동의 설정 페이지(/consent)로 이동 (클릭만으로 동의 저장하지 않음)
   const handleGoToSettings = () => {
     setIsOpen(false);
     router.push('/consent');
@@ -114,15 +110,10 @@ export default function MarketingConsentPopup() {
     setIsOpen(false);
   };
 
-  const isLocalTestPopup =
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
-    window.localStorage.getItem('__test_enable_marketing_popup') === '1';
-
-  if ((!ENABLE_GLOBAL_POPUP && !isLocalTestPopup) || !isOpen || loading) return null;
+  if (!ENABLE_GLOBAL_POPUP || !isOpen || loading) return null;
 
   return (
-    <div 
+    <div
       style={{
         position: 'fixed',
         top: 0,
@@ -134,114 +125,151 @@ export default function MarketingConsentPopup() {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 99999,
-        padding: '20px',
+        padding: '16px',
+        boxSizing: 'border-box',
         animation: 'fadeIn 0.25s ease-out'
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
     >
-      <div 
+      <div
         style={{
           background: '#ffffff',
           borderRadius: '20px',
-          maxWidth: '440px',
+          maxWidth: '420px',
           width: '100%',
-          padding: '32px 28px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+          maxHeight: 'calc(100vh - 32px)',
+          overflowY: 'auto',
+          padding: 'clamp(28px, 6vw, 40px) clamp(20px, 5vw, 32px) clamp(24px, 5vw, 32px)',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.22)',
           position: 'relative',
           fontFamily: 'var(--sans)',
-          textAlign: 'center'
+          textAlign: 'center',
+          boxSizing: 'border-box'
         }}
       >
         <button
+          type="button"
           onClick={handleClose}
           style={{
             position: 'absolute',
-            top: '18px',
-            right: '20px',
+            top: '16px',
+            right: '18px',
             background: 'none',
             border: 'none',
             fontSize: '20px',
             color: '#9ca3af',
             cursor: 'pointer',
-            padding: '4px'
+            padding: '4px',
+            lineHeight: 1
           }}
           aria-label="닫기"
         >
           ✕
         </button>
 
-        <div style={{ fontSize: '38px', marginBottom: '14px' }}>🎁</div>
-
-        <h3 style={{
-          fontSize: '1.3rem',
-          fontWeight: 700,
-          color: '#111827',
-          marginBottom: '10px',
-          lineHeight: 1.4
-        }}>
-          한경 언더라인의 새로운 소식과<br/>독서 혜택을 받아보시겠어요?
+        {/* 골드색 제목: Notice */}
+        <h3
+          style={{
+            fontFamily: 'var(--serif, Georgia, serif)',
+            fontSize: 'clamp(1.6rem, 5vw, 2rem)',
+            fontWeight: 700,
+            color: '#c59b27',
+            margin: '0 0 22px',
+            letterSpacing: '0.02em',
+            lineHeight: 1.25
+          }}
+        >
+          Notice
         </h3>
 
-        <p style={{
-          fontSize: '0.92rem',
-          color: '#4b5563',
-          lineHeight: 1.6,
-          marginBottom: '20px'
-        }}>
-          새로운 도서 라인업, 북토크 초대권, 기수 할인 등 회원 전용 혜택을 놓치지 않도록 안내해 드립니다.
-        </p>
-
-        <div style={{
-          background: '#f9fafb',
-          borderRadius: '12px',
-          padding: '12px 16px',
-          marginBottom: '24px',
-          fontSize: '0.8rem',
-          color: '#6b7280',
-          textAlign: 'left',
-          lineHeight: 1.5,
-          border: '1px solid #f3f4f6'
-        }}>
-          💡 <strong>안내:</strong> 동의 여부와 무관하게 기존 독서클럽 서비스는 정상적으로 자유롭게 이용하실 수 있습니다.
+        {/* 본문 */}
+        <div
+          style={{
+            fontSize: 'clamp(0.92rem, 3.6vw, 1.02rem)',
+            color: '#222222',
+            lineHeight: 1.75,
+            marginBottom: '28px',
+            wordBreak: 'keep-all'
+          }}
+        >
+          <p style={{ margin: '0 0 18px' }}>
+            한경언더라인에서는 회원 여러분께<br />
+            신간 출간 소식과 다양한 이벤트,<br />
+            특별 혜택 등 유익한 정보를<br />
+            빠르게 전해드리고자 합니다.
+          </p>
+          <p style={{ margin: 0, fontWeight: 500 }}>
+            반가운 소식이 닿을 수 있도록,<br />
+            지금 신청해 주세요.
+          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        {/* 신청하기 버튼 (골드색) */}
+        <button
+          type="button"
+          onClick={handleGoToSettings}
+          style={{
+            width: '100%',
+            padding: '14px 20px',
+            backgroundColor: '#c59b27',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '10px',
+            fontSize: '1rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(197, 155, 39, 0.3)',
+            transition: 'opacity 0.2s',
+            marginBottom: '12px'
+          }}
+        >
+          신청하기
+        </button>
+
+        {/* 나중에 / 닫기 보조 액션 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+            marginTop: '4px'
+          }}
+        >
           <button
+            type="button"
             onClick={handlePostpone}
             style={{
-              flex: 1,
-              padding: '13px 16px',
-              backgroundColor: '#f3f4f6',
-              color: '#4b5563',
+              background: 'none',
               border: 'none',
-              borderRadius: '10px',
-              fontSize: '0.95rem',
-              fontWeight: 600,
+              color: '#6b7280',
+              fontSize: '0.85rem',
+              fontWeight: 500,
               cursor: 'pointer',
-              transition: 'background 0.2s'
+              padding: '4px 8px',
+              textDecoration: 'underline',
+              textUnderlineOffset: '3px'
             }}
           >
             나중에 (7일간 안보기)
           </button>
+          <span style={{ color: '#d1d5db', fontSize: '0.75rem' }}>|</span>
           <button
-            onClick={handleGoToSettings}
+            type="button"
+            onClick={handleClose}
             style={{
-              flex: 1.2,
-              padding: '13px 16px',
-              backgroundColor: 'var(--accent, #1e3a8a)',
-              color: '#ffffff',
+              background: 'none',
               border: 'none',
-              borderRadius: '10px',
-              fontSize: '0.95rem',
-              fontWeight: 600,
+              color: '#6b7280',
+              fontSize: '0.85rem',
+              fontWeight: 500,
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(30, 58, 138, 0.25)',
-              transition: 'opacity 0.2s'
+              padding: '4px 8px'
             }}
           >
-            동의 여부 설정하기
+            닫기
           </button>
         </div>
       </div>
