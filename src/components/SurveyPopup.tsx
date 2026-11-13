@@ -2,17 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
 import { ENABLE_SURVEY_POPUP } from '@/lib/config';
 
 const SURVEY_URL = 'https://forms.gle/AbYtecJjhD7KsaQ28';
-const SURVEY_POSTPONE_KEY_PREFIX = 'survey_popup_202611_postponed_';
+const SURVEY_POSTPONE_KEY = 'survey_popup_202611_postponed';
 
 export default function SurveyPopup() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ENABLE_SURVEY_POPUP) {
@@ -28,54 +26,31 @@ export default function SurveyPopup() {
       return;
     }
 
-    async function checkUserSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session || !session.user) {
-          setIsOpen(false);
-          setLoading(false);
-          return;
-        }
-
-        const userId = session.user.id;
-        setCurrentUserId(userId);
-
-        // 설문 팝업 전용 '나중에' 유예 기간(7일) 체크
-        // (기존 마케팅 동의 팝업의 marketing_consent_postponed_* 와 분리하여 기존에 '나중에'를 눌렀던 회원도 볼 수 있음)
-        const postponedUntil = localStorage.getItem(`${SURVEY_POSTPONE_KEY_PREFIX}${userId}`);
-        if (postponedUntil && parseInt(postponedUntil, 10) > Date.now()) {
-          setIsOpen(false);
-          setLoading(false);
-          return;
-        }
-
-        // 로그인한 회원에게 마케팅 동의 여부와 관계없이 표시
-        setIsOpen(true);
-      } catch (err) {
-        console.error('Survey popup session check failed:', err);
-      } finally {
+    try {
+      // 설문 팝업 전용 '나중에' 유예 기간(7일) 체크
+      const postponedUntil = localStorage.getItem(SURVEY_POSTPONE_KEY);
+      if (postponedUntil && parseInt(postponedUntil, 10) > Date.now()) {
+        setIsOpen(false);
         setLoading(false);
+        return;
       }
+
+      // 로그인 여부 및 마케팅 동의 여부와 관계없이 모든 방문자/회원에게 즉시 노출
+      setIsOpen(true);
+    } catch (err) {
+      console.error('Survey popup check failed:', err);
+      setIsOpen(true);
+    } finally {
+      setLoading(false);
     }
-
-    checkUserSession();
-
-    const handleAuthSuccess = () => {
-      checkUserSession();
-    };
-
-    window.addEventListener('auth-success', handleAuthSuccess);
-    return () => {
-      window.removeEventListener('auth-success', handleAuthSuccess);
-    };
   }, [pathname]);
 
-  // '나중에' 클릭 시: 설문 팝업 기준 해당 회원 7일간 미표시
+  // '나중에' 클릭 시: 7일간 미표시
   const handlePostpone = () => {
-    if (currentUserId) {
+    try {
       const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-      localStorage.setItem(`${SURVEY_POSTPONE_KEY_PREFIX}${currentUserId}`, String(Date.now() + sevenDaysInMs));
-    }
+      localStorage.setItem(SURVEY_POSTPONE_KEY, String(Date.now() + sevenDaysInMs));
+    } catch {}
     setIsOpen(false);
   };
 
@@ -142,13 +117,13 @@ export default function SurveyPopup() {
           ✕
         </button>
 
-        {/* 골드색 제목 (굵게) */}
+        {/* 언더라인 주황색 제목 (굵게) */}
         <h3
           style={{
             fontFamily: 'var(--sans)',
             fontSize: 'clamp(1.25rem, 4.5vw, 1.5rem)',
             fontWeight: 700,
-            color: '#c59b27',
+            color: 'var(--accent, #fc6640)',
             margin: '0 0 22px',
             letterSpacing: '-0.01em',
             lineHeight: 1.35,
@@ -185,7 +160,7 @@ export default function SurveyPopup() {
           </p>
         </div>
 
-        {/* 설문 참여하기 버튼 (골드색, 새 탭 열기) */}
+        {/* 설문 참여하기 버튼 (언더라인 주황색, 새 탭 열기) */}
         <a
           href={SURVEY_URL}
           target="_blank"
@@ -195,14 +170,14 @@ export default function SurveyPopup() {
             display: 'block',
             width: '100%',
             padding: '14px 20px',
-            backgroundColor: '#c59b27',
+            backgroundColor: 'var(--accent, #fc6640)',
             color: '#ffffff',
             border: 'none',
             borderRadius: '10px',
             fontSize: '1rem',
             fontWeight: 700,
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(197, 155, 39, 0.3)',
+            boxShadow: '0 4px 14px rgba(252, 102, 64, 0.35)',
             transition: 'opacity 0.2s',
             marginBottom: '12px',
             textDecoration: 'none',
