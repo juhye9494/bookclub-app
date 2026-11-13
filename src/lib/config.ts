@@ -1,3 +1,4 @@
 // Configuration flags for the application
-// Set to true to enable the global marketing consent popup for all users.
-export const ENABLE_GLOBAL_POPUP = true;
+// Marketing consent popup is disabled while the survey popup is active.
+export const ENABLE_GLOBAL_POPUP = false;
+export const ENABLE_SURVEY_POPUP = true;
